@@ -1,2 +1,4 @@
-# Ignore 31337 deployments
+# Ignore 31337 deployments by default, but keep the address->name mapping
+# tracked (CitySync uses this to label contracts for nextjs codegen).
 31337.json
+!31337.json
