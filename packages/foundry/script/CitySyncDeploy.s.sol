@@ -12,8 +12,39 @@ import { Redemption } from "../contracts/citysync/redeem/Redemption.sol";
 /// @notice Minimal deployment + wiring script.
 /// Use: forge script script/CitySyncDeploy.s.sol --rpc-url localhost --broadcast
 contract CitySyncDeploy is Script {
+    function _parsePk(string memory s) internal pure returns (uint256) {
+        bytes memory b = bytes(s);
+        require(b.length > 0, "empty pk");
+
+        // If it starts with 0x / 0X, parse as hex.
+        if (b.length >= 2 && b[0] == "0" && (b[1] == "x" || b[1] == "X")) {
+            uint256 x = 0;
+            for (uint256 i = 2; i < b.length; i++) {
+                uint8 c = uint8(b[i]);
+                uint8 v;
+                if (c >= 48 && c <= 57) v = c - 48; // 0-9
+                else if (c >= 97 && c <= 102) v = c - 87; // a-f
+                else if (c >= 65 && c <= 70) v = c - 55; // A-F
+                else revert("bad hex");
+                x = (x << 4) | uint256(v);
+            }
+            return x;
+        }
+
+        // Otherwise parse as decimal.
+        uint256 y = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            uint8 c = uint8(b[i]);
+            require(c >= 48 && c <= 57, "bad dec");
+            y = (y * 10) + uint256(c - 48);
+        }
+        return y;
+    }
+
     function run() external {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        // Accept either a hex string ("0x...") or decimal string for the deployer key.
+        string memory pkStr = vm.envString("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPk = _parsePk(pkStr);
         address admin = vm.envAddress("CITYSYNC_ADMIN");
 
         vm.startBroadcast(deployerPk);
