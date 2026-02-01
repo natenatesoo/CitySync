@@ -61,6 +61,9 @@ contract OpportunityManager is AccessControl, Pausable, ReentrancyGuard, EIP712 
     mapping(uint256 => Opportunity) public opportunities;
     uint256 public nextOpportunityId = 1;
 
+    /// @dev Exclusive claim per opportunity (optional). If set, only claimedBy can submit completion.
+    mapping(uint256 => address) public claimedBy;
+
     mapping(uint256 => mapping(address => Completion)) public completions;
     mapping(uint256 => mapping(address => uint64)) public lastVerifiedAt;
 
@@ -86,6 +89,9 @@ contract OpportunityManager is AccessControl, Pausable, ReentrancyGuard, EIP712 
 
     event OpportunityUpdated(uint256 indexed opportunityId);
     event OpportunityStatusSet(uint256 indexed opportunityId, bool active);
+
+    event OpportunityClaimed(uint256 indexed opportunityId, address indexed citizen);
+    event OpportunityUnclaimed(uint256 indexed opportunityId, address indexed citizen);
 
     event CompletionSubmitted(uint256 indexed opportunityId, address indexed citizen, bytes32 proofHash);
     event CompletionVerified(
@@ -188,6 +194,33 @@ contract OpportunityManager is AccessControl, Pausable, ReentrancyGuard, EIP712 
         emit OpportunityStatusSet(opportunityId, active);
     }
 
+    // ---------- Claim lifecycle ----------
+
+    /// @notice Claim an opportunity. Once claimed, only the claimant can submit completion.
+    function claimOpportunity(uint256 opportunityId) external whenNotPaused {
+        Opportunity storage o = opportunities[opportunityId];
+        require(o.issuer != address(0), "bad id");
+        require(o.active, "inactive");
+        if (o.expiresAt != 0) require(block.timestamp <= o.expiresAt, "expired");
+
+        address current = claimedBy[opportunityId];
+        require(current == address(0) || current == msg.sender, "already claimed");
+
+        claimedBy[opportunityId] = msg.sender;
+        emit OpportunityClaimed(opportunityId, msg.sender);
+    }
+
+    /// @notice Unclaim an opportunity (only by current claimant). Requires no pending completion.
+    function unclaimOpportunity(uint256 opportunityId) external whenNotPaused {
+        require(claimedBy[opportunityId] == msg.sender, "not claimant");
+
+        Completion storage c = completions[opportunityId][msg.sender];
+        require(c.status == CompletionStatus.None || c.status == CompletionStatus.Invalidated, "pending/verified");
+
+        claimedBy[opportunityId] = address(0);
+        emit OpportunityUnclaimed(opportunityId, msg.sender);
+    }
+
     // ---------- Completion lifecycle ----------
 
     function submitCompletion(uint256 opportunityId, bytes32 proofHash) external whenNotPaused {
@@ -199,6 +232,9 @@ contract OpportunityManager is AccessControl, Pausable, ReentrancyGuard, EIP712 
         if (o.eligibilityHook != address(0)) {
             require(IEligibility(o.eligibilityHook).isEligible(msg.sender, opportunityId), "ineligible");
         }
+
+        address claimant = claimedBy[opportunityId];
+        require(claimant == address(0) || claimant == msg.sender, "claimed by other");
 
         Completion storage c = completions[opportunityId][msg.sender];
         require(

@@ -11,7 +11,7 @@ import { useDeployedContractInfo, useScaffoldWriteContract, useTargetNetwork } f
 // Default Anvil accounts (commonly used by Scaffold-ETH / Foundry local chain)
 const DEFAULT_ADMIN = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" as const;
 const DEFAULT_ISSUER = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" as const;
-const DEFAULT_VERIFIER = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" as const;
+// const DEFAULT_VERIFIER = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" as const;
 const DEFAULT_REDEEMER = "0x90F79bf6EB2c4f870365E785982E1f101E93b906" as const;
 
 export default function CitySyncAdmin() {
@@ -22,13 +22,12 @@ export default function CitySyncAdmin() {
   const { data: registryInfo } = useDeployedContractInfo({ contractName: "RedeemerRegistry" });
 
   const [issuerAddr, setIssuerAddr] = useState<string>(DEFAULT_ISSUER);
-  const [verifierAddr, setVerifierAddr] = useState<string>(DEFAULT_VERIFIER);
+  // verifier delegation is now handled during opportunity creation (Issuer page)
   const [redeemerAddr, setRedeemerAddr] = useState<string>(DEFAULT_REDEEMER);
 
   const { writeContractAsync: setIssuerApproved, isMining: isApprovingIssuer } =
     useScaffoldWriteContract("OpportunityManager");
-  const { writeContractAsync: setVerifierForIssuer, isMining: isSettingVerifier } =
-    useScaffoldWriteContract("OpportunityManager");
+  // (removed) setVerifierForIssuer
   const { writeContractAsync: setRedeemer, isMining: isSettingRedeemer } = useScaffoldWriteContract("RedeemerRegistry");
 
   return (
@@ -84,17 +83,7 @@ export default function CitySyncAdmin() {
             />
           </label>
 
-          <label className="form-control">
-            <div className="label">
-              <span className="label-text">Verifier</span>
-            </div>
-            <input
-              className="input input-bordered font-mono"
-              value={verifierAddr}
-              onChange={e => setVerifierAddr(e.target.value)}
-            />
-          </label>
-
+          {/* Verifier delegation removed from Admin page */}
           <label className="form-control">
             <div className="label">
               <span className="label-text">Redeemer</span>
@@ -126,30 +115,7 @@ export default function CitySyncAdmin() {
         </button>
       </Section>
 
-      <Section
-        title="Step 2: Delegate Verifier (optional)"
-        subtitle="Lets the verifier verify completions on behalf of the issuer. This call must be made by the issuer OR CityAdmin per contract rules."
-      >
-        <div className="flex flex-col gap-2">
-          <div className="text-xs text-base-content/60">
-            If you want to keep it simple, skip delegation and have the issuer verify completions directly.
-          </div>
-          <button
-            className="btn btn-secondary w-fit"
-            disabled={!address || isSettingVerifier}
-            onClick={async () => {
-              await setVerifierForIssuer({
-                functionName: "setVerifierForIssuer",
-                args: [issuerAddr as `0x${string}`, verifierAddr as `0x${string}`, true],
-              });
-            }}
-          >
-            Approve verifier for issuer
-          </button>
-        </div>
-      </Section>
-
-      <Section title="Step 3: Approve Redeemer" subtitle="Allowlists the redeemer address in RedeemerRegistry.">
+      <Section title="Step 2: Approve Redeemer" subtitle="Allowlists the redeemer address in RedeemerRegistry.">
         <button
           className="btn btn-primary w-fit"
           disabled={!address || isSettingRedeemer}
@@ -170,8 +136,7 @@ export default function CitySyncAdmin() {
           <li>Switch wallet to Issuer → create opportunity</li>
           <li>Switch wallet to Citizen → submit completion</li>
           <li>Switch wallet to Issuer/Verifier → verify completion</li>
-          <li>Switch wallet to Citizen → request redemption</li>
-          <li>Switch wallet to Redeemer → finalize redemption</li>
+          <li>Switch wallet to Citizen → purchase redemption offering</li>
         </ul>
       </div>
     </div>

@@ -153,6 +153,22 @@ process.env.DEPLOY_SCRIPT = `script/${fileName}`;
 process.env.RPC_URL = network;
 process.env.ETH_KEYSTORE_ACCOUNT = selectedKeystore;
 
+// For scripts that need an explicit admin address, set it to the selected keystore's address.
+// (Avoids requiring raw private keys in .env for localhost deploys.)
+if (!process.env.CITYSYNC_ADMIN) {
+  try {
+    const addrRes = spawnSync(
+      "cast",
+      ["wallet", "address", "--account", selectedKeystore],
+      { encoding: "utf-8", shell: true }
+    );
+    const addr = (addrRes.stdout || "").trim();
+    if (addr) process.env.CITYSYNC_ADMIN = addr;
+  } catch {
+    // Best-effort only.
+  }
+}
+
 const result = spawnSync("make", ["deploy-and-generate-abis"], {
   stdio: "inherit",
   shell: true,

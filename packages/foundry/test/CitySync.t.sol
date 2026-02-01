@@ -7,6 +7,7 @@ import { CityToken } from "../contracts/citysync/token/CityToken.sol";
 import { VoteToken } from "../contracts/citysync/token/VoteToken.sol";
 import { OpportunityManager } from "../contracts/citysync/opportunity/OpportunityManager.sol";
 import { RedeemerRegistry } from "../contracts/citysync/redeem/RedeemerRegistry.sol";
+import { RedemptionReceipt } from "../contracts/citysync/redeem/RedemptionReceipt.sol";
 import { Redemption } from "../contracts/citysync/redeem/Redemption.sol";
 
 contract CitySyncTest is Test {
@@ -28,9 +29,13 @@ contract CitySyncTest is Test {
 
         mgr = new OpportunityManager(admin, city, vote);
         reg = new RedeemerRegistry(admin);
-        red = new Redemption(admin, city, reg);
+        RedemptionReceipt receipt = new RedemptionReceipt(admin);
+        red = new Redemption(admin, city, reg, receipt);
 
         vm.startPrank(admin);
+
+        // allow redemption to mint receipts
+        receipt.grantRole(receipt.MINTER_ROLE(), address(red));
         city.grantRole(city.MINTER_ROLE(), address(mgr));
         city.grantRole(city.BURNER_ROLE(), address(red));
         vote.grantRole(vote.MINTER_ROLE(), address(mgr));
@@ -74,7 +79,10 @@ contract CitySyncTest is Test {
         vm.prank(issuer);
         mgr.setVerifierForIssuer(issuer, verifier, true);
 
-        // citizen submits completion
+        // citizen claims + submits completion
+        vm.prank(citizen);
+        mgr.claimOpportunity(oppId);
+
         bytes32 proof = keccak256("proof");
         vm.prank(citizen);
         mgr.submitCompletion(oppId, proof);
