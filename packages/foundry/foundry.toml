@@ -4,6 +4,12 @@ out = 'out'
 libs = ['lib', 'node_modules']
 fs_permissions = [{ access = "read-write", path = "./"}]
 
+# CitySync contracts are a bit struct-heavy; via-ir avoids stack-too-deep without
+# contorting the code.
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
 
 [rpc_endpoints]
 default_network = "http://127.0.0.1:8545"
