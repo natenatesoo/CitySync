@@ -12,8 +12,14 @@ const roles = [
   {
     key: "issuer",
     title: "Issuer",
-    desc: "Offer volunteer opportunities, set reward amounts, and verify completions to mint CITY + VOTE.",
+    desc: "Offer volunteer opportunities, set CITY rewards, and verify completions to mint CITY + VOTE.",
     href: "/citysync/issuer",
+  },
+  {
+    key: "verifier",
+    title: "Verifier",
+    desc: "Select opportunities you’re assigned to verify and attest citizen completions to distribute credits.",
+    href: "/citysync/verifier",
   },
   {
     key: "redeemer",
@@ -33,7 +39,7 @@ export default function CitySyncHome() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {roles.map(r => (
           <Link
             key={r.key}

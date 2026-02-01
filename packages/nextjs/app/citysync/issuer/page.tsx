@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ContractAddresses } from "../_components/ContractAddresses";
 import { Section } from "../_components/Section";
 import { Address } from "@scaffold-ui/components";
-import { keccak256, stringToHex } from "viem";
+import { keccak256, parseUnits, stringToHex } from "viem";
 import { useAccount } from "wagmi";
 import {
   useDeployedContractInfo,
@@ -32,8 +32,7 @@ export default function IssuerJourney() {
     useScaffoldWriteContract("OpportunityManager");
 
   const [metadataURI, setMetadataURI] = useState<string>("ipfs://example");
-  const [rewardCity, setRewardCity] = useState<string>("1000000000000000000"); // 1e18
-  const [rewardVote, setRewardVote] = useState<string>("0"); // 0 = 1:1 default
+  const [rewardCity, setRewardCity] = useState<string>("5");
   const [mode, setMode] = useState<string>("1"); // DelegatedVerifiers
 
   const [verifierAddr, setVerifierAddr] = useState<string>("");
@@ -72,7 +71,7 @@ export default function IssuerJourney() {
 
       <Section
         title="Create opportunity"
-        subtitle="Creates a new volunteer opportunity. rewardVote=0 means mint VOTE 1:1 with CITY."
+        subtitle="Creates a new volunteer opportunity. Enter reward as whole CITY tokens; VOTE is always minted 1:1 with CITY."
       >
         <div className="flex flex-col gap-3">
           <div className="text-sm text-base-content/70">
@@ -91,23 +90,17 @@ export default function IssuerJourney() {
             </label>
             <label className="form-control w-full max-w-xs">
               <div className="label">
-                <span className="label-text">rewardCity (wei)</span>
+                <span className="label-text">Reward (CITY)</span>
               </div>
               <input
                 className="input input-bordered"
                 value={rewardCity}
                 onChange={e => setRewardCity(e.target.value)}
+                placeholder="5"
               />
-            </label>
-            <label className="form-control w-full max-w-xs">
               <div className="label">
-                <span className="label-text">rewardVote (wei)</span>
+                <span className="label-text-alt text-base-content/60">VOTE will be minted 1:1 with CITY</span>
               </div>
-              <input
-                className="input input-bordered"
-                value={rewardVote}
-                onChange={e => setRewardVote(e.target.value)}
-              />
             </label>
             <label className="form-control w-full max-w-xs">
               <div className="label">
@@ -129,8 +122,8 @@ export default function IssuerJourney() {
                 functionName: "createOpportunity",
                 args: [
                   metadataURI,
-                  BigInt(rewardCity),
-                  BigInt(rewardVote),
+                  parseUnits(rewardCity || "0", 18),
+                  0n,
                   "0x0000000000000000000000000000000000000000",
                   Number(mode),
                   0n,
