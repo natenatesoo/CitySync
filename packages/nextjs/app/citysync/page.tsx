@@ -47,9 +47,17 @@ export default function CitySyncHome() {
         ))}
       </div>
 
-      <div className="text-sm text-base-content/60">
-        Tip: For full end-to-end testing, import multiple Anvil accounts into your wallet (issuer / verifier / citizen /
-        redeemer), since role permissions are enforced onchain.
+      <div className="rounded-2xl bg-base-100 border border-base-300 p-5">
+        <div className="text-lg font-semibold">Local demo setup</div>
+        <div className="mt-2 text-sm text-base-content/70">
+          Use the Admin Setup page to approve an issuer and redeemer, and optionally delegate a verifier (prefilled with
+          common Anvil accounts).
+        </div>
+        <div className="mt-3">
+          <Link href="/citysync/admin" className="link">
+            Open Admin Setup →
+          </Link>
+        </div>
       </div>
     </div>
   );
