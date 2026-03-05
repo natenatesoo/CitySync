@@ -486,7 +486,7 @@
       resize();
       window.addEventListener('resize', resize);
 
-      const COUNT = 70;
+      const COUNT = 100;
       const CONNECT_DIST = 160;
       const MOUSE_RADIUS = 130;
 
@@ -497,8 +497,8 @@
           this.y  = Math.random() * canvas.height;
           this.vx = (Math.random() - 0.5) * 0.35;
           this.vy = (Math.random() - 0.5) * 0.35;
-          this.r  = Math.random() * 1.8 + 0.6;
-          this.baseOpacity = Math.random() * 0.45 + 0.15;
+          this.r  = Math.random() * 2.2 + 0.8;
+          this.baseOpacity = Math.random() * 0.5 + 0.35;
           this.opacity = this.baseOpacity;
           // ~18% gold nodes, rest white
           this.gold = Math.random() < 0.18;
@@ -553,7 +553,7 @@
             const dy   = nodes[i].y - nodes[j].y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < CONNECT_DIST) {
-              const alpha = (1 - dist / CONNECT_DIST) * 0.22;
+              const alpha = (1 - dist / CONNECT_DIST) * 0.45;
               const bothGold = nodes[i].gold && nodes[j].gold;
               const eitherGold = nodes[i].gold || nodes[j].gold;
               ctx.strokeStyle = bothGold
