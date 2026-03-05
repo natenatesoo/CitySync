@@ -1,4 +1,4 @@
-<svg viewBox="0 0 172 30" xmlns="http://www.w3.org/2000/svg" aria-label="CITY//SYNC">
+<svg viewBox="0 0 148 30" xmlns="http://www.w3.org/2000/svg" aria-label="CITY//SYNC">
   <!-- CITY wordmark in royal blue -->
   <text y="26"
     font-family="'Rajdhani','Arial Black',sans-serif"
@@ -7,15 +7,15 @@
     letter-spacing="2"
     fill="#4169E1">CITY</text>
   <!-- Left slash: outlined parallelogram in royal blue -->
-  <polygon points="70,26 79,26 86,5 77,5"
+  <polygon points="66,26 70,26 77,4 73,4"
     fill="none"
     stroke="#4169E1"
-    stroke-width="1.5"/>
+    stroke-width="1"/>
   <!-- Right slash: solid white parallelogram -->
-  <polygon points="83,26 92,26 99,5 90,5"
+  <polygon points="73,26 77,26 84,4 80,4"
     fill="#FFFFFF"/>
   <!-- SYNC wordmark in white -->
-  <text x="103" y="26"
+  <text x="87" y="26"
     font-family="'Rajdhani','Arial Black',sans-serif"
     font-weight="700"
     font-size="28"
