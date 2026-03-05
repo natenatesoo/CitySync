@@ -1,5 +1,5 @@
 <svg viewBox="0 0 158 30" xmlns="http://www.w3.org/2000/svg" aria-label="CITY//SYNC">
-  <text y="26"
+  <text x="-2" y="26"
     font-family="'Rajdhani','Arial Black',sans-serif"
     font-weight="700"
     font-size="28"
@@ -10,7 +10,9 @@
     stroke="#FFFFFF"
     stroke-width="1"/>
   <polygon points="62,26 66,26 73,4 69,4"
-    fill="#DD9E33"/>
+    fill="none"
+    stroke="#DD9E33"
+    stroke-width="1"/>
   <text x="74" y="26"
     font-family="'Rajdhani','Arial Black',sans-serif"
     font-weight="700"
