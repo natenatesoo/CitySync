@@ -10,6 +10,8 @@ This repository keeps agent guidance in `AGENTS.md` to avoid duplication. Please
 
 > Read this section at the start of every session before doing anything else.
 > For current working state and next steps, also read `docs/SESSION.md`.
+>
+> **End of session:** Before closing out, update `docs/SESSION.md` with what was done, any new decisions made, and what's next. Then commit it and remind Nate to `git push`.
 
 ## What Is CitySync?
 
