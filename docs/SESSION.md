@@ -16,6 +16,8 @@
 - `Fix pre-commit hook to work in network-restricted environments`
 - `Add session memory: CLAUDE.md project context and docs/SESSION.md`
 - `Add end-of-session reminder to CLAUDE.md`
+- `Update SESSION.md with this session's work and next steps`
+- `Add landing/ — standalone Vercel landing page for City/Sync`
 
 ---
 
@@ -54,7 +56,8 @@ All 14 written essays saved as markdown files (01–14), plus two video presenta
 ## Pending / Next Steps
 
 ### High Priority
-- **Vercel landing page** — Nate wants a public-facing landing page for CitySync. Recommended approach: Option A — redesign the home route of the existing Next.js app (`packages/nextjs`) as a landing page, keep dApp at `/app`. Build it using the whitepaper content and brand colors/logo. Nate to place logo PNG into `packages/nextjs/public/` first.
+- **Landing page refinements** — `landing/index.html` is live at `city-sync.org` (deployed to Vercel, DNS configured via GoDaddy). Outstanding items: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update the Paragraph.com CTA with the preferred primary call-to-action; (3) add the real logo PNG — Nate should place it in `landing/` folder on his Mac and reference it in the HTML.
+- **dPAN dApp deployment** — second Vercel project from same repo; set Root Directory to `packages/nextjs`; point to `app.city-sync.org` or similar subdomain.
 - **Improve the Problem Definition & Impact Factors doc** — original at `docs/official/City_Sync Problem Definition & Impact Factors.docx`. Read with pandoc, create improved version using docx-js.
 - **Nate to review and edit the Whitepaper** — he will make modifications; re-generate with updated build script if structural changes needed.
 
@@ -79,7 +82,8 @@ All 14 written essays saved as markdown files (01–14), plus two video presenta
 | Essay 14 is foundational but divergent — reference carefully | Introduced dPANs and project, but contains speculative architecture not in current scope |
 | Git commits in sandbox, push from Mac | GitHub egress blocked in Cowork sandbox |
 | Skip Next.js lint in Linux ARM64 environment | SWC binary can't be downloaded; real lint enforced on Mac |
-| Landing page — Option A (add to existing Next.js app) | Quickest path to live URL; Vercel already configured; separate later if needed |
+| Landing page — separate `landing/` folder, own Vercel project | Two deployments: landing page at city-sync.org, dApp at app.city-sync.org later |
+| city-sync.org DNS via GoDaddy | A record → 76.76.21.21; CNAME www → cname.vercel-dns.com; SSL auto-provisioned by Vercel |
 
 ---
 
