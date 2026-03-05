@@ -6,7 +6,7 @@
 ---
 
 ## Last Updated
-2026-03-05
+2026-03-05 (Session 2 addendum)
 
 ## Current Branch
 `main`
@@ -65,6 +65,27 @@ All 14 written essays saved as markdown files (01–14), plus two video presenta
 - **Move build-whitepaper.js into repo** — currently at `/sessions/gracious-vigilant-thompson/build-whitepaper.js`; copy to `docs/official/` for version control
 - **Second pitch deck** — Nate mentioned more decks to come; consider a consistent visual template using brand colors
 - **Implementation plan** — created in a previous session; confirm it is saved in `docs/official/` and up to date with simplified civic credit model
+
+### Web3 Dogfooding — Redeemer Partnership Outreach
+CitySync acts as its own Issuer, offering public tasks and issuing civic credits redeemable with Web3 public goods partners. Priority outreach targets:
+
+**Tier 1 (highest leverage):**
+- **Gitcoin Passport** — add a "verified civic contributor" CitySync stamp; instant distribution across Gitcoin ecosystem. Contact via Twitter/X or Telegram; reach out to Kyle Weiss or Passport product team.
+- **OpenCivics** (opencivics.co) — closest philosophical peer; formal partnership or mutual recognition opens city government doors.
+- **ETHGlobal** (sponsorships@ethglobal.com) — civic credit holders redeem for hackathon tickets; strong near-term incentive.
+
+**Tier 2 (strategic):**
+- **Talent Protocol** — civic credits map to Builder Score; they actively seek novel credential sources.
+- **Optimism Collective / Retro Funding** — civic credit holders as retroPGF nominees; entry via gov.optimism.io governance forum.
+- **Giveth** (giveth.io) — public goods donation platform; ideologically aligned, approachable team.
+
+**Tier 3 (infrastructure):**
+- **Pinata** — IPFS storage credits as Redeemer offering.
+- **Akash Network** — decentralized compute credits; actively courts public goods projects.
+- **Otterspace** — non-transferable badge NFTs; potential technical partner for credentialing layer.
+- **Funding the Commons** — conference speaking slot + Redeemer partnership reinforce each other.
+- **Metagov** (metagov.org) — governance research DAO; credibility partner for city government pitches.
+- **Plurality Labs** (Arbitrum) — civic credit holders access community grant applications.
 
 ### Ongoing
 - Update `SESSION.md` and commit at end of each session
