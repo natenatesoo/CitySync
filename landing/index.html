@@ -305,11 +305,26 @@
         <p class="text-white/50 mt-3 font-body text-sm max-w-xl mx-auto">Civic coordination must never become coercion. These principles are binding governance rules — not aspirations.</p>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {["Voluntary Participation", "No Employment Substitution", "Survival Independence", "Universal Access", "No Second-Class Citizenship"].map((p, i) => `
         <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
-          <div class="text-gold font-heading font-bold text-2xl mb-2">0${i+1}</div>
-          <div class="text-white/70 font-body text-xs leading-relaxed">${p}</div>
-        </div>`).join('')}
+          <div class="text-gold font-heading font-bold text-2xl mb-2">01</div>
+          <div class="text-white/70 font-body text-xs leading-relaxed">Voluntary Participation</div>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+          <div class="text-gold font-heading font-bold text-2xl mb-2">02</div>
+          <div class="text-white/70 font-body text-xs leading-relaxed">No Employment Substitution</div>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+          <div class="text-gold font-heading font-bold text-2xl mb-2">03</div>
+          <div class="text-white/70 font-body text-xs leading-relaxed">Survival Independence</div>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+          <div class="text-gold font-heading font-bold text-2xl mb-2">04</div>
+          <div class="text-white/70 font-body text-xs leading-relaxed">Universal Access</div>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+          <div class="text-gold font-heading font-bold text-2xl mb-2">05</div>
+          <div class="text-white/70 font-body text-xs leading-relaxed">No Second-Class Citizenship</div>
+        </div>
       </div>
     </div>
   </section>
@@ -448,16 +463,6 @@
       observer.observe(el);
     });
 
-    // Principles rendering
-    document.querySelectorAll('section').forEach(section => {
-      const html = section.innerHTML;
-      if (html.includes('{[')) {
-        section.innerHTML = html.replace(
-          /\{(\[.*?\]\.map\(.*?\)\.join\(''\))\}/gs,
-          (_, expr) => eval(expr)
-        );
-      }
-    });
   </script>
 </body>
 </html>
