@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City/Sync Business Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #eee;
+            font-family: 'Inter', sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #23128F;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .cards-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+            justify-items: center;
+        }
+
+        .card-wrapper {
+            text-align: center;
+        }
+
+        .card-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card {
+            width: 672px;
+            height: 384px;
+            display: flex;
+            flex-direction: column;
+            font-size: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        /* FRONT SIDE */
+        .card-front {
+            background: #23128F;
+            color: white;
+            padding: 40px;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-front::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: #DD9E33;
+        }
+
+        .front-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-logo {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 36px;
+            letter-spacing: 3px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .card-logo-city {
+            color: white;
+        }
+
+        .card-logo-slash {
+            color: #DD9E33;
+            margin: 0 2px;
+        }
+
+        .card-logo-sync {
+            color: #DD9E33;
+        }
+
+        .card-tagline {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(221, 158, 51, 0.6);
+            line-height: 1.4;
+            margin-bottom: 40px;
+        }
+
+        .card-person {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .card-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            color: white;
+            line-height: 1;
+        }
+
+        .card-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: #DD9E33;
+            line-height: 1;
+        }
+
+        .card-email {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: #aaa;
+            line-height: 1;
+            margin-top: 8px;
+        }
+
+        /* BACK SIDE */
+        .card-back {
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .slash-mark {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 200px;
+            font-weight: 700;
+            color: #DD9E33;
+            line-height: 1;
+            letter-spacing: -10px;
+            text-align: center;
+            opacity: 1;
+        }
+
+        .back-content {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+
+        .back-url {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .notes {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 40px;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #333;
+            text-align: center;
+        }
+
+        .notes strong {
+            font-weight: 600;
+            color: #23128F;
+        }
+
+        .notes-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: #23128F;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 1400px) {
+            .cards-preview {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+
+            .card {
+                width: 100%;
+                max-width: 672px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">City/Sync Business Card</div>
+        
+        <div class="cards-preview">
+            <!-- FRONT -->
+            <div class="card-wrapper">
+                <div class="card-label">Front</div>
+                <div class="card card-front">
+                    <div class="front-content">
+                        <div class="card-logo">
+                            <span class="card-logo-city">CITY</span><span class="card-logo-slash">//</span><span class="card-logo-sync">SYNC</span>
+                        </div>
+                        <div class="card-tagline">Programmable Civic Coordination Infrastructure</div>
+                    </div>
+                    <div class="card-person">
+                        <div class="card-name">Nathan Suits</div>
+                        <div class="card-title">Founder</div>
+                        <div class="card-email">nate@city-sync.org</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BACK -->
+            <div class="card-wrapper">
+                <div class="card-label">Back</div>
+                <div class="card card-back">
+                    <div class="slash-mark">//</div>
+                    <div class="back-content">
+                        <div class="back-url">city-sync.org</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes">
+            <div class="notes-title">Printing Instructions</div>
+            <div>
+                <strong>Dimensions:</strong> 3.5 × 2 inches<br>
+                <strong>Paper Stock:</strong> Heavy card stock (100lb minimum)<br>
+                <strong>Bleed:</strong> Add 0.125 inches on all sides when preparing for print<br>
+                <strong>Print Method:</strong> Full-color (CMYK)<br>
+                <strong>Finish:</strong> Matte or gloss recommended
+            </div>
+        </div>
+    </div>
+</body>
+</html>

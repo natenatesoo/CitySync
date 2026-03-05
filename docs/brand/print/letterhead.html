@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City/Sync Letterhead</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #f5f5f5;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        @page {
+            size: letter;
+            margin: 0.75in 0.75in 0.75in 0.9in;
+        }
+
+        .letterhead {
+            width: 8.5in;
+            height: 11in;
+            background: white;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Left margin gold accent bar */
+        .letterhead::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #DD9E33;
+        }
+
+        /* Sidebar watermark */
+        .letterhead::after {
+            content: 'CITY//SYNC';
+            position: absolute;
+            left: 0.5in;
+            top: 2in;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: rgba(35, 18, 143, 0.05);
+            transform: rotate(-90deg);
+            transform-origin: left top;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.5in 0.75in 0 0.75in;
+            border-bottom: 3px solid #DD9E33;
+            padding-bottom: 0.35in;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15in;
+        }
+
+        .logo {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 24px;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .logo-city {
+            color: #23128F;
+            display: inline;
+        }
+
+        .logo-slash {
+            display: inline-block;
+            color: #DD9E33;
+            margin: 0 2px;
+            position: relative;
+        }
+
+        .slash-outline {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: inline-block;
+            color: transparent;
+            -webkit-text-stroke: 0.5px #DD9E33;
+            transform: skewX(-14deg);
+        }
+
+        .slash-solid {
+            display: inline-block;
+            color: #DD9E33;
+            transform: skewX(-14deg);
+        }
+
+        .logo-sync {
+            display: inline;
+            color: #A87420;
+        }
+
+        .tagline {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #333;
+            line-height: 1.2;
+        }
+
+        .contact-info {
+            text-align: right;
+            font-size: 10px;
+            color: #333;
+            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .contact-info a {
+            color: #23128F;
+            text-decoration: none;
+        }
+
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+
+        .body {
+            flex: 1;
+            padding: 0.5in 0.75in;
+            position: relative;
+            z-index: 1;
+        }
+
+        .body-placeholder {
+            color: #999;
+            font-size: 13px;
+            line-height: 1.8;
+            font-style: italic;
+        }
+
+        .footer {
+            border-top: 1px solid #ddd;
+            padding: 0.3in 0.75in;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9px;
+            color: #666;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-left {
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+
+        .footer-logo {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .footer-logo-city {
+            color: #23128F;
+        }
+
+        .footer-logo-slash {
+            color: #DD9E33;
+        }
+
+        .footer-logo-sync {
+            color: #A87420;
+        }
+
+        .print-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background: #23128F;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .print-button:hover {
+            background: #1a0d68;
+        }
+
+        @media print {
+            html, body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+
+            .letterhead {
+                box-shadow: none;
+                width: 100%;
+                height: 100%;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .letterhead {
+                margin: 0;
+                width: 8.5in;
+                height: 11in;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">Print</button>
+    
+    <div class="letterhead">
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">
+                    <span class="logo-city">CITY</span><span class="logo-slash"><span class="slash-outline">//</span><span class="slash-solid">//</span></span><span class="logo-sync">SYNC</span>
+                </div>
+                <div class="tagline">Programmable Civic Coordination Infrastructure</div>
+            </div>
+            <div class="contact-info">
+                <div><a href="https://city-sync.org">city-sync.org</a></div>
+                <div><a href="https://github.com/natenatesoo/CitySync">github.com/natenatesoo/CitySync</a></div>
+            </div>
+        </div>
+
+        <div class="body">
+            <p class="body-placeholder">
+                This is the body area of the letterhead. Replace this placeholder text with your message content. The letterhead is designed to print correctly on 8.5" × 11" paper with professional margins and the City/Sync branding elements.
+            </p>
+            <p class="body-placeholder" style="margin-top: 1in;">
+                The left margin features a thin gold accent bar, and a subtle watermark text appears in the background. When printing, these elements will render correctly with the appropriate color scheme.
+            </p>
+        </div>
+
+        <div class="footer">
+            <div class="footer-left">city-sync.org · Open Source Civic Infrastructure</div>
+            <div class="footer-logo">
+                <span class="footer-logo-city">CITY</span><span class="footer-logo-slash">//</span><span class="footer-logo-sync">SYNC</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

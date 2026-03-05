@@ -8,6 +8,9 @@
   <meta property="og:title" content="City/Sync — Programmable Civic Coordination Infrastructure" />
   <meta property="og:description" content="A new operating logic for civic life. Contribute. Earn. Redeem. Govern." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="/og-image.png" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -17,8 +20,8 @@
       theme: {
         extend: {
           colors: {
-            navy:    { DEFAULT: '#0C1240', light: '#141b5c', dark: '#080c2e' },
-            gold:    { DEFAULT: '#C49820', light: '#d4ae38', dark: '#9a7818' },
+            navy:    { DEFAULT: '#23128F', light: '#2D1BAF', dark: '#160B5C' },
+            gold:    { DEFAULT: '#DD9E33', light: '#F2C15E', dark: '#A87420' },
             civic:   '#2E75B6',
           },
           fontFamily: {
@@ -31,18 +34,21 @@
   </script>
   <style>
     html { scroll-behavior: smooth; }
-    .slash-white { display: inline-block; width: 3px; height: 1em; background: #fff; transform: skewX(-18deg); margin: 0 1px; }
-    .slash-gold  { display: inline-block; width: 4px; height: 1em; background: #C49820; transform: skewX(-18deg); margin: 0 1px; }
-    .gradient-fade { background: linear-gradient(to bottom, #0C1240 0%, #0e1650 60%, #0C1240 100%); }
+    /* Double-slash mark: outlined left slash + solid right slash */
+    .slash-outline { display: inline-block; width: 4px; height: 1em; background: transparent; border: 2px solid #DD9E33; transform: skewX(-14deg); margin: 0 1px; box-sizing: border-box; }
+    .slash-solid   { display: inline-block; width: 5px; height: 1em; background: #DD9E33; transform: skewX(-14deg); margin: 0 1px; }
+    /* White version for dark nav */
+    .slash-outline-white { display: inline-block; width: 4px; height: 1em; background: transparent; border: 2px solid rgba(255,255,255,0.7); transform: skewX(-14deg); margin: 0 1px; box-sizing: border-box; }
+    .gradient-fade { background: linear-gradient(to bottom, #23128F 0%, #2D1BAF 60%, #23128F 100%); }
     .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(196,152,32,0.15); }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(221,158,51,0.15); }
     .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
     .fade-up { animation: fadeUp 0.7s ease forwards; }
     .fade-up-delay-1 { animation: fadeUp 0.7s 0.15s ease both; }
     .fade-up-delay-2 { animation: fadeUp 0.7s 0.3s ease both; }
     .fade-up-delay-3 { animation: fadeUp 0.7s 0.45s ease both; }
-    .divider-gold { height: 3px; background: linear-gradient(to right, transparent, #C49820, transparent); }
+    .divider-gold { height: 3px; background: linear-gradient(to right, transparent, #DD9E33, transparent); }
   </style>
 </head>
 <body class="bg-navy text-white font-body antialiased">
@@ -54,8 +60,8 @@
       <a href="#" class="flex items-center gap-0 font-heading font-bold text-2xl tracking-widest">
         <span class="text-white">CITY</span>
         <span class="inline-flex items-end mx-1 gap-[3px]" style="line-height:1">
-          <span class="slash-white" style="height:1.1em"></span>
-          <span class="slash-gold"  style="height:1.1em"></span>
+          <span class="slash-outline-white" style="height:1.1em"></span>
+          <span class="slash-solid" style="height:1.1em"></span>
         </span>
         <span class="text-gold">SYNC</span>
       </a>
@@ -73,7 +79,7 @@
   <!-- ─── HERO ─────────────────────────────────────────────────────────────── -->
   <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
     <!-- Background grid -->
-    <div class="absolute inset-0 opacity-5" style="background-image: linear-gradient(rgba(196,152,32,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(196,152,32,0.5) 1px, transparent 1px); background-size: 60px 60px;"></div>
+    <div class="absolute inset-0 opacity-5" style="background-image: linear-gradient(rgba(221,158,51,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(221,158,51,0.5) 1px, transparent 1px); background-size: 60px 60px;"></div>
     <!-- Glow -->
     <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10" style="background: radial-gradient(circle, #2E75B6 0%, transparent 70%);"></div>
 
@@ -82,8 +88,8 @@
       <div class="fade-up mb-8 inline-flex items-end gap-[5px] font-heading font-bold" style="font-size: clamp(3.5rem, 10vw, 7rem); letter-spacing: 0.05em; line-height: 1;">
         <span class="text-white">CITY</span>
         <span class="inline-flex items-end gap-[4px] mx-1">
-          <span class="slash-white" style="height:0.9em; width:5px;"></span>
-          <span class="slash-gold"  style="height:0.95em; width:7px;"></span>
+          <span class="slash-outline" style="height:0.9em; width:6px;"></span>
+          <span class="slash-solid"   style="height:0.95em; width:8px;"></span>
         </span>
         <span class="text-gold">SYNC</span>
       </div>
@@ -413,8 +419,8 @@
       <div class="flex items-end gap-[4px] font-heading font-bold text-xl tracking-widest">
         <span class="text-white">CITY</span>
         <span class="inline-flex items-end gap-[3px] mx-0.5">
-          <span class="slash-white" style="height:1em; width:3px;"></span>
-          <span class="slash-gold"  style="height:1em; width:4px;"></span>
+          <span class="slash-outline-white" style="height:1em; width:4px;"></span>
+          <span class="slash-solid"         style="height:1em; width:5px;"></span>
         </span>
         <span class="text-gold">SYNC</span>
       </div>

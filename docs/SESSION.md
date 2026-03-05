@@ -3,20 +3,23 @@
 > Updated at the end of each working session.
 > Read this alongside `CLAUDE.md` to get full context before starting work.
 
+## Starting a New Session
+Type **"Start Session"** at the beginning of any new Cowork session. Claude will read `citysync/CLAUDE.md` and `citysync/docs/SESSION.md` and give you a briefing before you begin.
+
 ---
 
 ## Last Updated
-2026-03-05 (Session 2 addendum)
+2026-03-05 (Session 3)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (pushed to origin/main)
+- `Add brand asset suite: logos, web icons, style guide, print templates`
+- `Update landing page: corrected brand colors and slash mark style`
 - `Add docs folder: reference knowledge base and official documents`
 - `Fix pre-commit hook to work in network-restricted environments`
 - `Add session memory: CLAUDE.md project context and docs/SESSION.md`
-- `Add end-of-session reminder to CLAUDE.md`
-- `Update SESSION.md with this session's work and next steps`
 - `Add landing/ — standalone Vercel landing page for City/Sync`
 
 ---
@@ -37,8 +40,18 @@ All 14 written essays saved as markdown files (01–14), plus two video presenta
 
 ### Assets (`docs/official/assets/`)
 - `CSVideo.mp4` — project video (nature/purpose TBD — ask Nate)
-- CitySync logo: navy background, "CITY" in white, "SYNC" in gold, double diagonal slash divider. Logo exists as PNG on Nate's Mac but cannot be uploaded as a file via Cowork (comes through inline only). **For landing page:** Nate should place logo PNG directly into `packages/nextjs/public/` on his Mac; commit from there.
-- Brand colors: Navy ~#0D1245, Gold ~#B8860B, White #FFFFFF
+
+### Brand Identity System (`docs/brand/`) — NEW Session 3
+Full brand asset suite created. True colors extracted from Nate's SVG source files.
+- **Confirmed brand colors:** Navy `#23128F`, Gold `#DD9E33`, Black `#000000`, White `#FFFFFF`
+- **Font:** Rajdhani Bold (heading) + Inter (body) — already on landing page
+- **Double-slash mark:** left slash = outlined parallelogram (gold border, transparent fill); right slash = solid gold parallelogram; both skewX(-14deg)
+- `docs/brand/source/` — Nate's original SVG assets (raster-embedded, preserved as master refs)
+- `docs/brand/logos/` — 7 clean vector SVG logo variations (primary, dark, light, mono-dark, mono-light, icon, stacked)
+- `docs/brand/web/` — favicon.svg, favicon.ico, apple-touch-icon.svg, og-image.svg, icon-{16,32,48,180,192,512}.svg
+- `docs/brand/guide/brand-style-guide.html` — comprehensive brand style guide (colors, typography, logo rules, spacing, print, digital)
+- `docs/brand/print/letterhead.html` — printable letterhead template
+- `docs/brand/print/business-card.html` — business card front+back preview (3.5"×2")
 
 ### Git & Dev Environment
 - Yarn wrapper at `/sessions/gracious-vigilant-thompson/.local/bin/yarn`
@@ -56,7 +69,8 @@ All 14 written essays saved as markdown files (01–14), plus two video presenta
 ## Pending / Next Steps
 
 ### High Priority
-- **Landing page refinements** — `landing/index.html` is live at `city-sync.org` (deployed to Vercel, DNS configured via GoDaddy). Outstanding items: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update the Paragraph.com CTA with the preferred primary call-to-action; (3) add the real logo PNG — Nate should place it in `landing/` folder on his Mac and reference it in the HTML.
+- **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Brand colors updated this session (navy #23128F, gold #DD9E33, correct slash mark style). Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
+- **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder (or `landing/public/`) so they're served by Vercel.
 - **dPAN dApp deployment** — second Vercel project from same repo; set Root Directory to `packages/nextjs`; point to `app.city-sync.org` or similar subdomain.
 - **Improve the Problem Definition & Impact Factors doc** — original at `docs/official/City_Sync Problem Definition & Impact Factors.docx`. Read with pandoc, create improved version using docx-js.
 - **Nate to review and edit the Whitepaper** — he will make modifications; re-generate with updated build script if structural changes needed.

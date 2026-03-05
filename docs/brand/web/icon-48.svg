@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect width="48" height="48" fill="#23128F" rx="9.6"/>
+  <!-- Two gold slashes -->
+  <polygon points="12,6 16,6 21,42 17,42" fill="#DD9E33"/>
+  <polygon points="21,6 25,6 30,42 26,42" fill="#DD9E33"/>
+</svg>

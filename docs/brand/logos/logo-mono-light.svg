@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 140" width="600" height="140">
+  <title>CitySync Monochrome Light Logo</title>
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');
+      .city-text { font-family: 'Rajdhani', 'Arial Black', sans-serif; font-weight: 700; font-size: 72px; letter-spacing: 0.08em; }
+    </style>
+  </defs>
+  
+  <!-- CITY text in navy -->
+  <text x="30" y="100" class="city-text" fill="#23128F">CITY</text>
+  
+  <!-- Double slash mark (outlined only in navy) -->
+  <!-- Left slash: outlined -->
+  <g transform="translate(280, 30)">
+    <polygon points="25,20 40,20 55,100 40,100" fill="none" stroke="#23128F" stroke-width="3" stroke-linejoin="round"/>
+    <!-- Right slash: outlined -->
+    <polygon points="61,20 76,20 91,100 76,100" fill="none" stroke="#23128F" stroke-width="3" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- SYNC text in navy -->
+  <text x="380" y="100" class="city-text" fill="#23128F">SYNC</text>
+</svg>

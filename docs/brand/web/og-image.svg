@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#23128F"/>
+  
+  <!-- Subtle grid pattern overlay -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="40" y2="0" stroke="#DD9E33" stroke-width="0.5" opacity="0.1"/>
+      <line x1="0" y1="0" x2="0" y2="40" stroke="#DD9E33" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- Main text group -->
+  <g text-anchor="middle">
+    <!-- CITY//SYNC Wordmark -->
+    <text x="600" y="280" font-family="Rajdhani, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="120" font-weight="700" letter-spacing="0.05em">
+      <tspan fill="#FFFFFF">CITY</tspan><tspan fill="#DD9E33">//</tspan><tspan fill="#DD9E33">SYNC</tspan>
+    </text>
+    
+    <!-- Tagline -->
+    <text x="600" y="380" font-family="Rajdhani, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="28" letter-spacing="0.2em" fill="#FFFFFF" opacity="0.7">
+      Programmable Civic Coordination Infrastructure
+    </text>
+  </g>
+</svg>
