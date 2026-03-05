@@ -1,1 +1,2 @@
+export PATH="/sessions/gracious-vigilant-thompson/.local/bin:$PATH"
 yarn lint-staged --verbose

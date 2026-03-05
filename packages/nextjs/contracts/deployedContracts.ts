@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CityToken: {
-      address: "0x3a1d75769758705cab1385377d4d88b8193a5f37",
+      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
       abi: [
         {
           type: "constructor",
@@ -645,10 +645,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 52,
+      deployedOnBlock: 1,
     },
     VoteToken: {
-      address: "0xb1527802e7800034d6887b0a99a5ad2683184b95",
+      address: "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
       abi: [
         {
           type: "constructor",
@@ -1797,10 +1797,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 53,
+      deployedOnBlock: 2,
     },
     OpportunityManager: {
-      address: "0x4c073a92b1c8fb55313102ab412fb7f1704bcbdd",
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
       abi: [
         {
           type: "constructor",
@@ -3017,10 +3017,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 55,
+      deployedOnBlock: 2,
     },
     RedeemerRegistry: {
-      address: "0x90bb87c6258ad0d309d2f3a263d3bc7b0b9f522d",
+      address: "0x8ce361602b935680e8dec218b820ff5056beb7af",
       abi: [
         {
           type: "constructor",
@@ -3710,10 +3710,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 55,
+      deployedOnBlock: 2,
     },
     Redemption: {
-      address: "0xd49880bddfac4fd20d3b6bee01c71231c0c63789",
+      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48",
       abi: [
         {
           type: "constructor",
@@ -4441,10 +4441,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 54,
+      deployedOnBlock: 4,
     },
     RedemptionReceipt: {
-      address: "0x38381d63418ff752dba93ee018e36a6814388fa7",
+      address: "0xe1aa25618fa0c7a1cfdab5d6b456af611873b629",
       abi: [
         {
           type: "constructor",
@@ -5210,7 +5210,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 55,
+      deployedOnBlock: 5,
     },
   },
 } as const;
