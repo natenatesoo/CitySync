@@ -1,2 +1,9 @@
-export PATH="/sessions/gracious-vigilant-thompson/.local/bin:$PATH"
-yarn lint-staged --verbose
+#!/bin/sh
+NODE_BIN=$(command -v node 2>/dev/null)
+if [ -z "$NODE_BIN" ]; then
+  for p in /usr/local/bin/node /opt/homebrew/bin/node; do
+    [ -x "$p" ] && NODE_BIN="$p" && break
+  done
+fi
+REPO_DIR=$(git rev-parse --show-toplevel)
+"$NODE_BIN" "$REPO_DIR/.yarn/releases/yarn-3.2.3.cjs" lint-staged --verbose

@@ -34,10 +34,10 @@
   </script>
   <style>
     html { scroll-behavior: smooth; }
-    /* Double-slash mark: blue outlined left slash + white solid right slash */
-    .slash-outline       { display: inline-block; width: 4px; height: 1em; background: transparent; border: 2px solid #4169E1; transform: skewX(-14deg); margin: 0 1px; box-sizing: border-box; }
-    .slash-solid         { display: inline-block; width: 5px; height: 1em; background: #FFFFFF; transform: skewX(-14deg); margin: 0 1px; }
-    .slash-outline-white { display: inline-block; width: 4px; height: 1em; background: transparent; border: 2px solid #4169E1; transform: skewX(-14deg); margin: 0 1px; box-sizing: border-box; }
+    /* Logo SVG sizing */
+    .logo-svg-nav    { height: 26px; width: auto; display: block; }
+    .logo-svg-hero   { height: clamp(3rem, 9vw, 6rem); width: auto; display: block; margin: 0 auto; }
+    .logo-svg-footer { height: 20px; width: auto; display: block; }
     .gradient-fade { background: linear-gradient(to bottom, #15151E 0%, #1A1A26 60%, #15151E 100%); }
     .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(221,158,51,0.15); }
@@ -56,13 +56,13 @@
   <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-navy/80 border-b border-white/10">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <!-- Logo -->
-      <a href="#" class="flex items-center gap-0 font-heading font-bold text-2xl tracking-widest">
-        <span class="text-white">CITY</span>
-        <span class="inline-flex items-end mx-1 gap-[3px]" style="line-height:1">
-          <span class="slash-outline-white" style="height:1.1em"></span>
-          <span class="slash-solid" style="height:1.1em"></span>
-        </span>
-        <span class="text-white">SYNC</span>
+      <a href="#" aria-label="City/Sync home">
+        <svg class="logo-svg-nav" viewBox="0 0 172 30" xmlns="http://www.w3.org/2000/svg" aria-label="CITY//SYNC">
+          <text y="26" font-family="'Rajdhani','Arial Black',sans-serif" font-weight="700" font-size="28" letter-spacing="2" fill="#4169E1">CITY</text>
+          <polygon points="70,26 79,26 86,5 77,5" fill="none" stroke="#4169E1" stroke-width="1.5"/>
+          <polygon points="83,26 92,26 99,5 90,5" fill="#FFFFFF"/>
+          <text x="103" y="26" font-family="'Rajdhani','Arial Black',sans-serif" font-weight="700" font-size="28" letter-spacing="2" fill="#FFFFFF">SYNC</text>
+        </svg>
       </a>
       <!-- Links -->
       <div class="hidden md:flex items-center gap-8 text-sm font-body font-medium text-white/70">
@@ -84,13 +84,13 @@
 
     <div class="relative z-10 max-w-5xl mx-auto px-6 text-center">
       <!-- Logo mark -->
-      <div class="fade-up mb-8 inline-flex items-end gap-[5px] font-heading font-bold" style="font-size: clamp(3.5rem, 10vw, 7rem); letter-spacing: 0.05em; line-height: 1;">
-        <span class="text-white">CITY</span>
-        <span class="inline-flex items-end gap-[4px] mx-1">
-          <span class="slash-outline" style="height:0.9em; width:6px;"></span>
-          <span class="slash-solid"   style="height:0.95em; width:8px;"></span>
-        </span>
-        <span class="text-white">SYNC</span>
+      <div class="fade-up mb-8">
+        <svg class="logo-svg-hero" viewBox="0 0 172 30" xmlns="http://www.w3.org/2000/svg" aria-label="CITY//SYNC">
+          <text y="26" font-family="'Rajdhani','Arial Black',sans-serif" font-weight="700" font-size="28" letter-spacing="2" fill="#4169E1">CITY</text>
+          <polygon points="70,26 79,26 86,5 77,5" fill="none" stroke="#4169E1" stroke-width="1.5"/>
+          <polygon points="83,26 92,26 99,5 90,5" fill="#FFFFFF"/>
+          <text x="103" y="26" font-family="'Rajdhani','Arial Black',sans-serif" font-weight="700" font-size="28" letter-spacing="2" fill="#FFFFFF">SYNC</text>
+        </svg>
       </div>
 
       <p class="fade-up-delay-1 text-white/60 font-heading font-medium tracking-[0.25em] uppercase text-sm mb-8">
@@ -415,14 +415,12 @@
   <!-- ─── FOOTER ────────────────────────────────────────────────────────────── -->
   <footer class="border-t border-white/10 py-12 px-6 bg-navy-dark">
     <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex items-end gap-[4px] font-heading font-bold text-xl tracking-widest">
-        <span class="text-white">CITY</span>
-        <span class="inline-flex items-end gap-[3px] mx-0.5">
-          <span class="slash-outline-white" style="height:1em; width:4px;"></span>
-          <span class="slash-solid"         style="height:1em; width:5px;"></span>
-        </span>
-        <span class="text-white">SYNC</span>
-      </div>
+      <svg class="logo-svg-footer" viewBox="0 0 172 30" xmlns="http://www.w3.org/2000/svg" aria-label="CITY//SYNC">
+        <text y="26" font-family="'Rajdhani','Arial Black',sans-serif" font-weight="700" font-size="28" letter-spacing="2" fill="#4169E1">CITY</text>
+        <polygon points="70,26 79,26 86,5 77,5" fill="none" stroke="#4169E1" stroke-width="1.5"/>
+        <polygon points="83,26 92,26 99,5 90,5" fill="#FFFFFF"/>
+        <text x="103" y="26" font-family="'Rajdhani','Arial Black',sans-serif" font-weight="700" font-size="28" letter-spacing="2" fill="#FFFFFF">SYNC</text>
+      </svg>
       <p class="text-white/30 text-sm font-body text-center">Programmable Civic Coordination Infrastructure.<br class="md:hidden"/> Not a company. Not a crypto experiment. A process.</p>
       <div class="flex items-center gap-6 text-white/40 text-sm">
         <a href="https://paragraph.com/@city-sync" target="_blank" class="hover:text-gold transition-colors">Essays</a>
