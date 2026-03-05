@@ -17,9 +17,9 @@
   <!-- Double slash mark (centered between CITY and SYNC) -->
   <!-- Left slash: outlined only -->
   <g transform="translate(280, 60)">
-    <polygon points="25,20 40,20 55,100 40,100" fill="none" stroke="#DD9E33" stroke-width="3" stroke-linejoin="round"/>
-    <!-- Right slash: solid filled -->
-    <polygon points="61,20 76,20 91,100 76,100" fill="#DD9E33" stroke="none"/>
+    <polygon points="25,20 40,20 55,100 40,100" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+    <!-- Right slash: outlined gold -->
+    <polygon points="61,20 76,20 91,100 76,100" fill="none" stroke="#DD9E33" stroke-width="3" stroke-linejoin="round"/>
   </g>
   
   <!-- SYNC text in gold -->

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 180" width="600" height="180">
-  <title>City/Sync Logo — Charcoal Background (Blue+White Mono)</title>
+  <title>City/Sync Logo — Charcoal Background</title>
   <!-- Background -->
   <rect width="600" height="180" fill="#15151E"/>
   <!-- CITY wordmark in white -->
@@ -10,21 +10,22 @@
     letter-spacing="4"
     fill="#FFFFFF"
     text-anchor="start">CITY</text>
-  <!-- Double-slash mark: left = blue outlined parallelogram, right = white solid parallelogram -->
-  <!-- Left slash: outlined, royal blue #4169E1 -->
+  <!-- Left slash: outlined white -->
   <polygon points="290,28 308,28 316,152 298,152"
     fill="none"
-    stroke="#4169E1"
+    stroke="#FFFFFF"
     stroke-width="4"/>
-  <!-- Right slash: solid white -->
+  <!-- Right slash: outlined gold -->
   <polygon points="308,28 326,28 334,152 316,152"
-    fill="#FFFFFF"/>
-  <!-- SYNC wordmark in white -->
+    fill="none"
+    stroke="#DD9E33"
+    stroke-width="4"/>
+  <!-- SYNC wordmark in gold -->
   <text x="340" y="125"
     font-family="'Rajdhani', 'Arial Black', sans-serif"
     font-weight="700"
     font-size="80"
     letter-spacing="4"
-    fill="#FFFFFF"
+    fill="#DD9E33"
     text-anchor="start">SYNC</text>
 </svg>
