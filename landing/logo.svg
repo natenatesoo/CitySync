@@ -4,17 +4,17 @@
     font-weight="700"
     font-size="28"
     letter-spacing="2"
-    fill="#4169E1">CITY</text>
+    fill="#FFFFFF">CITY</text>
   <polygon points="55,26 59,26 66,4 62,4"
     fill="none"
-    stroke="#4169E1"
+    stroke="#FFFFFF"
     stroke-width="1"/>
   <polygon points="62,26 66,26 73,4 69,4"
-    fill="#FFFFFF"/>
+    fill="#DD9E33"/>
   <text x="74" y="26"
     font-family="'Rajdhani','Arial Black',sans-serif"
     font-weight="700"
     font-size="28"
     letter-spacing="2"
-    fill="#FFFFFF">SYNC</text>
+    fill="#DD9E33">SYNC</text>
 </svg>
