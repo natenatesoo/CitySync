@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City/Sync — Programmable Civic Coordination Infrastructure</title>
+  <meta name="description" content="City/Sync is a transitory framework that helps governments and citizens gradually move toward decentralized governance. Contribute civic labor, earn civic credits, redeem for public goods." />
+  <meta property="og:title" content="City/Sync — Programmable Civic Coordination Infrastructure" />
+  <meta property="og:description" content="A new operating logic for civic life. Contribute. Earn. Redeem. Govern." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:    { DEFAULT: '#0C1240', light: '#141b5c', dark: '#080c2e' },
+            gold:    { DEFAULT: '#C49820', light: '#d4ae38', dark: '#9a7818' },
+            civic:   '#2E75B6',
+          },
+          fontFamily: {
+            heading: ['Rajdhani', 'Arial Black', 'sans-serif'],
+            body:    ['Inter', 'Arial', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .slash-white { display: inline-block; width: 3px; height: 1em; background: #fff; transform: skewX(-18deg); margin: 0 1px; }
+    .slash-gold  { display: inline-block; width: 4px; height: 1em; background: #C49820; transform: skewX(-18deg); margin: 0 1px; }
+    .gradient-fade { background: linear-gradient(to bottom, #0C1240 0%, #0e1650 60%, #0C1240 100%); }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(196,152,32,0.15); }
+    .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.7s ease forwards; }
+    .fade-up-delay-1 { animation: fadeUp 0.7s 0.15s ease both; }
+    .fade-up-delay-2 { animation: fadeUp 0.7s 0.3s ease both; }
+    .fade-up-delay-3 { animation: fadeUp 0.7s 0.45s ease both; }
+    .divider-gold { height: 3px; background: linear-gradient(to right, transparent, #C49820, transparent); }
+  </style>
+</head>
+<body class="bg-navy text-white font-body antialiased">
+
+  <!-- ─── NAV ─────────────────────────────────────────────────────────────── -->
+  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-navy/80 border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-0 font-heading font-bold text-2xl tracking-widest">
+        <span class="text-white">CITY</span>
+        <span class="inline-flex items-end mx-1 gap-[3px]" style="line-height:1">
+          <span class="slash-white" style="height:1.1em"></span>
+          <span class="slash-gold"  style="height:1.1em"></span>
+        </span>
+        <span class="text-gold">SYNC</span>
+      </a>
+      <!-- Links -->
+      <div class="hidden md:flex items-center gap-8 text-sm font-body font-medium text-white/70">
+        <a href="#problem"       class="hover:text-gold transition-colors">The Problem</a>
+        <a href="#solution"      class="hover:text-gold transition-colors">The Solution</a>
+        <a href="#how-it-works"  class="hover:text-gold transition-colors">How It Works</a>
+        <a href="#vision"        class="hover:text-gold transition-colors">Vision</a>
+        <a href="#whitepaper"    class="hover:text-white transition-colors border border-gold/50 text-gold px-4 py-1.5 rounded hover:bg-gold/10">Whitepaper</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── HERO ─────────────────────────────────────────────────────────────── -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <!-- Background grid -->
+    <div class="absolute inset-0 opacity-5" style="background-image: linear-gradient(rgba(196,152,32,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(196,152,32,0.5) 1px, transparent 1px); background-size: 60px 60px;"></div>
+    <!-- Glow -->
+    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10" style="background: radial-gradient(circle, #2E75B6 0%, transparent 70%);"></div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-6 text-center">
+      <!-- Logo mark -->
+      <div class="fade-up mb-8 inline-flex items-end gap-[5px] font-heading font-bold" style="font-size: clamp(3.5rem, 10vw, 7rem); letter-spacing: 0.05em; line-height: 1;">
+        <span class="text-white">CITY</span>
+        <span class="inline-flex items-end gap-[4px] mx-1">
+          <span class="slash-white" style="height:0.9em; width:5px;"></span>
+          <span class="slash-gold"  style="height:0.95em; width:7px;"></span>
+        </span>
+        <span class="text-gold">SYNC</span>
+      </div>
+
+      <p class="fade-up-delay-1 text-white/60 font-heading font-medium tracking-[0.25em] uppercase text-sm mb-8">
+        Programmable Civic Coordination Infrastructure
+      </p>
+
+      <h1 class="fade-up-delay-2 text-white font-body font-light leading-relaxed mb-10 mx-auto" style="font-size: clamp(1.1rem, 2.5vw, 1.4rem); max-width: 700px;">
+        A transitory framework that helps governments and citizens<br class="hidden md:block"/>
+        gradually move toward <span class="text-gold font-medium">decentralized governance</span> —<br class="hidden md:block"/>
+        in a responsible, compliant, and stable way.
+      </h1>
+
+      <div class="fade-up-delay-3 flex flex-wrap items-center justify-center gap-4">
+        <a href="#solution" class="bg-gold hover:bg-gold-light text-navy font-heading font-bold px-8 py-3 rounded text-lg tracking-wider transition-all hover:shadow-lg hover:shadow-gold/30">
+          HOW IT WORKS
+        </a>
+        <a href="#whitepaper" class="border border-white/30 hover:border-gold text-white hover:text-gold font-heading font-semibold px-8 py-3 rounded text-lg tracking-wider transition-all">
+          READ THE WHITEPAPER
+        </a>
+      </div>
+
+      <!-- Stat bar -->
+      <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
+        <div class="bg-navy/80 px-8 py-6 text-center">
+          <div class="font-heading font-bold text-gold text-4xl">2.1B</div>
+          <div class="text-white/50 text-sm mt-1 font-body">Monthly volunteers worldwide</div>
+        </div>
+        <div class="bg-navy/80 px-8 py-6 text-center border-t border-b md:border-t-0 md:border-b-0 md:border-l md:border-r border-white/10">
+          <div class="font-heading font-bold text-gold text-4xl">$0</div>
+          <div class="text-white/50 text-sm mt-1 font-body">Recognition those contributors receive</div>
+        </div>
+        <div class="bg-navy/80 px-8 py-6 text-center">
+          <div class="font-heading font-bold text-gold text-4xl">∞</div>
+          <div class="text-white/50 text-sm mt-1 font-body">Potential of a coordinated civic economy</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PROBLEM ───────────────────────────────────────────────────────────── -->
+  <section id="problem" class="py-28 px-6 gradient-fade">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-3">The Problem</p>
+        <h2 class="font-heading font-bold text-white" style="font-size: clamp(2rem, 5vw, 3rem);">
+          Our governance systems were built<br class="hidden md:block"/> for a different world.
+        </h2>
+      </div>
+      <div class="divider-gold mb-16 max-w-xs mx-auto"></div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="card-hover bg-white/5 border border-white/10 rounded-xl p-8">
+          <div class="text-gold text-3xl font-heading font-bold mb-4">01</div>
+          <h3 class="font-heading font-bold text-white text-xl mb-3">Civic Disconnection</h3>
+          <p class="text-white/60 font-body text-sm leading-relaxed">Most people experience government as something that operates <em>on</em> their world — not something they participate in. The systems built to manage society have gradually taught us how not to participate in it.</p>
+        </div>
+        <div class="card-hover bg-white/5 border border-white/10 rounded-xl p-8">
+          <div class="text-gold text-3xl font-heading font-bold mb-4">02</div>
+          <h3 class="font-heading font-bold text-white text-xl mb-3">Unmeasured Value</h3>
+          <p class="text-white/60 font-body text-sm leading-relaxed">The public sector produces real value — but has no equivalent of the price signal to measure or reward it. Civic contribution is invisible to public accounting, unrecognized by the systems it sustains.</p>
+        </div>
+        <div class="card-hover bg-white/5 border border-white/10 rounded-xl p-8">
+          <div class="text-gold text-3xl font-heading font-bold mb-4">03</div>
+          <h3 class="font-heading font-bold text-white text-xl mb-3">Unmanaged Hybridity</h3>
+          <p class="text-white/60 font-body text-sm leading-relaxed">Every economy is already a hybrid of public and private modes. The problem is that this hybridity is unmanaged — public and private logics collide without clear boundaries, producing friction, misallocation, and eroded trust.</p>
+        </div>
+      </div>
+
+      <blockquote class="mt-16 border-l-4 border-gold pl-8 max-w-3xl mx-auto">
+        <p class="text-white/80 font-body text-lg italic leading-relaxed">"The systems that we built to manage society have slowly taught us how not to participate in it."</p>
+        <cite class="text-gold/70 text-sm font-heading mt-3 block not-italic tracking-wider">— Nathan Suits, Open Civics Presentation</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- ─── SOLUTION ──────────────────────────────────────────────────────────── -->
+  <section id="solution" class="py-28 px-6 bg-navy-dark">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-3">The Solution</p>
+        <h2 class="font-heading font-bold text-white" style="font-size: clamp(2rem, 5vw, 3rem);">
+          A bifurcated economy — two circuits,<br class="hidden md:block"/> each operating on its own logic.
+        </h2>
+      </div>
+      <div class="divider-gold mb-16 max-w-xs mx-auto"></div>
+
+      <!-- Two columns -->
+      <div class="grid md:grid-cols-2 gap-6 mb-16">
+        <div class="bg-white/5 border border-white/10 rounded-xl p-8">
+          <div class="text-civic font-heading font-bold text-sm tracking-widest uppercase mb-4">Market Circuit</div>
+          <h3 class="text-white font-heading font-bold text-xl mb-3">Private Value</h3>
+          <p class="text-white/60 text-sm leading-relaxed">Driven by competitive innovation, voluntary exchange, and profit incentives. The price signal governs what gets produced. Extraordinarily efficient at allocating private goods.</p>
+        </div>
+        <div class="bg-gold/10 border border-gold/30 rounded-xl p-8">
+          <div class="text-gold font-heading font-bold text-sm tracking-widest uppercase mb-4">Civic Circuit ← City/Sync</div>
+          <h3 class="text-white font-heading font-bold text-xl mb-3">Public Value</h3>
+          <p class="text-white/60 text-sm leading-relaxed">Driven by collective contribution, shared responsibility, and civic participation. City/Sync builds the infrastructure for this circuit — making civic contribution legible, rewarded, and self-governing.</p>
+        </div>
+      </div>
+
+      <!-- The loop -->
+      <div class="bg-white/5 border border-gold/20 rounded-2xl p-10 text-center">
+        <p class="text-white/50 font-heading tracking-widest text-sm uppercase mb-6">The Fundamental Loop</p>
+        <div class="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+          <div class="text-center">
+            <div class="bg-gold/15 border border-gold/30 rounded-lg px-6 py-4 font-heading font-bold text-white text-lg">Contribute<br/><span class="text-gold text-sm font-medium">Civic Labor</span></div>
+          </div>
+          <div class="text-gold text-2xl font-bold">→</div>
+          <div class="text-center">
+            <div class="bg-gold/15 border border-gold/30 rounded-lg px-6 py-4 font-heading font-bold text-white text-lg">Earn<br/><span class="text-gold text-sm font-medium">Civic Credits</span></div>
+          </div>
+          <div class="text-gold text-2xl font-bold">→</div>
+          <div class="text-center">
+            <div class="bg-gold/15 border border-gold/30 rounded-lg px-6 py-4 font-heading font-bold text-white text-lg">Redeem<br/><span class="text-gold text-sm font-medium">Public Goods Access</span></div>
+          </div>
+          <div class="text-gold text-2xl font-bold">→</div>
+          <div class="text-center">
+            <div class="bg-gold/20 border border-gold/50 rounded-lg px-6 py-4 font-heading font-bold text-white text-lg">Govern<br/><span class="text-gold text-sm font-medium">with $VOTE</span></div>
+          </div>
+        </div>
+        <p class="text-white/40 text-sm mt-6 font-body">Contribution in. Access out. Governed by those who participate.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── HOW IT WORKS ──────────────────────────────────────────────────────── -->
+  <section id="how-it-works" class="py-28 px-6 gradient-fade">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-3">How It Works</p>
+        <h2 class="font-heading font-bold text-white" style="font-size: clamp(2rem, 5vw, 3rem);">Three roles. One civic economy.</h2>
+      </div>
+      <div class="divider-gold mb-16 max-w-xs mx-auto"></div>
+
+      <div class="grid md:grid-cols-3 gap-6 mb-20">
+        <!-- Issuers -->
+        <div class="card-hover bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+          <div class="bg-civic/20 border-b border-civic/20 px-8 py-5">
+            <div class="font-heading font-bold text-civic tracking-widest text-xs uppercase mb-1">Role 01</div>
+            <div class="font-heading font-bold text-white text-2xl">Issuers</div>
+          </div>
+          <div class="p-8">
+            <p class="text-white/60 text-sm leading-relaxed mb-4">Municipal agencies, universities, and nonprofits that define civic tasks, verify their completion, and release credits to participants.</p>
+            <ul class="text-white/50 text-xs space-y-2">
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Post tasks to the civic catalog</li>
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Verify task completion on-chain</li>
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Distribute administrative savings</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Participants -->
+        <div class="card-hover bg-gold/5 border border-gold/20 rounded-xl overflow-hidden">
+          <div class="bg-gold/15 border-b border-gold/20 px-8 py-5">
+            <div class="font-heading font-bold text-gold tracking-widest text-xs uppercase mb-1">Role 02</div>
+            <div class="font-heading font-bold text-white text-2xl">Civic Participants</div>
+          </div>
+          <div class="p-8">
+            <p class="text-white/60 text-sm leading-relaxed mb-4">Community members who claim and complete civic tasks, earn credits, and redeem them for access to public goods and services.</p>
+            <ul class="text-white/50 text-xs space-y-2">
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Browse available civic opportunities</li>
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Earn civic credits + governance votes</li>
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Redeem for transit, culture, services</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Redeemers -->
+        <div class="card-hover bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+          <div class="bg-civic/20 border-b border-civic/20 px-8 py-5">
+            <div class="font-heading font-bold text-civic tracking-widest text-xs uppercase mb-1">Role 03</div>
+            <div class="font-heading font-bold text-white text-2xl">Redeemers</div>
+          </div>
+          <div class="p-8">
+            <p class="text-white/60 text-sm leading-relaxed mb-4">Transit agencies, cultural institutions, and service providers that accept civic credits in exchange for goods access, burning credits on redemption.</p>
+            <ul class="text-white/50 text-xs space-y-2">
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Offer underutilized capacity</li>
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Accept civic credits for access</li>
+              <li class="flex gap-2"><span class="text-gold mt-0.5">▸</span> Burns credits on redemption</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- On-chain assets -->
+      <h3 class="font-heading font-bold text-white text-2xl text-center mb-8">Two On-Chain Assets</h3>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white/5 border border-white/10 rounded-xl p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="bg-gold/20 text-gold font-heading font-bold px-3 py-1 rounded text-sm">$CITY</span>
+            <span class="text-white/50 text-sm">Civic Credit</span>
+          </div>
+          <p class="text-white/60 text-sm leading-relaxed">Earned through verified civic labor. Non-transferable. Burned upon redemption. Not a cryptocurrency — a recognition token valued by what you can do with it, not what you can sell it for.</p>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-xl p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="bg-civic/20 text-civic font-heading font-bold px-3 py-1 rounded text-sm">$VOTE</span>
+            <span class="text-white/50 text-sm">Governance Token</span>
+          </div>
+          <p class="text-white/60 text-sm leading-relaxed">Issued 1:1 alongside civic credits. Non-transferable. Used for participatory budgeting, public proposals, and dPAN governance. Governance power scales with civic participation — not financial investment.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PRINCIPLES ────────────────────────────────────────────────────────── -->
+  <section class="py-20 px-6 bg-navy-dark">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-3">By Design</p>
+        <h2 class="font-heading font-bold text-white text-3xl">Five Anti-Coercion Principles</h2>
+        <p class="text-white/50 mt-3 font-body text-sm max-w-xl mx-auto">Civic coordination must never become coercion. These principles are binding governance rules — not aspirations.</p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {["Voluntary Participation", "No Employment Substitution", "Survival Independence", "Universal Access", "No Second-Class Citizenship"].map((p, i) => `
+        <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+          <div class="text-gold font-heading font-bold text-2xl mb-2">0${i+1}</div>
+          <div class="text-white/70 font-body text-xs leading-relaxed">${p}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VISION ────────────────────────────────────────────────────────────── -->
+  <section id="vision" class="py-28 px-6 gradient-fade">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-3">The Vision</p>
+        <h2 class="font-heading font-bold text-white" style="font-size: clamp(2rem, 5vw, 3rem);">Every city.<br/>Its own chain.</h2>
+      </div>
+      <div class="divider-gold mb-16 max-w-xs mx-auto"></div>
+
+      <div class="grid md:grid-cols-2 gap-12 items-center mb-20">
+        <div>
+          <h3 class="font-heading font-bold text-white text-2xl mb-4">dPANs — Decentralized Public Administration Networks</h3>
+          <p class="text-white/60 leading-relaxed mb-4">Every department in a local government — parks, housing, transit, public health — can be mirrored as a community-governed application that citizens can audit, propose changes to, and participate in directly.</p>
+          <p class="text-white/60 leading-relaxed">We are not trying to replace government. We are distributing it — turning public administration into something people can engage with directly, rather than something done to them by distant institutions.</p>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-white/5 border border-white/10 rounded-lg p-5 flex gap-4">
+            <span class="text-gold font-heading font-bold text-xl mt-0.5">→</span>
+            <div>
+              <div class="text-white font-heading font-semibold">Local POA Chain</div>
+              <div class="text-white/50 text-sm">Lightweight, operated by civic validators — universities, nonprofits, municipal agencies.</div>
+            </div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-lg p-5 flex gap-4">
+            <span class="text-gold font-heading font-bold text-xl mt-0.5">→</span>
+            <div>
+              <div class="text-white font-heading font-semibold">dPAN Marketplace</div>
+              <div class="text-white/50 text-sm">Open-source catalog of civic admin applications. Any city can deploy. All cities contribute.</div>
+            </div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-lg p-5 flex gap-4">
+            <span class="text-gold font-heading font-bold text-xl mt-0.5">→</span>
+            <div>
+              <div class="text-white font-heading font-semibold">Portable Civic Identity</div>
+              <div class="text-white/50 text-sm">Your civic record travels with you. Contributions made in one city are recognized in another.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gold/10 border border-gold/30 rounded-2xl p-10 text-center">
+        <p class="text-white/50 font-heading tracking-widest text-xs uppercase mb-4">The Open Research Question</p>
+        <blockquote class="text-white font-body text-xl md:text-2xl font-light leading-relaxed italic max-w-3xl mx-auto">
+          "Is the public-sector economy merely a functional appendage of capitalism — or can it mature into an independent mode of production with its own internal logics?"
+        </blockquote>
+        <p class="text-gold/70 text-sm font-heading mt-6 tracking-wider">That's what we're building the infrastructure to find out.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── WHITEPAPER CTA ─────────────────────────────────────────────────────── -->
+  <section id="whitepaper" class="py-28 px-6 bg-navy-dark">
+    <div class="max-w-3xl mx-auto text-center">
+      <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-4">Go Deeper</p>
+      <h2 class="font-heading font-bold text-white text-4xl mb-6">Read the Whitepaper</h2>
+      <p class="text-white/60 font-body leading-relaxed mb-10">The City/Sync whitepaper covers the full theoretical foundation, technical architecture, economic model, governance design, pilot program, and long-term vision in detail.</p>
+      <a href="#" class="inline-block bg-gold hover:bg-gold-light text-navy font-heading font-bold px-10 py-4 rounded text-lg tracking-wider transition-all hover:shadow-lg hover:shadow-gold/30">
+        DOWNLOAD WHITEPAPER
+      </a>
+      <p class="text-white/30 text-xs mt-4 font-body">Coming soon — follow along at paragraph.com/@city-sync</p>
+    </div>
+  </section>
+
+  <!-- ─── PILOT ─────────────────────────────────────────────────────────────── -->
+  <section class="py-20 px-6 gradient-fade border-t border-white/10">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-gold font-heading font-semibold tracking-[0.2em] uppercase text-sm mb-3">Where We Start</p>
+        <h2 class="font-heading font-bold text-white text-3xl">The Pilot Program</h2>
+      </div>
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <p class="text-white/60 leading-relaxed mb-6">City/Sync is currently in pilot design phase, targeting two cities for the initial deployment: <span class="text-white font-medium">Berkeley, California</span> and <span class="text-white font-medium">Mexico City, Mexico</span>.</p>
+          <p class="text-white/60 leading-relaxed">The pilot validates that programmable civic coordination can be adopted across varied institutional environments — without requiring structural disruption to existing administrative systems.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+            <div class="text-gold font-heading font-bold text-2xl">Berkeley</div>
+            <div class="text-white/40 text-xs mt-1">California, USA</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-lg p-5 text-center">
+            <div class="text-gold font-heading font-bold text-2xl">CDMX</div>
+            <div class="text-white/40 text-xs mt-1">Mexico City, Mexico</div>
+          </div>
+          <div class="col-span-2 bg-white/5 border border-white/10 rounded-lg p-5">
+            <div class="text-white/50 text-xs font-heading tracking-widest uppercase mb-3">Pilot Objectives</div>
+            <div class="space-y-2 text-white/60 text-sm">
+              <div class="flex gap-2"><span class="text-gold">▸</span> Procedural — repeatable onboarding process</div>
+              <div class="flex gap-2"><span class="text-gold">▸</span> Economic — measurable positive ROI for cities</div>
+              <div class="flex gap-2"><span class="text-gold">▸</span> Social — increased civic participation rates</div>
+              <div class="flex gap-2"><span class="text-gold">▸</span> Governance — validate three-committee model</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ────────────────────────────────────────────────────────────── -->
+  <footer class="border-t border-white/10 py-12 px-6 bg-navy-dark">
+    <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-end gap-[4px] font-heading font-bold text-xl tracking-widest">
+        <span class="text-white">CITY</span>
+        <span class="inline-flex items-end gap-[3px] mx-0.5">
+          <span class="slash-white" style="height:1em; width:3px;"></span>
+          <span class="slash-gold"  style="height:1em; width:4px;"></span>
+        </span>
+        <span class="text-gold">SYNC</span>
+      </div>
+      <p class="text-white/30 text-sm font-body text-center">Programmable Civic Coordination Infrastructure.<br class="md:hidden"/> Not a company. Not a crypto experiment. A process.</p>
+      <div class="flex items-center gap-6 text-white/40 text-sm">
+        <a href="https://paragraph.com/@city-sync" target="_blank" class="hover:text-gold transition-colors">Essays</a>
+        <a href="https://github.com/natenatesoo/CitySync" target="_blank" class="hover:text-gold transition-colors">GitHub</a>
+        <a href="#whitepaper" class="hover:text-gold transition-colors">Whitepaper</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Simple intersection observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('section > div').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+
+    // Principles rendering
+    document.querySelectorAll('section').forEach(section => {
+      const html = section.innerHTML;
+      if (html.includes('{[')) {
+        section.innerHTML = html.replace(
+          /\{(\[.*?\]\.map\(.*?\)\.join\(''\))\}/gs,
+          (_, expr) => eval(expr)
+        );
+      }
+    });
+  </script>
+</body>
+</html>
