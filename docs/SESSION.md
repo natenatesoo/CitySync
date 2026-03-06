@@ -9,17 +9,17 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-05 (Session 3)
+2026-03-06 (Session 4)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (pushed to origin/main)
+- `Add demo contract layer: MCE system, identity registries, feedback` ← pending push from Mac
+- `Add mid-session save practice to guard against usage limit cutoffs`
 - `Replace CSS logo with inline SVG: blue CITY, proper parallelogram slashes` ← pending push from Mac
 - `Update landing page: charcoal bg and blue+white mono logo`
 - `Add brand identity system and update landing page brand colors`
-- `Update SESSION.md: Web3 dogfooding strategy and Redeemer partner outreach list`
-- `Wrap up session: update SESSION.md with landing page deployment`
 
 ---
 
@@ -55,6 +55,53 @@ Full brand asset suite created. True colors extracted from Nate's SVG source fil
 - `docs/brand/print/letterhead.html` — printable letterhead template
 - `docs/brand/print/business-card.html` — business card front+back preview (3.5"×2")
 
+### Smart Contracts (`packages/foundry/contracts/`)
+
+#### Pilot contracts (`contracts/citysync/`) — Session 4, pre-existing + reviewed
+- `token/CityToken.sol` — Soul-bound ERC-20 civic credit
+- `token/VoteToken.sol` — Soul-bound ERC-20Votes governance token
+- `opportunity/OpportunityManager.sol` — Full task lifecycle with 3 verification modes (IssuerOnly, DelegatedVerifiers, EIP712Signature). Already includes representative system via `isVerifierForIssuer`.
+- `redeem/RedeemerRegistry.sol`, `Redemption.sol`, `RedemptionReceipt.sol` — Full pilot redemption flow
+- `interfaces/` — IEligibility, INonTransferable, IRedemptionPolicy
+
+#### Demo contracts (`contracts/demo/`) — Session 4, NEW
+Directory structure: `token/`, `identity/`, `mce/`, `redeem/`, `feedback/`
+
+**Token layer:**
+- `token/MCECredit.sol` — Soul-bound ERC-20 for MCE-specific credits. Separate from CivicCredit; `mintTo` takes `mceId` for event tracking. Burns on MCE redemption.
+
+**Identity layer (self-service onboarding):**
+- `identity/IssuerRegistry.sol` — Self-registration, auto-generated org name (8 prefixes × 8 suffixes = 64 combos), CERTIFIED_ISSUER_ROLE granted on register. Has STATS_UPDATER_ROLE for task registries to record issuance stats.
+- `identity/DemoRedeemerRegistry.sol` — Self-registration, auto-generated venue name. Manages offers (create/update/remove). `setMCEOptIn(bool)` flag required for MCE credit redemption. `getMCERedeemers()` for frontend.
+
+**MCE layer:**
+- `mce/MCERegistry.sol` — Full MCE lifecycle: Proposed → Planning → Active → Closed | Rejected. 14-day voting (configurable), 2-day planning. VoteToken-weighted voting. State transitions are permissionless (anyone calls after time elapses).
+- `mce/MCETaskRegistry.sol` — MCE-specific tasks. Created during Planning phase, claimable/completable during Active. EIP712 oracle auto-verification (oracle signs after frontend's 10–15s simulated delay). Mints MCECredit + VoteToken. References IssuerRegistry.isActiveIssuer() (not local hasRole — important!).
+
+**Redemption layer:**
+- `redeem/MCERedemption.sol` — Burns MCECredit for MCE-specific offers. Requires redeemer `acceptsMCECredits = true`. Emits `MCEOfferPurchased` event for off-chain receipt rendering.
+
+**Auxiliary:**
+- `feedback/FeedbackRegistry.sol` — Participant feedback on Issuers/Redeemers. 1–5 rating + 140-char comment. Requires ≥1 CivicCredit to submit (sybil gate). Average rating queryable (×100 for precision). Admin can hide abusive entries.
+
+**Test suite:** `test/CitySyncDemo.t.sol` — comprehensive tests for all demo contracts. Run from Mac: `cd packages/foundry && forge test`
+
+**Deployment role grants required (in deployment script):**
+```
+mceCredit.grantRole(MINTER_ROLE, address(mceTaskReg))
+mceCredit.grantRole(BURNER_ROLE, address(mceRed))
+vote.grantRole(MINTER_ROLE, address(mceTaskReg))
+issuerReg.grantRole(STATS_UPDATER_ROLE, address(mceTaskReg))
+```
+Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verifications.
+
+**Design decisions:**
+- Demo and pilot contracts are completely separate (no shared inheritance)
+- Demo MCE timeline stays at 14 days/2 days — demo is a living city simulation, not a single-session toy
+- Task Catalog is backend-managed (anti-spam moderation queue, Nate approves → dropdown options for Issuers)
+- Testnet: Base Sepolia (ERC-4337 Paymaster via Alchemy Account Kit for gasless UX)
+- `CERTIFIED_ISSUER_ROLE` is managed by IssuerRegistry, not by MCERegistry/MCETaskRegistry — those contracts call `ISSUER_REG.isActiveIssuer()` instead of local hasRole
+
 ### Git & Dev Environment
 - Pre-commit hook: now uses `/usr/bin/node` directly with `.yarn/releases/yarn-3.2.3.cjs` — no session path dependency
 - `git push` workflow: Claude commits here, Nate pushes from Mac terminal
@@ -70,6 +117,11 @@ Full brand asset suite created. True colors extracted from Nate's SVG source fil
 ## Pending / Next Steps
 
 ### High Priority
+- **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
+- **Write deployment script** — `script/DeployDemo.s.sol` that deploys all demo contracts in correct order with role grants
+- **Alchemy Account Kit integration** — ERC-4337 Paymaster setup on Base Sepolia for gasless demo UX. Fund Paymaster from faucets: Alchemy, Coinbase, Superchain
+- **Demo frontend** — mobile wallet UI linked from city-sync.org. Three role chooser screen → mobile app shell with role-specific tabs (Participant: Profile/Explore/MyCity/Vote/Redemptions; Issuer: Profile/Tasks/MyCity/Dashboard/MCEs; Redeemer: Profile/Redemptions/MyCity/Dashboard/MCEs). Wallet icon top-right.
+- **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo
 - **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Brand colors updated this session (navy #23128F, gold #DD9E33, correct slash mark style). Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
 - **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder (or `landing/public/`) so they're served by Vercel.
 - **dPAN dApp deployment** — second Vercel project from same repo; set Root Directory to `packages/nextjs`; point to `app.city-sync.org` or similar subdomain.
