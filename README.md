@@ -2,23 +2,23 @@
 
 **Civic participation infrastructure for local communities.**
 
-CitySync is an on-chain system that turns verified civic actions into redeemable credits — connecting residents, local organizations, and community businesses in a closed-loop economy of contribution and access.
+CitySync is an onchain system that turns verified civic actions into redeemable credits by connecting residents, local organizations, and community businesses in a closed-loop economy of contribution and access.
 
 ---
 
 ## What It Does
 
-Residents earn **CITY** (civic credits) by completing verified community tasks — volunteering, attending events, participating in local governance. Those credits are redeemable with local businesses and services as tangible rewards.
+Residents earn **CITY** (civic credits) by completing verified civic-labor through volunteering, staffing events, participating in local governance, etc. Those credits are redeemable with local businesses and services as tangible rewards.
 
 **Three roles:**
 - **Participant** — Complete tasks, earn credits, vote on community initiatives, redeem rewards
 - **Issuer** — Organizations that post tasks and verify completions (nonprofits, city departments, civic orgs)
 - **Redeemer** — Local businesses and services that accept CITY credits in exchange for goods or discounts
 
-**Three on-chain assets:**
+**Three onchain assets:**
 - `CITY` — Soul-bound civic credit (ERC-20, non-transferable)
 - `VOTE` — Soul-bound governance token (ERC-20Votes, non-transferable)
-- `MCE` — Soul-bound credit for community event participation
+- `MCE` — Soul-bound credits used for specific city-wide event missions.  (Available to a larger redemption universe)
 
 ---
 
