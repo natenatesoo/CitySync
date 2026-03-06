@@ -15,12 +15,11 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 `main`
 
 ## Recent Commits (pushed to origin/main)
-- `Add brand asset suite: logos, web icons, style guide, print templates`
-- `Update landing page: corrected brand colors and slash mark style`
-- `Add docs folder: reference knowledge base and official documents`
-- `Fix pre-commit hook to work in network-restricted environments`
-- `Add session memory: CLAUDE.md project context and docs/SESSION.md`
-- `Add landing/ — standalone Vercel landing page for City/Sync`
+- `Replace CSS logo with inline SVG: blue CITY, proper parallelogram slashes` ← pending push from Mac
+- `Update landing page: charcoal bg and blue+white mono logo`
+- `Add brand identity system and update landing page brand colors`
+- `Update SESSION.md: Web3 dogfooding strategy and Redeemer partner outreach list`
+- `Wrap up session: update SESSION.md with landing page deployment`
 
 ---
 
@@ -44,8 +43,11 @@ All 14 written essays saved as markdown files (01–14), plus two video presenta
 ### Brand Identity System (`docs/brand/`) — NEW Session 3
 Full brand asset suite created. True colors extracted from Nate's SVG source files.
 - **Confirmed brand colors:** Navy `#23128F`, Gold `#DD9E33`, Black `#000000`, White `#FFFFFF`
+- **Website logo style (Session 3 update):** Charcoal background `#15151E`, CITY in royal blue `#4169E1`, double-slash as inline SVG parallelograms (outlined blue left + solid white right), SYNC in white
 - **Font:** Rajdhani Bold (heading) + Inter (body) — already on landing page
-- **Double-slash mark:** left slash = outlined parallelogram (gold border, transparent fill); right slash = solid gold parallelogram; both skewX(-14deg)
+- **Double-slash mark (web):** inline SVG polygons — left slash outlined #4169E1, right slash solid #FFFFFF; viewBox="0 0 172 30", polygon points precisely calculated
+- **logo.svg** saved to `landing/` folder as standalone reference
+- **Pre-commit hook** fixed to use direct `/usr/bin/node` path (sh-compatible, no more session path issues)
 - `docs/brand/source/` — Nate's original SVG assets (raster-embedded, preserved as master refs)
 - `docs/brand/logos/` — 7 clean vector SVG logo variations (primary, dark, light, mono-dark, mono-light, icon, stacked)
 - `docs/brand/web/` — favicon.svg, favicon.ico, apple-touch-icon.svg, og-image.svg, icon-{16,32,48,180,192,512}.svg
@@ -54,8 +56,7 @@ Full brand asset suite created. True colors extracted from Nate's SVG source fil
 - `docs/brand/print/business-card.html` — business card front+back preview (3.5"×2")
 
 ### Git & Dev Environment
-- Yarn wrapper at `/sessions/gracious-vigilant-thompson/.local/bin/yarn`
-- Pre-commit hook fixed: finds yarn, skips Next.js lint when Linux ARM64 SWC binary unavailable
+- Pre-commit hook: now uses `/usr/bin/node` directly with `.yarn/releases/yarn-3.2.3.cjs` — no session path dependency
 - `git push` workflow: Claude commits here, Nate pushes from Mac terminal
 - Cron job on Nate's Mac: every 2 days at 2pm, notifies if unpushed commits exist (`~/citysync-push-reminder.sh`)
 - SSH key generated in sandbox but GitHub egress blocked — SSH not usable from sandbox
@@ -102,7 +103,7 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - **Plurality Labs** (Arbitrum) — civic credit holders access community grant applications.
 
 ### Ongoing
-- Update `SESSION.md` and commit at end of each session
+- Update `SESSION.md` and commit at end of each session **and after each major milestone mid-session** (to guard against usage limit cutoffs losing state)
 - Remind Nate to `git push` after each session
 
 ---
