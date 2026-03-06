@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import AppShell from "../_components/AppShell";
 import VerifyingOverlay from "../_components/VerifyingOverlay";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, MOCK_OFFERS, Task, TaskCategory } from "../_data/mockData";
+import { FAKE_WALLETS, Task, TaskCategory } from "../_data/mockData";
 
 // ─── Tab icons ────────────────────────────────────────────────────────────────
 
@@ -809,7 +809,7 @@ function VoteTab({
 
 // ─── Redemptions Tab ──────────────────────────────────────────────────────────
 
-const CAT_EMOJI: Record<string, string> = {
+const _CAT_EMOJI: Record<string, string> = {
   Food: "🍱",
   Fitness: "🏋️",
   Transit: "🚌",
@@ -835,7 +835,7 @@ function RedemptionsTab({
   onRedeem: (id: string) => void;
 }) {
   const confirmOffer = confirmId ? offers.find(o => o.id === confirmId) : null;
-  const canAfford = (o: typeof confirmOffer) => o && cityBalance >= o.costCity;
+  const _canAfford = (o: typeof confirmOffer) => o && cityBalance >= o.costCity;
 
   return (
     <div className="px-5 py-6">

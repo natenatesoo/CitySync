@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import AppShell from "../_components/AppShell";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, MOCK_TASKS, Task, TaskCategory } from "../_data/mockData";
+import { FAKE_WALLETS, MOCK_TASKS, Task } from "../_data/mockData";
 
 // ─── Tab icons ────────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ export default function IssuerApp() {
   const [activeTab, setActiveTab] = useState("profile");
   const [createSheet, setCreateSheet] = useState(false);
 
-  const { issuer, mces, availableTasks } = state;
+  const { issuer, mces } = state;
 
   React.useEffect(() => {
     setRole("issuer");
@@ -89,7 +89,6 @@ export default function IssuerApp() {
         {activeTab === "tasks" && (
           <IssuerTasksTab
             issuerTasks={issuer.tasks}
-            allTasks={availableTasks}
             onCreateOpen={() => setCreateSheet(true)}
             onVerify={issuerVerifyCompletion}
           />
@@ -203,12 +202,10 @@ function IssuerProfileTab({ issuer }: { issuer: ReturnType<typeof useDemo>["stat
 
 function IssuerTasksTab({
   issuerTasks,
-  allTasks,
   onCreateOpen,
   onVerify,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
-  allTasks: Task[];
   onCreateOpen: () => void;
   onVerify: (taskId: string, citizen: string) => void;
 }) {

@@ -50,7 +50,7 @@ const TABS = [
   { key: "mces", label: "MCEs", icon: icons.mces },
 ];
 
-const OFFER_CATEGORIES: Array<OfferCategory | "All"> = ["All", "Food", "Fitness", "Transit", "Culture", "Essentials"];
+const _OFFER_CATEGORIES: Array<OfferCategory | "All"> = ["All", "Food", "Fitness", "Transit", "Culture", "Essentials"];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
