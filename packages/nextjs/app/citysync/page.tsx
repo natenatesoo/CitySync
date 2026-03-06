@@ -53,6 +53,20 @@ export default function CitySyncHome() {
         ))}
       </div>
 
+      {/* Demo link */}
+      <div className="rounded-2xl bg-base-100 border border-primary/40 p-5" style={{ background: "rgba(65,105,225,0.05)" }}>
+        <div className="text-lg font-semibold">🎮 Try the Interactive Demo</div>
+        <div className="mt-2 text-sm text-base-content/70">
+          Explore City/Sync with simulated wallet interactions — no real funds required. Choose a role and experience the
+          full protocol flow in a mobile-first interface.
+        </div>
+        <div className="mt-3">
+          <Link href="/demo" className="link font-medium">
+            Open Demo →
+          </Link>
+        </div>
+      </div>
+
       <div className="rounded-2xl bg-base-100 border border-base-300 p-5">
         <div className="text-lg font-semibold">Local demo setup</div>
         <div className="mt-2 text-sm text-base-content/70">
