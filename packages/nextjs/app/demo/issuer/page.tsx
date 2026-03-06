@@ -17,7 +17,12 @@ const icons = {
   tasks: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   mycity: (
@@ -115,7 +120,10 @@ function IssuerProfileTab({ issuer }: { issuer: ReturnType<typeof useDemo>["stat
       {/* Welcome banner */}
       <div
         className="mb-6 rounded-3xl p-5"
-        style={{ background: "linear-gradient(135deg, #2a2000 0%, #1E1E2C 100%)", border: "1px solid rgba(221,158,51,0.3)" }}
+        style={{
+          background: "linear-gradient(135deg, #2a2000 0%, #1E1E2C 100%)",
+          border: "1px solid rgba(221,158,51,0.3)",
+        }}
       >
         <div className="mb-1 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(221,158,51,0.6)" }}>
           Welcome
@@ -147,7 +155,11 @@ function IssuerProfileTab({ issuer }: { issuer: ReturnType<typeof useDemo>["stat
       <div className="mb-6 rounded-2xl" style={{ background: "#1E1E2C" }}>
         <StatRow label="Tasks Created" value={issuer.totalTasksIssued} />
         <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITY" border />
-        <StatRow label="Pending Verifications" value={issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0)} border />
+        <StatRow
+          label="Pending Verifications"
+          value={issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0)}
+          border
+        />
       </div>
 
       {/* Active tasks quick view */}
@@ -202,9 +214,7 @@ function IssuerTasksTab({
 }) {
   const [view, setView] = useState<"my" | "pending">("my");
 
-  const pendingAll = issuerTasks.flatMap(t =>
-    t.pendingCompletions.map(addr => ({ task: t, citizen: addr })),
-  );
+  const pendingAll = issuerTasks.flatMap(t => t.pendingCompletions.map(addr => ({ task: t, citizen: addr })));
 
   return (
     <div className="px-5 py-6">
@@ -240,7 +250,11 @@ function IssuerTasksTab({
           </button>
 
           {issuerTasks.length === 0 ? (
-            <EmptyState emoji="📭" title="No tasks yet" desc="Post a task from the catalog to start receiving completions from participants." />
+            <EmptyState
+              emoji="📭"
+              title="No tasks yet"
+              desc="Post a task from the catalog to start receiving completions from participants."
+            />
           ) : (
             <div className="space-y-3">
               {issuerTasks.map(t => (
@@ -257,15 +271,21 @@ function IssuerTasksTab({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold" style={{ color: "#DD9E33" }}>{t.credits} CITY</div>
-                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>+{t.voteTokens} VOTE</div>
+                      <div className="text-sm font-bold" style={{ color: "#DD9E33" }}>
+                        {t.credits} CITY
+                      </div>
+                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        +{t.voteTokens} VOTE
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex gap-3 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
                     <span>✓ {t.verifiedCount} verified</span>
                     <span>⏳ {t.pendingCompletions.length} pending</span>
-                    <span>👥 {t.slotsRemaining}/{t.slots} slots</span>
+                    <span>
+                      👥 {t.slotsRemaining}/{t.slots} slots
+                    </span>
                   </div>
                 </div>
               ))}
@@ -277,7 +297,11 @@ function IssuerTasksTab({
       {view === "pending" && (
         <>
           {pendingAll.length === 0 ? (
-            <EmptyState emoji="🎉" title="All clear!" desc="No pending verifications. Create tasks and participants will start claiming them." />
+            <EmptyState
+              emoji="🎉"
+              title="All clear!"
+              desc="No pending verifications. Create tasks and participants will start claiming them."
+            />
           ) : (
             <div className="space-y-3">
               {pendingAll.map(({ task, citizen }) => (
@@ -294,7 +318,10 @@ function IssuerTasksTab({
                   </div>
 
                   <div className="mb-3 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.05)" }}>
-                    <div className="flex items-center justify-between text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <div
+                      className="flex items-center justify-between text-xs"
+                      style={{ color: "rgba(255,255,255,0.45)" }}
+                    >
                       <span>Reward on verification</span>
                       <span>
                         <span style={{ color: "#DD9E33" }}>{task.credits} CITY</span>
@@ -323,13 +350,7 @@ function IssuerTasksTab({
 
 // ─── Create Task Sheet ────────────────────────────────────────────────────────
 
-function CreateTaskSheet({
-  onClose,
-  onCreate,
-}: {
-  onClose: () => void;
-  onCreate: (task: Task) => void;
-}) {
+function CreateTaskSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (task: Task) => void }) {
   const [selected, setSelected] = useState<Task | null>(null);
   const [step, setStep] = useState<"pick" | "review">("pick");
 
@@ -356,7 +377,10 @@ function CreateTaskSheet({
               {CATALOG_TASKS.map(task => (
                 <button
                   key={task.id}
-                  onClick={() => { setSelected(task); setStep("review"); }}
+                  onClick={() => {
+                    setSelected(task);
+                    setStep("review");
+                  }}
                   className="flex w-full items-start justify-between rounded-2xl p-4 text-left transition"
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
                 >
@@ -367,7 +391,9 @@ function CreateTaskSheet({
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-sm font-bold" style={{ color: "#DD9E33" }}>{task.credits} CITY</div>
+                    <div className="text-sm font-bold" style={{ color: "#DD9E33" }}>
+                      {task.credits} CITY
+                    </div>
                   </div>
                 </button>
               ))}
@@ -383,7 +409,9 @@ function CreateTaskSheet({
               ← Back to catalog
             </button>
             <div className="mb-1 text-xl font-bold text-white">{selected.title}</div>
-            <div className="mb-4 text-xs" style={{ color: "#DD9E33" }}>{selected.category}</div>
+            <div className="mb-4 text-xs" style={{ color: "#DD9E33" }}>
+              {selected.category}
+            </div>
             <p className="mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
               {selected.description}
             </p>
@@ -394,13 +422,21 @@ function CreateTaskSheet({
               style={{ background: "rgba(221,158,51,0.08)", border: "1px solid rgba(221,158,51,0.2)" }}
             >
               <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: "#DD9E33" }}>{selected.credits}</div>
-                <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>CITY per completion</div>
+                <div className="text-2xl font-bold" style={{ color: "#DD9E33" }}>
+                  {selected.credits}
+                </div>
+                <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  CITY per completion
+                </div>
               </div>
               <div className="h-10 w-px" style={{ background: "rgba(255,255,255,0.1)" }} />
               <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: "#4169E1" }}>{selected.voteTokens}</div>
-                <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>VOTE per completion</div>
+                <div className="text-2xl font-bold" style={{ color: "#4169E1" }}>
+                  {selected.voteTokens}
+                </div>
+                <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  VOTE per completion
+                </div>
               </div>
             </div>
 
@@ -467,9 +503,7 @@ function IssuerDashboard({ issuer }: { issuer: ReturnType<typeof useDemo>["state
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
   const totalVerified = issuer.tasks.reduce((n, t) => n + t.verifiedCount, 0);
   const completionRate =
-    totalPending + totalVerified > 0
-      ? Math.round((totalVerified / (totalPending + totalVerified)) * 100)
-      : 0;
+    totalPending + totalVerified > 0 ? Math.round((totalVerified / (totalPending + totalVerified)) * 100) : 0;
 
   const categoryBreakdown = issuer.tasks.reduce<Record<string, number>>((acc, t) => {
     acc[t.category] = (acc[t.category] ?? 0) + 1;
@@ -491,9 +525,15 @@ function IssuerDashboard({ issuer }: { issuer: ReturnType<typeof useDemo>["state
           <SectionHeader title="Tasks by Category" />
           <div className="mb-6 space-y-2">
             {Object.entries(categoryBreakdown).map(([cat, count]) => (
-              <div key={cat} className="flex items-center justify-between rounded-xl px-4 py-2.5" style={{ background: "#1E1E2C" }}>
+              <div
+                key={cat}
+                className="flex items-center justify-between rounded-xl px-4 py-2.5"
+                style={{ background: "#1E1E2C" }}
+              >
                 <span className="text-sm text-white">{cat}</span>
-                <span className="text-sm font-semibold" style={{ color: "#DD9E33" }}>{count} task{count > 1 ? "s" : ""}</span>
+                <span className="text-sm font-semibold" style={{ color: "#DD9E33" }}>
+                  {count} task{count > 1 ? "s" : ""}
+                </span>
               </div>
             ))}
           </div>
@@ -521,7 +561,9 @@ function IssuerDashboard({ issuer }: { issuer: ReturnType<typeof useDemo>["state
             <span className="text-lg">{num}</span>
             <div>
               <div className="text-sm font-semibold text-white">{title}</div>
-              <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{desc}</div>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {desc}
+              </div>
             </div>
           </div>
         ))}
@@ -575,7 +617,10 @@ function MCECard({ mce }: { mce: ReturnType<typeof useDemo>["state"]["mces"][num
   return (
     <div className="rounded-3xl p-5" style={{ background: "#1E1E2C", border: "1px solid rgba(255,255,255,0.06)" }}>
       <div className="mb-1">
-        <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: `${statusColor}18`, color: statusColor }}>
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-medium"
+          style={{ background: `${statusColor}18`, color: statusColor }}
+        >
           {mce.status}
         </span>
       </div>
@@ -616,23 +661,42 @@ function SectionHeader({ title }: { title: string }) {
 
 function StatusPill({ label, color }: { label: string; color: string }) {
   return (
-    <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `${color}20`, color }}>
+    <span
+      className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+      style={{ background: `${color}20`, color }}
+    >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
       {label}
     </span>
   );
 }
 
-function StatRow({ label, value, suffix, border }: { label: string; value: number; suffix?: string; border?: boolean }) {
+function StatRow({
+  label,
+  value,
+  suffix,
+  border,
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  border?: boolean;
+}) {
   return (
     <div
       className="flex items-center justify-between px-4 py-3"
       style={{ borderTop: border ? "1px solid rgba(255,255,255,0.06)" : undefined }}
     >
-      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{label}</span>
+      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+        {label}
+      </span>
       <span className="text-sm font-semibold text-white">
         {value.toLocaleString()}
-        {suffix && <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{suffix}</span>}
+        {suffix && (
+          <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {suffix}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -641,8 +705,12 @@ function StatRow({ label, value, suffix, border }: { label: string; value: numbe
 function MetricCard({ label, value, color }: { label: string; value: number | string; color: string }) {
   return (
     <div className="rounded-2xl p-4 text-center" style={{ background: "#1E1E2C" }}>
-      <div className="text-2xl font-bold" style={{ color }}>{typeof value === "number" ? value.toLocaleString() : value}</div>
-      <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</div>
+      <div className="text-2xl font-bold" style={{ color }}>
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </div>
+      <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        {label}
+      </div>
     </div>
   );
 }
@@ -650,7 +718,9 @@ function MetricCard({ label, value, color }: { label: string; value: number | st
 function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.05)" }}>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{icon} {label}</div>
+      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        {icon} {label}
+      </div>
       <div className="mt-1 text-sm font-medium text-white">{value}</div>
     </div>
   );
@@ -661,7 +731,9 @@ function EmptyState({ emoji, title, desc }: { emoji: string; title: string; desc
     <div className="flex flex-col items-center py-12 text-center">
       <div className="mb-4 text-5xl">{emoji}</div>
       <div className="mb-2 text-base font-semibold text-white">{title}</div>
-      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{desc}</div>
+      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+        {desc}
+      </div>
     </div>
   );
 }

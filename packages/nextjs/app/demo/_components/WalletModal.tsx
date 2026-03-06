@@ -59,7 +59,10 @@ export default function WalletModal({
         </div>
 
         <div className="mb-5 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.05)" }}>
-          <div className="mb-1 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <div
+            className="mb-1 text-xs font-medium uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+          >
             Balances
           </div>
           <div className="mt-3 space-y-3">
@@ -71,7 +74,8 @@ export default function WalletModal({
 
         <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.04)" }}>
           <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            This is a simulated wallet on Base Sepolia testnet. All tokens are soul-bound (non-transferable) and earned through civic participation.
+            This is a simulated wallet on Base Sepolia testnet. All tokens are soul-bound (non-transferable) and earned
+            through civic participation.
           </div>
         </div>
 

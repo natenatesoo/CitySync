@@ -10,8 +10,8 @@ export interface Task {
   title: string;
   description: string;
   category: TaskCategory;
-  credits: number;      // CITY credits
-  voteTokens: number;   // VOTE tokens
+  credits: number; // CITY credits
+  voteTokens: number; // VOTE tokens
   estimatedTime: string;
   location: string;
   slots: number;

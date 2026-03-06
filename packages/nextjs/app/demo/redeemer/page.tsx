@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import AppShell from "../_components/AppShell";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, RedemptionOffer, OfferCategory } from "../_data/mockData";
+import { FAKE_WALLETS, OfferCategory, RedemptionOffer } from "../_data/mockData";
 
 // ─── Tab icons ────────────────────────────────────────────────────────────────
 
@@ -55,7 +55,8 @@ const OFFER_CATEGORIES: Array<OfferCategory | "All"> = ["All", "Food", "Fitness"
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RedeemerApp() {
-  const { state, setRole, redeemerToggleMCE, redeemerAddOffer, redeemerRemoveOffer, redeemerProcessRedemption } = useDemo();
+  const { state, setRole, redeemerToggleMCE, redeemerAddOffer, redeemerRemoveOffer, redeemerProcessRedemption } =
+    useDemo();
   const [activeTab, setActiveTab] = useState("profile");
   const [addOfferSheet, setAddOfferSheet] = useState(false);
   const [qrTarget, setQrTarget] = useState<string | null>(null);
@@ -81,9 +82,7 @@ export default function RedeemerApp() {
         accentColor="#34eeb6"
         title="Redeemer"
       >
-        {activeTab === "profile" && (
-          <RedeemerProfileTab redeemer={redeemer} onToggleMCE={redeemerToggleMCE} />
-        )}
+        {activeTab === "profile" && <RedeemerProfileTab redeemer={redeemer} onToggleMCE={redeemerToggleMCE} />}
         {activeTab === "redemptions" && (
           <RedeemerRedemptionsTab
             redeemer={redeemer}
@@ -109,9 +108,7 @@ export default function RedeemerApp() {
         />
       )}
 
-      {qrTarget && (
-        <QRModal offerId={qrTarget} offers={redeemer.offers} onClose={() => setQrTarget(null)} />
-      )}
+      {qrTarget && <QRModal offerId={qrTarget} offers={redeemer.offers} onClose={() => setQrTarget(null)} />}
     </>
   );
 }
@@ -130,7 +127,10 @@ function RedeemerProfileTab({
       {/* Welcome banner */}
       <div
         className="mb-6 rounded-3xl p-5"
-        style={{ background: "linear-gradient(135deg, #001a14 0%, #1E1E2C 100%)", border: "1px solid rgba(52,238,182,0.25)" }}
+        style={{
+          background: "linear-gradient(135deg, #001a14 0%, #1E1E2C 100%)",
+          border: "1px solid rgba(52,238,182,0.25)",
+        }}
       >
         <div className="mb-1 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(52,238,182,0.6)" }}>
           Welcome
@@ -152,8 +152,9 @@ function RedeemerProfileTab({
       >
         <div className="mb-2 text-sm font-semibold text-white">Your Role as a Redeemer</div>
         <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-          Accept CITY credits from civic participants in exchange for goods and services. Generate QR codes for in-person
-          redemption, finalize transactions from your wallet, and optionally accept MCECredits for expanded offerings.
+          Accept CITY credits from civic participants in exchange for goods and services. Generate QR codes for
+          in-person redemption, finalize transactions from your wallet, and optionally accept MCECredits for expanded
+          offerings.
         </p>
       </div>
 
@@ -161,7 +162,10 @@ function RedeemerProfileTab({
       <SectionHeader title="MCECredit Settings" />
       <div
         className="mb-6 rounded-2xl p-4"
-        style={{ background: "#1E1E2C", border: redeemer.acceptsMCE ? "1px solid rgba(221,158,51,0.25)" : "1px solid rgba(255,255,255,0.06)" }}
+        style={{
+          background: "#1E1E2C",
+          border: redeemer.acceptsMCE ? "1px solid rgba(221,158,51,0.25)" : "1px solid rgba(255,255,255,0.06)",
+        }}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -201,7 +205,12 @@ function RedeemerProfileTab({
         <StatRow label="Active Offers" value={redeemer.offers.length} />
         <StatRow label="Pending Queue" value={redeemer.redemptionQueue.length} border />
         <StatRow label="Processed" value={redeemer.processedRedemptions.length} border />
-        <StatRow label="CITY Received" value={redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0)} suffix="CITY" border />
+        <StatRow
+          label="CITY Received"
+          value={redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0)}
+          suffix="CITY"
+          border
+        />
       </div>
     </div>
   );
@@ -257,7 +266,11 @@ function RedeemerRedemptionsTab({
           </button>
 
           {redeemer.offers.length === 0 ? (
-            <EmptyState emoji="🏪" title="No offers yet" desc="Add an offer to start accepting CITY credits from participants." />
+            <EmptyState
+              emoji="🏪"
+              title="No offers yet"
+              desc="Add an offer to start accepting CITY credits from participants."
+            />
           ) : (
             <div className="space-y-3">
               {redeemer.offers.map(offer => (
@@ -281,12 +294,17 @@ function RedeemerRedemptionsTab({
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm font-semibold text-white">{offer.offerTitle}</span>
                           {offer.mceOnly && (
-                            <span className="rounded-full px-1.5 py-0.5 text-xs" style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}>
+                            <span
+                              className="rounded-full px-1.5 py-0.5 text-xs"
+                              style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}
+                            >
                               MCE
                             </span>
                           )}
                         </div>
-                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{offer.description}</div>
+                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                          {offer.description}
+                        </div>
                         <div className="mt-1 text-xs font-semibold" style={{ color: "#34eeb6" }}>
                           {offer.costCity} CITY
                         </div>
@@ -347,7 +365,9 @@ function RedeemerRedemptionsTab({
                       <div className="text-base font-bold" style={{ color: "#34eeb6" }}>
                         {r.costCity}
                       </div>
-                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>CITY</div>
+                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                        CITY
+                      </div>
                     </div>
                   </div>
 
@@ -366,7 +386,10 @@ function RedeemerRedemptionsTab({
           {/* Processed history */}
           {redeemer.processedRedemptions.length > 0 && (
             <>
-              <div className="mt-6 mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <div
+                className="mt-6 mb-3 text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "rgba(255,255,255,0.35)" }}
+              >
                 Processed
               </div>
               <div className="space-y-2">
@@ -401,12 +424,43 @@ function RedeemerRedemptionsTab({
 // ─── Add Offer Sheet ──────────────────────────────────────────────────────────
 
 const PRESET_OFFERS = [
-  { title: "10% Grocery Discount", desc: "10% off any purchase up to $50", cost: 30, cat: "Essentials" as OfferCategory, emoji: "🛒" },
+  {
+    title: "10% Grocery Discount",
+    desc: "10% off any purchase up to $50",
+    cost: 30,
+    cat: "Essentials" as OfferCategory,
+    emoji: "🛒",
+  },
   { title: "Day Pass", desc: "Full access for one day", cost: 20, cat: "Fitness" as OfferCategory, emoji: "🏋️" },
-  { title: "Meal Voucher ($10)", desc: "Any item up to $10 value", cost: 25, cat: "Food" as OfferCategory, emoji: "🍱" },
-  { title: "Transit Pass (1 day)", desc: "Unlimited rides for one day", cost: 15, cat: "Transit" as OfferCategory, emoji: "🚌" },
-  { title: "Workshop Entry", desc: "One drop-in workshop session", cost: 35, cat: "Culture" as OfferCategory, emoji: "🎨" },
-  { title: "MCE Champion Reward", desc: "Special reward for MCE participants", cost: 80, cat: "Culture" as OfferCategory, emoji: "🏆", mceOnly: true },
+  {
+    title: "Meal Voucher ($10)",
+    desc: "Any item up to $10 value",
+    cost: 25,
+    cat: "Food" as OfferCategory,
+    emoji: "🍱",
+  },
+  {
+    title: "Transit Pass (1 day)",
+    desc: "Unlimited rides for one day",
+    cost: 15,
+    cat: "Transit" as OfferCategory,
+    emoji: "🚌",
+  },
+  {
+    title: "Workshop Entry",
+    desc: "One drop-in workshop session",
+    cost: 35,
+    cat: "Culture" as OfferCategory,
+    emoji: "🎨",
+  },
+  {
+    title: "MCE Champion Reward",
+    desc: "Special reward for MCE participants",
+    cost: 80,
+    cat: "Culture" as OfferCategory,
+    emoji: "🏆",
+    mceOnly: true,
+  },
 ];
 
 function AddOfferSheet({
@@ -433,7 +487,7 @@ function AddOfferSheet({
       description: selected.desc,
       costCity: cost,
       acceptsMCE: redeemer.acceptsMCE,
-      mceOnly: (selected as typeof PRESET_OFFERS[number] & { mceOnly?: boolean }).mceOnly ?? false,
+      mceOnly: (selected as (typeof PRESET_OFFERS)[number] & { mceOnly?: boolean }).mceOnly ?? false,
       category: selected.cat,
       emoji: selected.emoji,
     };
@@ -463,7 +517,11 @@ function AddOfferSheet({
               {PRESET_OFFERS.map(preset => (
                 <button
                   key={preset.title}
-                  onClick={() => { setSelected(preset); setCustomCost(String(preset.cost)); setStep("configure"); }}
+                  onClick={() => {
+                    setSelected(preset);
+                    setCustomCost(String(preset.cost));
+                    setStep("configure");
+                  }}
                   className="flex w-full items-center gap-3 rounded-2xl p-4 text-left transition"
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
                 >
@@ -471,13 +529,22 @@ function AddOfferSheet({
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-semibold text-white">{preset.title}</span>
-                      {(preset as typeof PRESET_OFFERS[number] & { mceOnly?: boolean }).mceOnly && (
-                        <span className="rounded-full px-1.5 py-0.5 text-xs" style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}>MCE</span>
+                      {(preset as (typeof PRESET_OFFERS)[number] & { mceOnly?: boolean }).mceOnly && (
+                        <span
+                          className="rounded-full px-1.5 py-0.5 text-xs"
+                          style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}
+                        >
+                          MCE
+                        </span>
                       )}
                     </div>
-                    <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{preset.desc}</div>
+                    <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      {preset.desc}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold" style={{ color: "#34eeb6" }}>{preset.cost} CITY</div>
+                  <div className="text-sm font-bold" style={{ color: "#34eeb6" }}>
+                    {preset.cost} CITY
+                  </div>
                 </button>
               ))}
             </div>
@@ -491,14 +558,14 @@ function AddOfferSheet({
               <span className="text-3xl">{selected.emoji}</span>
               <div>
                 <div className="text-xl font-bold text-white">{selected.title}</div>
-                <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{selected.desc}</div>
+                <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                  {selected.desc}
+                </div>
               </div>
             </div>
 
             <div className="mb-5">
-              <label className="mb-2 block text-sm font-medium text-white">
-                CITY Cost
-              </label>
+              <label className="mb-2 block text-sm font-medium text-white">CITY Cost</label>
               <input
                 type="number"
                 value={customCost}
@@ -528,15 +595,7 @@ function AddOfferSheet({
 
 // ─── QR Modal ─────────────────────────────────────────────────────────────────
 
-function QRModal({
-  offerId,
-  offers,
-  onClose,
-}: {
-  offerId: string;
-  offers: RedemptionOffer[];
-  onClose: () => void;
-}) {
+function QRModal({ offerId, offers, onClose }: { offerId: string; offers: RedemptionOffer[]; onClose: () => void }) {
   const offer = offers.find(o => o.id === offerId);
   if (!offer) return null;
 
@@ -556,7 +615,9 @@ function QRModal({
       >
         <div className="mb-4 text-center">
           <div className="text-xl font-bold text-white">{offer.offerTitle}</div>
-          <div className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>{offer.redeemerName}</div>
+          <div className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
+            {offer.redeemerName}
+          </div>
         </div>
 
         {/* QR placeholder */}
@@ -571,7 +632,9 @@ function QRModal({
           className="mb-4 rounded-xl px-3 py-2 text-center"
           style={{ background: "rgba(52,238,182,0.1)", border: "1px solid rgba(52,238,182,0.2)" }}
         >
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Cost</div>
+          <div className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+            Cost
+          </div>
           <div className="text-2xl font-bold" style={{ color: "#34eeb6" }}>
             {offer.costCity} CITY
           </div>
@@ -614,16 +677,7 @@ function QRGrid({ seed }: { seed: string }) {
   return (
     <svg width="176" height="176" viewBox={`0 0 ${size} ${size}`} style={{ imageRendering: "pixelated" }}>
       {cells.map((filled, i) =>
-        filled ? (
-          <rect
-            key={i}
-            x={i % size}
-            y={Math.floor(i / size)}
-            width={1}
-            height={1}
-            fill="#15151E"
-          />
-        ) : null,
+        filled ? <rect key={i} x={i % size} y={Math.floor(i / size)} width={1} height={1} fill="#15151E" /> : null,
       )}
     </svg>
   );
@@ -651,37 +705,48 @@ function RedeemerMyCityTab({
       <div className="mb-6 rounded-2xl" style={{ background: "#1E1E2C" }}>
         <StatRow label="Active Offers" value={redeemer.offers.length} />
         <StatRow label="Redemptions Processed" value={redeemer.processedRedemptions.length} border />
-        <StatRow label="CITY Received" value={redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0)} suffix="CITY" border />
+        <StatRow
+          label="CITY Received"
+          value={redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0)}
+          suffix="CITY"
+          border
+        />
         <StatRow label="MCE Opt-In" value={redeemer.acceptsMCE ? 1 : 0} border />
       </div>
 
-      {mces.filter(m => m.status === "Active").map(mce => (
-        <div key={mce.id}>
-          <SectionHeader title="Active MCE" />
-          <div
-            className="rounded-3xl p-5"
-            style={{ background: "#1E1E2C", border: "1px solid rgba(52,238,182,0.2)" }}
-          >
-            <div className="mb-1">
-              <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "rgba(52,238,182,0.15)", color: "#34eeb6" }}>
-                Active
-              </span>
-            </div>
-            <div className="mt-2 text-base font-semibold text-white">{mce.title}</div>
-            <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-              {mce.participantCount.toLocaleString()} participants · {mce.taskCount} tasks · {mce.mceCreditsPerTask} MCE/task
-            </div>
-            {redeemer.acceptsMCE && (
-              <div
-                className="mt-3 rounded-xl px-3 py-2 text-xs"
-                style={{ background: "rgba(221,158,51,0.1)", color: "#DD9E33" }}
-              >
-                ✓ You are accepting MCECredits from this event
+      {mces
+        .filter(m => m.status === "Active")
+        .map(mce => (
+          <div key={mce.id}>
+            <SectionHeader title="Active MCE" />
+            <div
+              className="rounded-3xl p-5"
+              style={{ background: "#1E1E2C", border: "1px solid rgba(52,238,182,0.2)" }}
+            >
+              <div className="mb-1">
+                <span
+                  className="rounded-full px-2 py-0.5 text-xs font-medium"
+                  style={{ background: "rgba(52,238,182,0.15)", color: "#34eeb6" }}
+                >
+                  Active
+                </span>
               </div>
-            )}
+              <div className="mt-2 text-base font-semibold text-white">{mce.title}</div>
+              <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {mce.participantCount.toLocaleString()} participants · {mce.taskCount} tasks · {mce.mceCreditsPerTask}{" "}
+                MCE/task
+              </div>
+              {redeemer.acceptsMCE && (
+                <div
+                  className="mt-3 rounded-xl px-3 py-2 text-xs"
+                  style={{ background: "rgba(221,158,51,0.1)", color: "#DD9E33" }}
+                >
+                  ✓ You are accepting MCECredits from this event
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 }
@@ -711,9 +776,15 @@ function RedeemerDashboard({ redeemer }: { redeemer: ReturnType<typeof useDemo>[
           <SectionHeader title="Offers by Category" />
           <div className="mb-6 space-y-2">
             {Object.entries(categoryBreakdown).map(([cat, count]) => (
-              <div key={cat} className="flex items-center justify-between rounded-xl px-4 py-2.5" style={{ background: "#1E1E2C" }}>
+              <div
+                key={cat}
+                className="flex items-center justify-between rounded-xl px-4 py-2.5"
+                style={{ background: "#1E1E2C" }}
+              >
                 <span className="text-sm text-white">{cat}</span>
-                <span className="text-sm font-semibold" style={{ color: "#34eeb6" }}>{count}</span>
+                <span className="text-sm font-semibold" style={{ color: "#34eeb6" }}>
+                  {count}
+                </span>
               </div>
             ))}
           </div>
@@ -733,7 +804,9 @@ function RedeemerDashboard({ redeemer }: { redeemer: ReturnType<typeof useDemo>[
             <span className="text-lg">{num}</span>
             <div>
               <div className="text-sm font-semibold text-white">{title}</div>
-              <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{desc}</div>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {desc}
+              </div>
             </div>
           </div>
         ))}
@@ -789,7 +862,10 @@ function RedeemerMCEsTab({
               className="rounded-3xl p-5"
               style={{ background: "#1E1E2C", border: "1px solid rgba(255,255,255,0.06)" }}
             >
-              <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: `${statusColor}18`, color: statusColor }}>
+              <span
+                className="rounded-full px-2 py-0.5 text-xs font-medium"
+                style={{ background: `${statusColor}18`, color: statusColor }}
+              >
                 {mce.status}
               </span>
               <div className="mt-2 text-base font-semibold text-white">{mce.title}</div>
@@ -798,7 +874,10 @@ function RedeemerMCEsTab({
               </div>
 
               <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                <div className="h-full rounded-full" style={{ width: `${forPct}%`, background: "linear-gradient(90deg, #4169E1, #34eeb6)" }} />
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${forPct}%`, background: "linear-gradient(90deg, #4169E1, #34eeb6)" }}
+                />
               </div>
               <div className="mt-1 flex justify-between text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
                 <span>{mce.votesFor.toLocaleString()} for</span>
@@ -833,23 +912,42 @@ function SectionHeader({ title }: { title: string }) {
 
 function StatusPill({ label, color }: { label: string; color: string }) {
   return (
-    <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `${color}20`, color }}>
+    <span
+      className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+      style={{ background: `${color}20`, color }}
+    >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
       {label}
     </span>
   );
 }
 
-function StatRow({ label, value, suffix, border }: { label: string; value: number; suffix?: string; border?: boolean }) {
+function StatRow({
+  label,
+  value,
+  suffix,
+  border,
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  border?: boolean;
+}) {
   return (
     <div
       className="flex items-center justify-between px-4 py-3"
       style={{ borderTop: border ? "1px solid rgba(255,255,255,0.06)" : undefined }}
     >
-      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{label}</span>
+      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+        {label}
+      </span>
       <span className="text-sm font-semibold text-white">
         {value.toLocaleString()}
-        {suffix && <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{suffix}</span>}
+        {suffix && (
+          <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {suffix}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -858,8 +956,12 @@ function StatRow({ label, value, suffix, border }: { label: string; value: numbe
 function MetricCard({ label, value, color }: { label: string; value: number | string; color: string }) {
   return (
     <div className="rounded-2xl p-4 text-center" style={{ background: "#1E1E2C" }}>
-      <div className="text-2xl font-bold" style={{ color }}>{typeof value === "number" ? value.toLocaleString() : value}</div>
-      <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</div>
+      <div className="text-2xl font-bold" style={{ color }}>
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </div>
+      <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        {label}
+      </div>
     </div>
   );
 }
@@ -869,7 +971,9 @@ function EmptyState({ emoji, title, desc }: { emoji: string; title: string; desc
     <div className="flex flex-col items-center py-12 text-center">
       <div className="mb-4 text-5xl">{emoji}</div>
       <div className="mb-2 text-base font-semibold text-white">{title}</div>
-      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{desc}</div>
+      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+        {desc}
+      </div>
     </div>
   );
 }

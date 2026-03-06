@@ -30,13 +30,24 @@ const icons = {
   vote: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   redemptions: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M2 17l10 5 10-5M2 12l10 5 10-5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
 };
@@ -73,18 +84,12 @@ export default function ParticipantApp() {
     setRole("participant");
   }, [setRole]);
 
-  const filteredTasks = selectedCategory === "All"
-    ? availableTasks
-    : availableTasks.filter(t => t.category === selectedCategory);
+  const filteredTasks =
+    selectedCategory === "All" ? availableTasks : availableTasks.filter(t => t.category === selectedCategory);
 
   return (
     <>
-      {verifying && (
-        <VerifyingOverlay
-          taskTitle={verifying.taskTitle}
-          secondsRemaining={verifying.secondsRemaining}
-        />
-      )}
+      {verifying && <VerifyingOverlay taskTitle={verifying.taskTitle} secondsRemaining={verifying.secondsRemaining} />}
 
       <AppShell
         role="participant"
@@ -98,9 +103,7 @@ export default function ParticipantApp() {
         accentColor="#4169E1"
         title="Participant"
       >
-        {activeTab === "profile" && (
-          <ProfileTab participant={participant} />
-        )}
+        {activeTab === "profile" && <ProfileTab participant={participant} />}
         {activeTab === "explore" && (
           <ExploreTab
             tasks={filteredTasks}
@@ -122,12 +125,7 @@ export default function ParticipantApp() {
           />
         )}
         {activeTab === "vote" && (
-          <VoteTab
-            mces={mces}
-            votes={participant.mceVotes}
-            voteBalance={participant.voteBalance}
-            onVote={voteOnMCE}
-          />
+          <VoteTab mces={mces} votes={participant.mceVotes} voteBalance={participant.voteBalance} onVote={voteOnMCE} />
         )}
         {activeTab === "redemptions" && (
           <RedemptionsTab
@@ -151,8 +149,14 @@ export default function ParticipantApp() {
           task={selectedTask}
           isClaimed={participant.claimedTaskIds.includes(selectedTask.id)}
           isCompleted={participant.completedTasks.some(t => t.taskId === selectedTask.id)}
-          onClaim={() => { claimTask(selectedTask.id); setSelectedTask(null); }}
-          onVerify={() => { startVerify(selectedTask.id, selectedTask.title); setSelectedTask(null); }}
+          onClaim={() => {
+            claimTask(selectedTask.id);
+            setSelectedTask(null);
+          }}
+          onVerify={() => {
+            startVerify(selectedTask.id, selectedTask.title);
+            setSelectedTask(null);
+          }}
           onClose={() => setSelectedTask(null)}
         />
       )}
@@ -168,10 +172,7 @@ function ProfileTab({ participant }: { participant: ReturnType<typeof useDemo>["
   return (
     <div className="px-5 py-6">
       {/* Welcome banner */}
-      <div
-        className="mb-6 rounded-3xl p-5"
-        style={{ background: "linear-gradient(135deg, #4169E1 0%, #23128F 100%)" }}
-      >
+      <div className="mb-6 rounded-3xl p-5" style={{ background: "linear-gradient(135deg, #4169E1 0%, #23128F 100%)" }}>
         <div className="mb-1 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.6)" }}>
           Welcome back
         </div>
@@ -290,10 +291,7 @@ function ExploreTab({
                       ? "#4169E1"
                       : CATEGORY_COLORS[cat as TaskCategory]
                     : "rgba(255,255,255,0.07)",
-                color:
-                  selectedCategory === cat
-                    ? "#15151E"
-                    : "rgba(255,255,255,0.6)",
+                color: selectedCategory === cat ? "#15151E" : "rgba(255,255,255,0.6)",
               }}
             >
               {cat}
@@ -354,8 +352,8 @@ function TaskCard({
         border: isCompleted
           ? "1px solid rgba(52,238,182,0.2)"
           : isClaimed
-          ? "1px solid rgba(65,105,225,0.3)"
-          : "1px solid rgba(255,255,255,0.06)",
+            ? "1px solid rgba(65,105,225,0.3)"
+            : "1px solid rgba(255,255,255,0.06)",
       }}
     >
       {/* Header row */}
@@ -396,10 +394,7 @@ function TaskCard({
 
       {/* Slots */}
       <div className="mb-3 flex items-center gap-1.5">
-        <div
-          className="h-1.5 flex-1 overflow-hidden rounded-full"
-          style={{ background: "rgba(255,255,255,0.08)" }}
-        >
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
           <div
             className="h-full rounded-full"
             style={{
@@ -420,7 +415,13 @@ function TaskCard({
           style={{ background: "rgba(52,238,182,0.12)", color: "#34eeb6" }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M20 6L9 17l-5-5"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           Completed
         </div>
@@ -482,11 +483,17 @@ function TaskDetailSheet({
         <div className="mx-auto mb-5 h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
 
         <div className="mb-1 flex items-center gap-2">
-          <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: `${catColor}18`, color: catColor }}>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-medium"
+            style={{ background: `${catColor}18`, color: catColor }}
+          >
             {task.category}
           </span>
           {task.isMCE && (
-            <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "rgba(221,158,51,0.15)", color: "#DD9E33" }}>
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{ background: "rgba(221,158,51,0.15)", color: "#DD9E33" }}
+            >
               MCE
             </span>
           )}
@@ -581,14 +588,18 @@ function MyCityTab({
       {/* Impact header */}
       <div
         className="mb-6 rounded-3xl p-5"
-        style={{ background: "linear-gradient(135deg, #23128F 0%, #15151E 100%)", border: "1px solid rgba(65,105,225,0.3)" }}
+        style={{
+          background: "linear-gradient(135deg, #23128F 0%, #15151E 100%)",
+          border: "1px solid rgba(65,105,225,0.3)",
+        }}
       >
         <div className="mb-3 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
           Your City Impact
         </div>
         <div className="mb-4 text-3xl font-bold text-white">{completedTasks.length}</div>
         <div className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-          {completedTasks.length === 1 ? "task completed" : "tasks completed"} across {totalCategories} {totalCategories === 1 ? "organization" : "organizations"}
+          {completedTasks.length === 1 ? "task completed" : "tasks completed"} across {totalCategories}{" "}
+          {totalCategories === 1 ? "organization" : "organizations"}
         </div>
       </div>
 
@@ -755,8 +766,7 @@ function VoteTab({
                   <div
                     className="flex items-center justify-center gap-1.5 rounded-2xl py-2.5 text-sm font-medium"
                     style={{
-                      background:
-                        myVote === "for" ? "rgba(52,238,182,0.12)" : "rgba(255,107,157,0.12)",
+                      background: myVote === "for" ? "rgba(52,238,182,0.12)" : "rgba(255,107,157,0.12)",
                       color: myVote === "for" ? "#34eeb6" : "#ff6b9d",
                     }}
                   >
@@ -785,7 +795,8 @@ function VoteTab({
                   className="rounded-2xl py-2.5 text-center text-xs"
                   style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)" }}
                 >
-                  Voting {mce.status === "Voting" ? "open" : "closed"} · {mce.participantCount.toLocaleString()} participants
+                  Voting {mce.status === "Voting" ? "open" : "closed"} · {mce.participantCount.toLocaleString()}{" "}
+                  participants
                 </div>
               )}
             </div>
@@ -834,17 +845,29 @@ function RedemptionsTab({
           className="flex-1 rounded-2xl p-3 text-center"
           style={{ background: "rgba(65,105,225,0.1)", border: "1px solid rgba(65,105,225,0.2)" }}
         >
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Available</div>
-          <div className="text-xl font-bold" style={{ color: "#4169E1" }}>{cityBalance}</div>
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>CITY</div>
+          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+            Available
+          </div>
+          <div className="text-xl font-bold" style={{ color: "#4169E1" }}>
+            {cityBalance}
+          </div>
+          <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            CITY
+          </div>
         </div>
         <div
           className="flex-1 rounded-2xl p-3 text-center"
           style={{ background: "rgba(52,238,182,0.08)", border: "1px solid rgba(52,238,182,0.15)" }}
         >
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>MCE Credits</div>
-          <div className="text-xl font-bold" style={{ color: "#34eeb6" }}>{mceBalance}</div>
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>MCE</div>
+          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+            MCE Credits
+          </div>
+          <div className="text-xl font-bold" style={{ color: "#34eeb6" }}>
+            {mceBalance}
+          </div>
+          <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            MCE
+          </div>
         </div>
       </div>
 
@@ -874,20 +897,32 @@ function RedemptionsTab({
                     <div className="flex items-center gap-1.5">
                       <div className="text-sm font-semibold text-white">{offer.offerTitle}</div>
                       {offer.mceOnly && (
-                        <span className="rounded-full px-1.5 py-0.5 text-xs" style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}>
+                        <span
+                          className="rounded-full px-1.5 py-0.5 text-xs"
+                          style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}
+                        >
                           MCE
                         </span>
                       )}
                     </div>
-                    <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{offer.redeemerName}</div>
-                    <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{offer.description}</div>
+                    <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      {offer.redeemerName}
+                    </div>
+                    <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      {offer.description}
+                    </div>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-base font-bold" style={{ color: canAffordOffer ? "#4169E1" : "rgba(255,255,255,0.25)" }}>
+                  <div
+                    className="text-base font-bold"
+                    style={{ color: canAffordOffer ? "#4169E1" : "rgba(255,255,255,0.25)" }}
+                  >
                     {offer.costCity}
                   </div>
-                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>CITY</div>
+                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    CITY
+                  </div>
                 </div>
               </div>
 
@@ -900,7 +935,9 @@ function RedemptionsTab({
                   color: canAffordOffer ? "#4169E1" : "rgba(255,255,255,0.2)",
                 }}
               >
-                {canAffordOffer ? `Redeem for ${offer.costCity} CITY →` : `Need ${offer.costCity - cityBalance} more CITY`}
+                {canAffordOffer
+                  ? `Redeem for ${offer.costCity} CITY →`
+                  : `Need ${offer.costCity - cityBalance} more CITY`}
               </button>
             </div>
           );
@@ -953,13 +990,17 @@ function RedemptionsTab({
                 {confirmOffer.redeemerName}
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Cost</span>
+                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  Cost
+                </span>
                 <span className="text-lg font-bold" style={{ color: "#4169E1" }}>
                   {confirmOffer.costCity} CITY
                 </span>
               </div>
               <div className="mt-1 flex items-center justify-between">
-                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Remaining</span>
+                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  Remaining
+                </span>
                 <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
                   {cityBalance - confirmOffer.costCity} CITY
                 </span>
@@ -1000,7 +1041,10 @@ function SectionHeader({ title }: { title: string }) {
 
 function StatusPill({ label, color }: { label: string; color: string }) {
   return (
-    <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: `${color}20`, color }}>
+    <span
+      className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+      style={{ background: `${color}20`, color }}
+    >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
       {label}
     </span>
@@ -1010,23 +1054,43 @@ function StatusPill({ label, color }: { label: string; color: string }) {
 function BalanceCard({ label, value, color, desc }: { label: string; value: number; color: string; desc: string }) {
   return (
     <div className="rounded-2xl p-3 text-center" style={{ background: "#1E1E2C" }}>
-      <div className="text-xs font-semibold" style={{ color }}>{label}</div>
+      <div className="text-xs font-semibold" style={{ color }}>
+        {label}
+      </div>
       <div className="mt-1 text-xl font-bold text-white">{value}</div>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{desc}</div>
+      <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+        {desc}
+      </div>
     </div>
   );
 }
 
-function StatRow({ label, value, suffix, border }: { label: string; value: number; suffix?: string; border?: boolean }) {
+function StatRow({
+  label,
+  value,
+  suffix,
+  border,
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  border?: boolean;
+}) {
   return (
     <div
       className="flex items-center justify-between px-4 py-3"
       style={{ borderTop: border ? "1px solid rgba(255,255,255,0.06)" : undefined }}
     >
-      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{label}</span>
+      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+        {label}
+      </span>
       <span className="text-sm font-semibold text-white">
         {value.toLocaleString()}
-        {suffix && <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{suffix}</span>}
+        {suffix && (
+          <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {suffix}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -1035,7 +1099,9 @@ function StatRow({ label, value, suffix, border }: { label: string; value: numbe
 function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.05)" }}>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{icon} {label}</div>
+      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        {icon} {label}
+      </div>
       <div className="mt-1 text-sm font-medium text-white">{value}</div>
     </div>
   );
@@ -1044,8 +1110,12 @@ function DetailItem({ icon, label, value }: { icon: string; label: string; value
 function RewardItem({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="text-center">
-      <div className="text-2xl font-bold" style={{ color }}>{value}</div>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</div>
+      <div className="text-2xl font-bold" style={{ color }}>
+        {value}
+      </div>
+      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        {label}
+      </div>
     </div>
   );
 }
@@ -1055,7 +1125,9 @@ function EmptyState({ emoji, title, desc }: { emoji: string; title: string; desc
     <div className="flex flex-col items-center py-12 text-center">
       <div className="mb-4 text-5xl">{emoji}</div>
       <div className="mb-2 text-base font-semibold text-white">{title}</div>
-      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{desc}</div>
+      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+        {desc}
+      </div>
     </div>
   );
 }

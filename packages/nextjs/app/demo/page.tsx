@@ -58,13 +58,15 @@ export default function DemoHome() {
           }}
         >
           {/* Back to site */}
-          <Link
-            href="/"
-            className="mb-6 flex items-center gap-1.5 text-xs"
-            style={{ color: "rgba(255,255,255,0.35)" }}
-          >
+          <Link href="/" className="mb-6 flex items-center gap-1.5 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M19 12H5M12 5l-7 7 7 7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             city-sync.org
           </Link>
@@ -127,7 +129,13 @@ export default function DemoHome() {
                   style={{ background: role.accent }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14M12 5l7 7-7 7" stroke="#15151E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M5 12h14M12 5l7 7-7 7"
+                      stroke="#15151E"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
               </div>
@@ -159,7 +167,10 @@ export default function DemoHome() {
             className="rounded-2xl px-5 py-4"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
           >
-            <div className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>
+            <div
+              className="mb-1 text-xs font-semibold uppercase tracking-widest"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
               About the Demo
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>

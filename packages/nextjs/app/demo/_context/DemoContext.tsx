@@ -1,16 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from "react";
+import React, { ReactNode, createContext, useCallback, useContext, useReducer } from "react";
 import {
-  Task,
-  MCEProposal,
-  RedemptionOffer,
   CompletedTask,
-  PastRedemption,
-  MOCK_TASKS,
+  FAKE_WALLETS,
+  MCEProposal,
   MOCK_MCES,
   MOCK_OFFERS,
-  FAKE_WALLETS,
+  MOCK_TASKS,
+  PastRedemption,
+  RedemptionOffer,
+  Task,
 } from "../_data/mockData";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -113,9 +113,18 @@ const randomTxHash = () =>
   "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 
 const randomAddress = () =>
-  "0x" + Array.from({ length: 4 }, () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, "0")).join("") +
+  "0x" +
+  Array.from({ length: 4 }, () =>
+    Math.floor(Math.random() * 0xffff)
+      .toString(16)
+      .padStart(4, "0"),
+  ).join("") +
   "..." +
-  Array.from({ length: 4 }, () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, "0")).join("");
+  Array.from({ length: 4 }, () =>
+    Math.floor(Math.random() * 0xffff)
+      .toString(16)
+      .padStart(4, "0"),
+  ).join("");
 
 const VERIFY_DURATION = 12; // seconds
 
@@ -459,21 +468,18 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const setRole = useCallback((role: Role) => dispatch({ type: "SET_ROLE", role }), []);
   const claimTask = useCallback((taskId: string) => dispatch({ type: "CLAIM_TASK", taskId }), []);
 
-  const startVerify = useCallback(
-    (taskId: string, taskTitle: string) => {
-      dispatch({ type: "START_VERIFY", taskId, taskTitle });
-      let remaining = VERIFY_DURATION;
-      const interval = setInterval(() => {
-        remaining -= 1;
-        dispatch({ type: "TICK_VERIFY" });
-        if (remaining <= 0) {
-          clearInterval(interval);
-          dispatch({ type: "COMPLETE_VERIFY" });
-        }
-      }, 1000);
-    },
-    [],
-  );
+  const startVerify = useCallback((taskId: string, taskTitle: string) => {
+    dispatch({ type: "START_VERIFY", taskId, taskTitle });
+    let remaining = VERIFY_DURATION;
+    const interval = setInterval(() => {
+      remaining -= 1;
+      dispatch({ type: "TICK_VERIFY" });
+      if (remaining <= 0) {
+        clearInterval(interval);
+        dispatch({ type: "COMPLETE_VERIFY" });
+      }
+    }, 1000);
+  }, []);
 
   const voteOnMCE = useCallback(
     (mceId: string, direction: "for" | "against") => {
@@ -485,23 +491,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const redeemOffer = useCallback((offerId: string) => dispatch({ type: "REDEEM_OFFER", offerId }), []);
 
-  const issuerCreateTask = useCallback(
-    (task: Task) => dispatch({ type: "ISSUER_CREATE_TASK", task }),
-    [],
-  );
+  const issuerCreateTask = useCallback((task: Task) => dispatch({ type: "ISSUER_CREATE_TASK", task }), []);
 
   const issuerVerifyCompletion = useCallback(
-    (taskId: string, citizenAddress: string) =>
-      dispatch({ type: "ISSUER_VERIFY_COMPLETION", taskId, citizenAddress }),
+    (taskId: string, citizenAddress: string) => dispatch({ type: "ISSUER_VERIFY_COMPLETION", taskId, citizenAddress }),
     [],
   );
 
   const redeemerToggleMCE = useCallback(() => dispatch({ type: "REDEEMER_TOGGLE_MCE" }), []);
 
-  const redeemerAddOffer = useCallback(
-    (offer: RedemptionOffer) => dispatch({ type: "REDEEMER_ADD_OFFER", offer }),
-    [],
-  );
+  const redeemerAddOffer = useCallback((offer: RedemptionOffer) => dispatch({ type: "REDEEMER_ADD_OFFER", offer }), []);
 
   const redeemerRemoveOffer = useCallback(
     (offerId: string) => dispatch({ type: "REDEEMER_REMOVE_OFFER", offerId }),
