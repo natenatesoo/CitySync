@@ -9,18 +9,16 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-06 (Session 5)
+2026-03-06 (Session 6)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (pending `git push` from Mac)
-- `feat: add interactive demo frontend at /demo` ← **Session 5, pending push**
-- `Add demo contract layer: MCE system, identity registries, feedback` ← pending push
-- `Add mid-session save practice to guard against usage limit cutoffs`
-- `Replace CSS logo with inline SVG: blue CITY, proper parallelogram slashes` ← pending push
-- `Update landing page: charcoal bg and blue+white mono logo`
-- `Add brand identity system and update landing page brand colors`
+- `fix: resolve Vercel lint failures — prettier config and unused vars` (26c93bc) ← **Session 6, pending push**
+- `style: run prettier on demo frontend for Vercel lint compliance` (f5053bd) ← pushed in Session 5
+- `feat: add interactive demo frontend at /demo` ← pushed in Session 5
+- `Add demo contract layer: MCE system, identity registries, feedback` ← pushed in Session 5
 
 ---
 
@@ -76,6 +74,22 @@ Full interactive demo built with React, Tailwind, mocked data (no live contract 
 **Design system:** All inline Tailwind + hardcoded brand hex values. Full-screen fixed overlay at z-50. Charcoal `#15151E` background, `#1E1E2C` card surfaces. Role accent colors consistent throughout each app. Safe-area-inset support for iPhone notch.
 
 **Link:** `/citysync` hub page now has a "Try the Interactive Demo" card pointing to `/demo`.
+
+### Vercel Build Fixes — Session 6
+
+Two rounds of Vercel lint failures diagnosed and resolved.
+
+**Session 5 attempt:** Ran `prettier --write` on all demo files. Appeared to fix things locally but Vercel still failed.
+
+**Root cause (Session 6):** `.prettierrc.js` used `require.resolve("@trivago/prettier-plugin-sort-imports")`. This call was failing silently in Vercel's Node environment, causing Prettier to fall back to its default 80-char `printWidth` instead of our configured 120. Local runs used the cached resolved path and worked fine — Vercel did not.
+
+**Fixes applied (`26c93bc`):**
+- Replaced `.prettierrc.js` with plain JSON `.prettierrc` (no `require.resolve`, no plugins). `printWidth: 120`, `tabWidth: 2`, `arrowParens: "avoid"`, `trailingComma: "all"` preserved.
+- Added `@typescript-eslint/no-unused-vars: ["error", { varsIgnorePattern: "^_", argsIgnorePattern: "^_" }]` to `eslint.config.mjs` — allows `_prefixed` intentional stubs.
+- Removed 6 dead-code unused variables across `issuer/page.tsx`, `participant/page.tsx`, `redeemer/page.tsx`: `TaskCategory` import, `allTasks` prop + type, `availableTasks` destructure, `MOCK_OFFERS` import, `CAT_EMOJI` constant, `canAfford` lambda, `OFFER_CATEGORIES` constant.
+- Verified locally: `eslint --max-warnings 0 app/demo/` exits clean with zero errors/warnings.
+
+**Pending:** `git push` from Mac to trigger the clean Vercel rebuild.
 
 ### Smart Contracts (`packages/foundry/contracts/`)
 
@@ -139,15 +153,16 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 ## Pending / Next Steps
 
 ### High Priority
-- **`git push` from Mac** — 4 commits pending. Run `git push` from Mac terminal in the citysync repo.
+- **`git push` from Mac** — 1 commit pending (`26c93bc`). Run `git push` from Mac terminal in the citysync repo to trigger clean Vercel rebuild.
+- **Verify Vercel Next.js deployment passes** — after pushing, confirm the `packages/nextjs` Vercel project shows a green build. The root causes are now fixed (see Session 6 below).
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
-- **Broadcast deployment to Base Sepolia** — dry run passed (chain 84532, estimated ~0.000269 ETH gas). Fund deployer `0xD2b36eb4e2c349aA9ABe17EB3e9D6789BeAD487b` from faucets then run: `forge script script/DeployDemo.s.sol --rpc-url baseSepolia --broadcast --verify`
-- **Wire demo frontend to live contracts** — replace `mockData.ts` constants with real contract reads/writes once deployed. Swap DemoContext's reducer actions for wagmi hooks + contract calls. EIP712 oracle backend (simple Node.js signer service) needed for task verification flow.
+- **Broadcast deployment to Base Sepolia** — contracts already deployed (addresses in `packages/foundry/deployments/84532.json`). Commit those deployment files: `git add packages/foundry/deployments/ packages/foundry/broadcast/ && git commit -m "chore: add Base Sepolia deployment artifacts"`
+- **Wire demo frontend to live contracts** — replace `mockData.ts` constants with real contract reads/writes. Swap DemoContext's reducer actions for wagmi hooks + contract calls. EIP712 oracle backend (simple Node.js signer service) needed for task verification flow.
 - **Alchemy Account Kit integration** — ERC-4337 Paymaster setup on Base Sepolia for gasless demo UX. Fund Paymaster from faucets: Alchemy, Coinbase, Superchain.
 - **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo.
-- **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Brand colors updated this session (navy #23128F, gold #DD9E33, correct slash mark style). Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
-- **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder (or `landing/public/`) so they're served by Vercel.
-- **dPAN dApp deployment** — second Vercel project from same repo; set Root Directory to `packages/nextjs`; point to `app.city-sync.org` or similar subdomain.
+- **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
+- **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder so they're served by Vercel.
+- **dPAN dApp deployment** — Next.js Vercel project already created; point to `app.city-sync.org` subdomain once build is confirmed green.
 - **Improve the Problem Definition & Impact Factors doc** — original at `docs/official/City_Sync Problem Definition & Impact Factors.docx`. Read with pandoc, create improved version using docx-js.
 - **Nate to review and edit the Whitepaper** — he will make modifications; re-generate with updated build script if structural changes needed.
 
@@ -209,6 +224,9 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 | Demo state managed by a single shared DemoContext (useReducer) | Cross-role interactions (Participant spends credits at Redeemer offers, etc.) require shared global state |
 | QR codes rendered as deterministic SVG pixel grids (no external library) | Avoids bundle bloat; QR content is a `citysync://redeem?offer=...` URI suitable for real app scanning |
 | Verification animation is a real 12-second `setInterval` countdown, not fake | Accurately represents the oracle signing + on-chain minting latency users will experience in production |
+| `.prettierrc.js` replaced with plain JSON `.prettierrc` | `require.resolve()` in `.prettierrc.js` silently fails in Vercel's build environment, causing Prettier to fall back to 80-char printWidth and generating hundreds of lint warnings |
+| `varsIgnorePattern: "^_"` added to ESLint no-unused-vars rule | Allows intentional stub variables (dead code kept for near-future wiring) to be prefixed with `_` without triggering build errors |
+| Base Sepolia demo contracts are already deployed | Addresses committed in `deployments/84532.json`; deployment files just need to be committed to git |
 
 ---
 
