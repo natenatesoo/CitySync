@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ContractAddresses } from "../_components/ContractAddresses";
@@ -15,7 +15,7 @@ import {
   useTargetNetwork,
 } from "~~/hooks/scaffold-eth";
 
-export default function RedeemLinkPage() {
+function RedeemContent() {
   const params = useSearchParams();
   const { address } = useAccount();
   const { targetNetwork } = useTargetNetwork();
@@ -126,5 +126,13 @@ export default function RedeemLinkPage() {
         )}
       </Section>
     </div>
+  );
+}
+
+export default function RedeemLinkPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-base-content/50">Loading…</div>}>
+      <RedeemContent />
+    </Suspense>
   );
 }
