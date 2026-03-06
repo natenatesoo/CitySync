@@ -1,83 +1,101 @@
-# 🏗 Scaffold-ETH 2
+# CitySync
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+**Civic participation infrastructure for local communities.**
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+CitySync is an on-chain system that turns verified civic actions into redeemable credits — connecting residents, local organizations, and community businesses in a closed-loop economy of contribution and access.
 
-> [!NOTE]
-> 🤖 Scaffold-ETH 2 is AI-ready! It has everything agents need to build on Ethereum. Check `.agents/`, `.claude/`, `.opencode` or `.cursor/` for more info.
+---
 
-⚙️ Built using NextJS, RainbowKit, Foundry, Wagmi, Viem, and Typescript.
+## What It Does
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+Residents earn **CITY** (civic credits) by completing verified community tasks — volunteering, attending events, participating in local governance. Those credits are redeemable with local businesses and services as tangible rewards.
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+**Three roles:**
+- **Participant** — Complete tasks, earn credits, vote on community initiatives, redeem rewards
+- **Issuer** — Organizations that post tasks and verify completions (nonprofits, city departments, civic orgs)
+- **Redeemer** — Local businesses and services that accept CITY credits in exchange for goods or discounts
 
-## Requirements
+**Three on-chain assets:**
+- `CITY` — Soul-bound civic credit (ERC-20, non-transferable)
+- `VOTE` — Soul-bound governance token (ERC-20Votes, non-transferable)
+- `MCE` — Soul-bound credit for community event participation
 
-Before you begin, you need to install the following tools:
+---
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+## Try the Demo
 
-## Quickstart
+Live at **[demo.city-sync.org](https://demo.city-sync.org)**
 
-To get started with Scaffold-ETH 2, follow the steps below:
+The interactive demo lets you explore all three roles with simulated state — no wallet required. Credits earned as a Participant are spendable at Redeemer offers. Issuer verifications increment real stats. Cross-role state is shared.
 
-1. Install dependencies if it was skipped in CLI:
+---
+
+## Project Structure
 
 ```
-cd my-dapp-example
+citysync/
+├── landing/                  # city-sync.org landing page (separate Vercel project)
+├── packages/
+│   ├── nextjs/               # dApp frontend (demo.city-sync.org)
+│   │   └── app/
+│   │       ├── demo/         # Interactive three-role demo (mocked data)
+│   │       └── citysync/     # Pilot dApp (live contract integration)
+│   └── foundry/              # Smart contracts
+│       └── contracts/
+│           ├── citysync/     # Pilot contracts (token, opportunity, redeem)
+│           └── demo/         # Demo contracts (MCE system, identity registries)
+└── docs/
+    ├── SESSION.md            # Development session log
+    ├── brand/                # Brand assets and style guide
+    └── references/           # Research essays and source material
+```
+
+---
+
+## Smart Contracts
+
+Deployed on **Base Sepolia** testnet.
+
+| Contract | Address |
+|----------|---------|
+| CityToken | `0xA1526B32AF6aA6CE824F8734E967aD410192b05c` |
+| VoteToken | `0xEEa4fBc7a74504A3095AF042D487cFFf2ebff1eC` |
+| MCECredit | `0x0f62c344264eDBCDFcDF55579191557259D6Ef0D` |
+| IssuerRegistry | `0x513c1e9c303Ed184D7eed07e48555DAaCE5CEbD2` |
+| DemoRedeemerRegistry | `0xB9d731DE9fbe753b707ACe82E9A6C4061522240E` |
+| MCERegistry | `0xDf7BafF494604846d45CD32c314F07cdFe2d6c7B` |
+| MCETaskRegistry | `0xC1f6a6Ad4869D46eEd522eDccD9590c7DCB2585B` |
+| OpportunityManager | `0x613b383907275871171A8cEBD8273D965582a2ac` |
+| Redemption | `0xc7C285d9454251896c4F11C075D7A0Bcc3910C6D` |
+
+---
+
+## Tech Stack
+
+- **Frontend:** Next.js 15, Tailwind CSS, wagmi, viem
+- **Contracts:** Solidity, Foundry
+- **Chain:** Base Sepolia (ERC-4337 Paymaster via Alchemy Account Kit for gasless UX)
+- **Infra:** Vercel (two projects — landing page + dApp)
+
+---
+
+## Dev Setup
+
+```bash
+# Install dependencies
 yarn install
+
+# Run the frontend locally
+cd packages/nextjs && yarn dev
+
+# Run contract tests
+cd packages/foundry && forge test
 ```
 
-2. Run a local network in the first terminal:
+---
 
-```
-yarn chain
-```
+## Links
 
-This command starts a local Ethereum network using Foundry. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/foundry/foundry.toml`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
-```
-
-This command deploys a test smart contract to the local network. The contract is located in `packages/foundry/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/foundry/script` to deploy the contract to the network. You can also customize the deploy script.
-
-4. On a third terminal, start your NextJS app:
-
-```
-yarn start
-```
-
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
-
-Run smart contract test with `yarn foundry:test`
-
-- Edit your smart contracts in `packages/foundry/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/foundry/script`
-
-
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
-
-To know more about its features, check out our [website](https://scaffoldeth.io).
-
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+- **Landing page:** [city-sync.org](https://city-sync.org)
+- **Demo:** [demo.city-sync.org](https://demo.city-sync.org)
+- **Base Sepolia explorer:** [sepolia.basescan.org](https://sepolia.basescan.org)
