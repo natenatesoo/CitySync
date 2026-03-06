@@ -118,7 +118,7 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 
 ### High Priority
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
-- **Write deployment script** — `script/DeployDemo.s.sol` that deploys all demo contracts in correct order with role grants
+- **Broadcast deployment to Base Sepolia** — dry run passed (chain 84532, estimated ~0.000269 ETH gas). Fund deployer `0xD2b36eb4e2c349aA9ABe17EB3e9D6789BeAD487b` from faucets then run: `forge script script/DeployDemo.s.sol --rpc-url baseSepolia --broadcast --verify`
 - **Alchemy Account Kit integration** — ERC-4337 Paymaster setup on Base Sepolia for gasless demo UX. Fund Paymaster from faucets: Alchemy, Coinbase, Superchain
 - **Demo frontend** — mobile wallet UI linked from city-sync.org. Three role chooser screen → mobile app shell with role-specific tabs (Participant: Profile/Explore/MyCity/Vote/Redemptions; Issuer: Profile/Tasks/MyCity/Dashboard/MCEs; Redeemer: Profile/Redemptions/MyCity/Dashboard/MCEs). Wallet icon top-right.
 - **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo
