@@ -171,7 +171,16 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 | Git commits in sandbox, push from Mac | GitHub egress blocked in Cowork sandbox |
 | Skip Next.js lint in Linux ARM64 environment | SWC binary can't be downloaded; real lint enforced on Mac |
 | Landing page — separate `landing/` folder, own Vercel project | Two deployments: landing page at city-sync.org, dApp at app.city-sync.org later |
-| city-sync.org DNS via GoDaddy | A record → 76.76.21.21; CNAME www → cname.vercel-dns.com; SSL auto-provisioned by Vercel |
+| city-sync.org DNS via GoDaddy | A record → 76.76.21.21; CNAME www → cname.vercel-dns.com; SSL auto-provisioned by Vercel. GoDaddy "WebsiteBuilder Site" parking record must be deleted — it intercepts traffic before A record. |
+| Demo and pilot smart contracts are completely separate codebases | Cleaner separation; no shared inheritance or dual-mode flags |
+| Base Sepolia chosen over Arbitrum Sepolia for testnet | Better Paymaster tooling (Alchemy Account Kit), Superchain ecosystem alignment (Gitcoin, Optimism Retro Funding), more reliable faucets |
+| Demo MCE timeline stays at 14 days voting / 2 days planning | Demo is a living city simulation, not a single-session toy — users return to vote and watch events progress |
+| Task Catalog is backend-managed, not on-chain | Faster iteration, no gas for catalog changes, Nate reviews proposals before they appear as Issuer dropdown options |
+| Pilot verification: Issuer wallet calls verifyCompletion() directly | Simple and decentralized; representatives (delegated via isVerifierForIssuer) can also verify on the org's behalf |
+| Pilot attestation: quality score (1–5) + IPFS CID stored on verifyCompletion() | Builds participant reputation over time; text stored off-chain via IPFS to save gas |
+| MCECredit is a separate soul-bound token from CivicCredit | MCE participation deserves distinct recognition; enables a wider/different redemption universe |
+| Demo oracle verification via EIP712 signature after frontend timer | 10–15s "Verifying…" spinner → backend oracle signs → verifyCompletionWithSig() mints credits. No Issuer action needed in demo. |
+| Mid-session SESSION.md commits after every major milestone | Guard against usage limit cutoffs losing session state |
 
 ---
 
