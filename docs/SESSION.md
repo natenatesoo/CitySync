@@ -9,15 +9,16 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-06 (Session 4)
+2026-03-06 (Session 5)
 
 ## Current Branch
 `main`
 
-## Recent Commits (pushed to origin/main)
-- `Add demo contract layer: MCE system, identity registries, feedback` ← pending push from Mac
+## Recent Commits (pending `git push` from Mac)
+- `feat: add interactive demo frontend at /demo` ← **Session 5, pending push**
+- `Add demo contract layer: MCE system, identity registries, feedback` ← pending push
 - `Add mid-session save practice to guard against usage limit cutoffs`
-- `Replace CSS logo with inline SVG: blue CITY, proper parallelogram slashes` ← pending push from Mac
+- `Replace CSS logo with inline SVG: blue CITY, proper parallelogram slashes` ← pending push
 - `Update landing page: charcoal bg and blue+white mono logo`
 - `Add brand identity system and update landing page brand colors`
 
@@ -54,6 +55,27 @@ Full brand asset suite created. True colors extracted from Nate's SVG source fil
 - `docs/brand/guide/brand-style-guide.html` — comprehensive brand style guide (colors, typography, logo rules, spacing, print, digital)
 - `docs/brand/print/letterhead.html` — printable letterhead template
 - `docs/brand/print/business-card.html` — business card front+back preview (3.5"×2")
+
+### Demo Frontend (`packages/nextjs/app/demo/`) — NEW Session 5
+
+Full interactive demo built with React, Tailwind, mocked data (no live contract calls yet). Three roles, each a standalone mobile-first app with 5 tabs. Shared `DemoContext` (useReducer) holds all cross-role state — credits earned as Participant are spendable at Redeemer offers, Issuer verifications increment stats, etc.
+
+**Files:**
+- `_data/mockData.ts` — 10 tasks (5 categories + 2 MCE-linked), 4 MCE proposals, 7 redemption offers, 3 issuer profiles. All seed data.
+- `_context/DemoContext.tsx` — Full reducer covering: claim/verify tasks, vote on MCEs, redeem offers, create/verify issuer tasks, add/process redeemer offers, MCE opt-in toggle. Verification triggers a real 12-second countdown with `setInterval`.
+- `_components/AppShell.tsx` — Full-screen fixed overlay (hides Scaffold-ETH header). Phone-width container (max-width 480px), header with wallet button, scrollable content, BottomNav.
+- `_components/BottomNav.tsx` — 5-tab bottom navigation; active tab highlighted in role accent color.
+- `_components/WalletModal.tsx` — Bottom sheet showing CITY/VOTE/MCE balances, wallet address, role badge.
+- `_components/VerifyingOverlay.tsx` — 12-second oracle verification animation. Circular progress ring, step-by-step status messages ("Submitting proof to oracle…", "Minting CITY credits…"), animated progress dots.
+- `layout.tsx` — Wraps all /demo routes in `<DemoProvider>`.
+- `page.tsx` — Role chooser. Dark CitySync branding, 3 role cards with accent colors (Participant #4169E1, Issuer #DD9E33, Redeemer #34eeb6), tab previews, about-the-demo footer note.
+- `participant/page.tsx` — Profile (balances, stats, recent completions), Explore (category filter, task cards, claim→verify flow), MyCity (impact + tx history), Vote (MCE list, VOTE-weighted voting, status badges), Redemptions (offer cards, confirm modal, burn CITY).
+- `issuer/page.tsx` — Profile (org name, stats), Tasks (catalog picker sheet + pending verification queue), MyCity (city overview), Dashboard (metrics, category breakdown, how-it-works), MCEs (all MCEs with vote bars).
+- `redeemer/page.tsx` — Profile (MCECredit opt-in toggle), Redemptions (offers + QR modal + incoming queue), MyCity, Dashboard, MCEs. QR codes are deterministic SVG pixel art grids (no external lib needed).
+
+**Design system:** All inline Tailwind + hardcoded brand hex values. Full-screen fixed overlay at z-50. Charcoal `#15151E` background, `#1E1E2C` card surfaces. Role accent colors consistent throughout each app. Safe-area-inset support for iPhone notch.
+
+**Link:** `/citysync` hub page now has a "Try the Interactive Demo" card pointing to `/demo`.
 
 ### Smart Contracts (`packages/foundry/contracts/`)
 
@@ -117,11 +139,12 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 ## Pending / Next Steps
 
 ### High Priority
+- **`git push` from Mac** — 4 commits pending. Run `git push` from Mac terminal in the citysync repo.
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
 - **Broadcast deployment to Base Sepolia** — dry run passed (chain 84532, estimated ~0.000269 ETH gas). Fund deployer `0xD2b36eb4e2c349aA9ABe17EB3e9D6789BeAD487b` from faucets then run: `forge script script/DeployDemo.s.sol --rpc-url baseSepolia --broadcast --verify`
-- **Alchemy Account Kit integration** — ERC-4337 Paymaster setup on Base Sepolia for gasless demo UX. Fund Paymaster from faucets: Alchemy, Coinbase, Superchain
-- **Demo frontend** — mobile wallet UI linked from city-sync.org. Three role chooser screen → mobile app shell with role-specific tabs (Participant: Profile/Explore/MyCity/Vote/Redemptions; Issuer: Profile/Tasks/MyCity/Dashboard/MCEs; Redeemer: Profile/Redemptions/MyCity/Dashboard/MCEs). Wallet icon top-right.
-- **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo
+- **Wire demo frontend to live contracts** — replace `mockData.ts` constants with real contract reads/writes once deployed. Swap DemoContext's reducer actions for wagmi hooks + contract calls. EIP712 oracle backend (simple Node.js signer service) needed for task verification flow.
+- **Alchemy Account Kit integration** — ERC-4337 Paymaster setup on Base Sepolia for gasless demo UX. Fund Paymaster from faucets: Alchemy, Coinbase, Superchain.
+- **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo.
 - **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Brand colors updated this session (navy #23128F, gold #DD9E33, correct slash mark style). Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
 - **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder (or `landing/public/`) so they're served by Vercel.
 - **dPAN dApp deployment** — second Vercel project from same repo; set Root Directory to `packages/nextjs`; point to `app.city-sync.org` or similar subdomain.
@@ -181,6 +204,11 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 | MCECredit is a separate soul-bound token from CivicCredit | MCE participation deserves distinct recognition; enables a wider/different redemption universe |
 | Demo oracle verification via EIP712 signature after frontend timer | 10–15s "Verifying…" spinner → backend oracle signs → verifyCompletionWithSig() mints credits. No Issuer action needed in demo. |
 | Mid-session SESSION.md commits after every major milestone | Guard against usage limit cutoffs losing session state |
+| Demo frontend uses mocked data first, not live contracts | Faster to build and preview; wire to real contracts after Base Sepolia deployment |
+| Full-screen fixed overlay for demo (z-50, covers Scaffold-ETH header) | Cleanest way to build a custom mobile UI without ejecting Scaffold-ETH's layout |
+| Demo state managed by a single shared DemoContext (useReducer) | Cross-role interactions (Participant spends credits at Redeemer offers, etc.) require shared global state |
+| QR codes rendered as deterministic SVG pixel grids (no external library) | Avoids bundle bloat; QR content is a `citysync://redeem?offer=...` URI suitable for real app scanning |
+| Verification animation is a real 12-second `setInterval` countdown, not fake | Accurately represents the oracle signing + on-chain minting latency users will experience in production |
 
 ---
 
