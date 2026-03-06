@@ -21,3 +21,6 @@ node_modules
 
 # cli
 dist
+
+# Private documents — keep off GitHub
+docs/official/
