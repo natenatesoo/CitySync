@@ -215,7 +215,16 @@ function PanelCard({
 }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: accent, textTransform: "uppercase" }}>
+      <p
+        style={{
+          margin: "0 0 4px",
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          color: accent,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </p>
       <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 700, color: "#fff" }}>{title}</h3>
@@ -266,8 +275,8 @@ function getRedeemerPanels(
         left: (
           <PanelCard label="Redeemer Organization" title="Where CITYx Meets Real Value" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
-              Redeemer organizations close the loop between civic participation and tangible rewards. Citizens earn CITYx
-              by completing tasks — you let them spend it in your venue.
+              Redeemer organizations close the loop between civic participation and tangible rewards. Citizens earn
+              CITYx by completing tasks — you let them spend it in your venue.
             </p>
             <p style={{ margin: 0 }}>
               Registering your organization unlocks access to the full redemption network, MCE rewards, and on-chain
@@ -380,8 +389,8 @@ function getRedeemerPanels(
         left: (
           <PanelCard label="MCE Program" title="Amplify with Mass Events" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
-              Mass Coordination Events are city-wide mobilizations voted on by the community. Opting in makes your
-              venue a featured reward destination during the event.
+              Mass Coordination Events are city-wide mobilizations voted on by the community. Opting in makes your venue
+              a featured reward destination during the event.
             </p>
             <p style={{ margin: 0 }}>
               MCE participation drives surges of motivated participants to your venue. Event rewards are funded from a

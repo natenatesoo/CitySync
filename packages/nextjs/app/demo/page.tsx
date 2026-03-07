@@ -242,10 +242,7 @@ export default function DemoHome() {
         }}
       >
         <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ background: "#23128F" }}
-          >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "#23128F" }}>
             <SlashIcon width={20} height={22} />
           </div>
           <span className="text-base font-bold text-white">City/Sync DEMO</span>
@@ -402,10 +399,7 @@ export default function DemoHome() {
       </section>
 
       {/* ── Public Sector Economy ───────────────────────────────────────────── */}
-      <section
-        className="px-6 py-20"
-        style={{ background: "#111120", borderTop: "1px solid rgba(255,255,255,0.06)" }}
-      >
+      <section className="px-6 py-20" style={{ background: "#111120", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="mx-auto max-w-7xl">
           {/* Prose intro */}
           <div className="mx-auto mb-14 max-w-3xl text-center">

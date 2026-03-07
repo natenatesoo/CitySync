@@ -150,13 +150,7 @@ function PanelCard({
   );
 }
 
-function PanelStats({
-  stats,
-  accent,
-}: {
-  stats: { label: string; value: string | number }[];
-  accent: string;
-}) {
+function PanelStats({ stats, accent }: { stats: { label: string; value: string | number }[]; accent: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {stats.map(({ label, value }) => (

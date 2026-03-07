@@ -53,13 +53,7 @@ function PanelCard({
   );
 }
 
-function PanelStats({
-  stats,
-  accent,
-}: {
-  stats: { label: string; value: string | number }[];
-  accent: string;
-}) {
+function PanelStats({ stats, accent }: { stats: { label: string; value: string | number }[]; accent: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {stats.map(({ label, value }) => (
@@ -101,14 +95,14 @@ function getParticipantPanels(
           <>
             <PanelCard label="Account Login" title="Welcome to City/Sync" accent={ACCENT}>
               <p style={{ margin: 0 }}>
-                When you first log in with your email, you are provisioned an on-chain account. This account serves as your
-                wallet and holds all of your City/Sync tokens — CITYx, VOTE, and special MCE credits.
+                When you first log in with your email, you are provisioned an on-chain account. This account serves as
+                your wallet and holds all of your City/Sync tokens — CITYx, VOTE, and special MCE credits.
               </p>
             </PanelCard>
             <PanelCard label="My Profile" title="Your City/Sync Profile" accent={ACCENT}>
               <p style={{ margin: 0 }}>
-                The Profile tab lets you edit your City/Sync identity, track your token balances, and view your completed
-                tasks and voting history.
+                The Profile tab lets you edit your City/Sync identity, track your token balances, and view your
+                completed tasks and voting history.
               </p>
             </PanelCard>
           </>
@@ -133,16 +127,17 @@ function getParticipantPanels(
             <PanelCard label="Task Catalog" title="Onboarding Tasks" accent={ACCENT}>
               <p style={{ margin: 0 }}>
                 All new Civic Participants must complete an in-person onboarding task to activate their account. All
-                certified Issuers offer a continuous set of onboarding tasks. The initial task is how the protocol ensures
-                real community membership. Upon completion, your account is whitelisted and can interact with all City/Sync
-                smart contracts. Once this is done, you are free to claim any available tasks from the Task Catalog.
+                certified Issuers offer a continuous set of onboarding tasks. The initial task is how the protocol
+                ensures real community membership. Upon completion, your account is whitelisted and can interact with
+                all City/Sync smart contracts. Once this is done, you are free to claim any available tasks from the
+                Task Catalog.
               </p>
             </PanelCard>
             <PanelCard label="Task Management" title="Earning CITYx Credits" accent={ACCENT}>
               <p style={{ margin: 0 }}>
-                When you claim a task, you are reserving it for execution. Citizens can claim a maximum of 2 tasks at any
-                given time. Once you claim a task, it will appear in the My Tasks tab. After completing the task, you can
-                submit proof for verification. Once verified, you will receive your CITYx and VOTE tokens.
+                When you claim a task, you are reserving it for execution. Citizens can claim a maximum of 2 tasks at
+                any given time. Once you claim a task, it will appear in the My Tasks tab. After completing the task,
+                you can submit proof for verification. Once verified, you will receive your CITYx and VOTE tokens.
               </p>
             </PanelCard>
             <PanelCard label="DEMO Limitations" title="Verification" accent={ACCENT}>
@@ -202,9 +197,9 @@ function getParticipantPanels(
               <p style={{ margin: 0 }}>
                 $VOTE tokens are non-transferable and are earned 1:1 with your $CITYx tokens. At City/Sync we utilize
                 Approval Voting to make decisions on a finite set of proposals. During the open period of voting, users
-                have an opportunity to change their votes however they see fit. Once the open period ends, a much shorter
-                closed period of voting begins, where $VOTE tokens can no longer be changed. At the end of the voting
-                period, the proposal with the most votes is enacted.
+                have an opportunity to change their votes however they see fit. Once the open period ends, a much
+                shorter closed period of voting begins, where $VOTE tokens can no longer be changed. At the end of the
+                voting period, the proposal with the most votes is enacted.
               </p>
             </PanelCard>
             <PanelCard label="MCE Governance" title="MCE Epochs" accent={ACCENT}>
@@ -239,12 +234,12 @@ function getParticipantPanels(
         left: (
           <PanelCard label="Redemptions" title="Using your CITYx" accent={ACCENT}>
             <p style={{ margin: 0 }}>
-              On this page you can view all of the offerings within the Redemption Universe. Redeemer Organizations
-              will have printed QR codes for each of their offerings that interact with the token contract and call the
+              On this page you can view all of the offerings within the Redemption Universe. Redeemer Organizations will
+              have printed QR codes for each of their offerings that interact with the token contract and call the
               &ldquo;Burn&rdquo; function. When visiting a Redeemer Organization&apos;s location, scan the QR code at
-              the Point of Sale — this instantly calls the function and burns your CITYx at the rate for that
-              offering. A visible and audible cue will appear on screen to prove to the Redeemer Organization that the
-              transaction was processed and the CITYx was deducted from your account.
+              the Point of Sale — this instantly calls the function and burns your CITYx at the rate for that offering.
+              A visible and audible cue will appear on screen to prove to the Redeemer Organization that the transaction
+              was processed and the CITYx was deducted from your account.
             </p>
           </PanelCard>
         ),
@@ -675,7 +670,16 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
               gap: 8,
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -786,7 +790,7 @@ function BurnConfirmOverlay({
       };
       play(660, 0, 0.3);
       play(880, 0.2, 0.4);
-    } catch (_) {
+    } catch {
       // Audio not available — silent fallback
     }
 
@@ -829,7 +833,16 @@ function BurnConfirmOverlay({
           animation: "burnPulse 0.6s ease-out",
         }}
       >
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#34eeb6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#34eeb6"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
@@ -1461,7 +1474,16 @@ function TaskCard({
             { label: "📋 Credentials", value: task.credentials },
           ].map(({ label, value }) => (
             <div key={label}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.35)", marginBottom: 3 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255,255,255,0.35)",
+                  marginBottom: 3,
+                }}
+              >
                 {label}
               </div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{value}</div>
@@ -1974,119 +1996,119 @@ function VoteTab() {
               const totalVotes = mce.votesFor + allocated;
               const pct = Math.round((totalVotes / maxVotesFor) * 100);
 
-            return (
-              <div key={mce.id} style={{ ...card, marginBottom: 12 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: 8,
-                  }}
-                >
-                  <div style={{ flex: 1, paddingRight: 10 }}>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>MCE-0{i + 1}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35 }}>{mce.title}</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
-                      by {mce.proposerName}
+              return (
+                <div key={mce.id} style={{ ...card, marginBottom: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div style={{ flex: 1, paddingRight: 10 }}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>MCE-0{i + 1}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35 }}>{mce.title}</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                        by {mce.proposerName}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 700,
+                          color: allocated > 0 ? ACCENT : "rgba(255,255,255,0.25)",
+                        }}
+                      >
+                        {allocated}
+                      </div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>your VOTE</div>
                     </div>
                   </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginBottom: 12 }}>
+                    {mce.description.slice(0, 120)}…
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
                     <div
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 700,
-                        color: allocated > 0 ? ACCENT : "rgba(255,255,255,0.25)",
-                      }}
+                      style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}
                     >
-                      {allocated}
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${pct}%`,
+                          background: TEAL,
+                          borderRadius: 3,
+                          transition: "width 0.2s",
+                        }}
+                      />
                     </div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>your VOTE</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                        {totalVotes.toLocaleString()} votes for
+                      </span>
+                      <span style={{ fontSize: 11, color: TEAL }}>{pct}%</span>
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginBottom: 12 }}>
-                  {mce.description.slice(0, 120)}…
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${pct}%`,
-                        background: TEAL,
-                        borderRadius: 3,
-                        transition: "width 0.2s",
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                      {totalVotes.toLocaleString()} votes for
-                    </span>
-                    <span style={{ fontSize: 11, color: TEAL }}>{pct}%</span>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", flex: 1 }}>
-                    Allocate VOTE:
-                  </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button
-                      onClick={() => adjust(mce.id, -STEP)}
-                      disabled={allocated === 0}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.06)",
-                        cursor: allocated === 0 ? "not-allowed" : "pointer",
-                        color: allocated === 0 ? "rgba(255,255,255,0.2)" : "white",
-                        fontSize: 18,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      −
-                    </button>
-                    <span
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: allocated > 0 ? ACCENT : "rgba(255,255,255,0.25)",
-                        minWidth: 36,
-                        textAlign: "center",
-                      }}
-                    >
-                      {allocated}
-                    </span>
-                    <button
-                      onClick={() => adjust(mce.id, STEP)}
-                      disabled={remaining < STEP}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: remaining >= STEP ? `${ACCENT}33` : "rgba(255,255,255,0.06)",
-                        color: remaining >= STEP ? ACCENT : "rgba(255,255,255,0.2)",
-                        cursor: remaining < STEP ? "not-allowed" : "pointer",
-                        fontSize: 18,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      +
-                    </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", flex: 1 }}>Allocate VOTE:</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button
+                        onClick={() => adjust(mce.id, -STEP)}
+                        disabled={allocated === 0}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(255,255,255,0.06)",
+                          cursor: allocated === 0 ? "not-allowed" : "pointer",
+                          color: allocated === 0 ? "rgba(255,255,255,0.2)" : "white",
+                          fontSize: 18,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        −
+                      </button>
+                      <span
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: allocated > 0 ? ACCENT : "rgba(255,255,255,0.25)",
+                          minWidth: 36,
+                          textAlign: "center",
+                        }}
+                      >
+                        {allocated}
+                      </span>
+                      <button
+                        onClick={() => adjust(mce.id, STEP)}
+                        disabled={remaining < STEP}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: remaining >= STEP ? `${ACCENT}33` : "rgba(255,255,255,0.06)",
+                          color: remaining >= STEP ? ACCENT : "rgba(255,255,255,0.2)",
+                          cursor: remaining < STEP ? "not-allowed" : "pointer",
+                          fontSize: 18,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
+              );
             });
           })()}
 
@@ -2243,7 +2265,8 @@ function RedeemTab() {
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              background: filter === f ? (f === "MCE" ? GOLD : f === "CITYx" ? TEAL : ACCENT) : "rgba(255,255,255,0.06)",
+              background:
+                filter === f ? (f === "MCE" ? GOLD : f === "CITYx" ? TEAL : ACCENT) : "rgba(255,255,255,0.06)",
               color: filter === f ? "#15151E" : "rgba(255,255,255,0.55)",
               transition: "all 0.15s",
             }}
@@ -2316,7 +2339,9 @@ function RedeemTab() {
                     <div style={{ fontSize: 16, fontWeight: 700, color: offer.mceOnly ? GOLD : TEAL }}>
                       {offer.costCity}
                     </div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{offer.mceOnly ? "MCE" : "CITYx"}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
+                      {offer.mceOnly ? "MCE" : "CITYx"}
+                    </div>
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.45, marginBottom: 10 }}>

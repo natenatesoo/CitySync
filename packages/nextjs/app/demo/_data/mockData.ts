@@ -23,10 +23,10 @@ export interface Task {
   mceId?: string;
   isMCE?: boolean;
   isOnboarding?: boolean; // claimable only by new members (zero balance)
-  taskDate: string;        // specific date/schedule text
+  taskDate: string; // specific date/schedule text
   successCriteria: string; // what success looks like
   creditRatePerHr: number; // CITYx per hour rate
-  credentials: string;     // required credentials or "None"
+  credentials: string; // required credentials or "None"
 }
 
 export interface MCEProposal {
