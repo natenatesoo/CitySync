@@ -308,8 +308,8 @@ export default function DemoHome() {
                 gridTemplateRows: "auto 1fr auto auto",
               }}
             >
-              {/* Card header — row 1 */}
-              <div className="p-6 pb-4" style={{ borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
+              {/* Card header — row 1. minHeight matches the longest description (Redeemer) */}
+              <div className="p-6 pb-4" style={{ borderBottom: `1px solid rgba(255,255,255,0.06)`, minHeight: 260 }}>
                 <div className="mb-4 flex items-center gap-3">
                   <div
                     className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl"
@@ -363,10 +363,10 @@ export default function DemoHome() {
                 </div>
               </div>
 
-              {/* Eligibility */}
+              {/* Eligibility — row 3. minHeight matches the longest eligibility text (Redeemer) */}
               <div
                 className="mx-6 mb-6 rounded-2xl p-4"
-                style={{ background: `${role.accent}0a`, border: `1px solid ${role.accent}22` }}
+                style={{ background: `${role.accent}0a`, border: `1px solid ${role.accent}22`, minHeight: 320 }}
               >
                 <div className="mb-1.5 text-xs font-semibold" style={{ color: role.accent }}>
                   {role.eligibility.title}
