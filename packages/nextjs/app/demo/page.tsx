@@ -106,7 +106,7 @@ const ROLES = [
     tagline: "Create. Verify. Distribute.",
     accent: "#DD9E33",
     description:
-      "Issuer Organizations are the public-sector organizations that power the civic economy. As an Issuer, you represent a community organization, public agency, or public-benefit entity that creates and manages civic-labor opportunities. You will be able to post tasks from the approved and curated Task Catalog, propose new tasks to the Task Catalog for approval, and set $CITY credit rates for tasks. Issuers will also be responsible for verifying task completion, providing feedback on participants, and distributing rewards.",
+      "Issuer Organizations are the public-sector organizations that power the civic economy. As an Issuer, you represent a community organization, public agency, or public-benefit entity that creates and manages civic-labor opportunities. You will be able to post tasks from the approved and curated Task Catalog, propose new tasks to the Task Catalog, and set $CITY credit rates for tasks. Issuers will also be responsible for verifying task completion, providing feedback on participants, and distributing rewards.",
     tabs: [
       {
         key: "Profile",
@@ -118,7 +118,7 @@ const ROLES = [
       },
       {
         key: "MyCity",
-        desc: "See the impact the network is having on your City, Keep track of upcoming events, and get engaged with your community.",
+        desc: "Post articles, events, photos, and promotions for your organization.",
       },
       {
         key: "Verify",
@@ -147,7 +147,7 @@ const ROLES = [
     tabs: [
       {
         key: "Profile",
-        desc: "Manage your organization profile, and track your Redemption History.",
+        desc: "Manage your organizational profile, and track your Redemption History.",
       },
       {
         key: "Offerings",
@@ -155,7 +155,7 @@ const ROLES = [
       },
       {
         key: "MyCity",
-        desc: "See the impact the network is having on your City, Keep track of upcoming events, and get engaged with your community.",
+        desc: "Post articles, events, photos, and promotions for your organization.",
       },
       {
         key: "Dashboard",
@@ -168,7 +168,7 @@ const ROLES = [
     ],
     eligibility: {
       title: "Becoming a Redeemer Organization",
-      body: "To become a Redeemer Organization, you need to apply to become a Redeemer Organization. Redeemer Organizations can be any entity ranging from a local coffee shop to a transit authority, as long as they commit to honoring their offerings according to the rules set by the Representative Redeemer Committee. Redeemers have full autonomy over what they offer and at what credit rates, and can create time-limited offers tied to specific credit types like MCE's. This flexibility allows both small businesses and large public service providers to participate on their own terms.",
+      body: "To become a Redeemer Organization, you need to apply through City/Sync. Redeemer Organizations can be any entity ranging from a local coffee shop to a transit authority, as long as they commit to honoring their offerings according to the rules set by the Representative Redeemer Committee. Redeemers have full autonomy over what they offer, the rates for each offering, and can create time-limited offers tied to specific credit types like MCE's. This flexibility allows both small businesses and large public service providers to participate on their own terms.",
     },
     buttonLabel: "Enter as Redeemer Organization",
   },
@@ -180,7 +180,7 @@ const ECONOMY_INTRO = {
   sectionLabel: "The Public Sector Economy",
   heading: "How it Works",
   body1:
-    "City/Sync proposes the creation of a bifurcated economy that exists entirely within the public-sector, and separate from speculative financial markets and fiat currency. $CITY credits cannot be bought or sold. They are earned through civic-labor contributions and spent on access to public goods and services. This keeps the system grounded in real civic value rather than through market dynamics.",
+    "City/Sync proposes the creation of a bifurcated economy that exists entirely within the public-sector, and is separate from the domain of financial markets and fiat currency. $CITY credits cannot be transferred, bought, or sold. They are earned through civic-labor contributions and spent on access to public goods and services. This keeps the system grounded in real civic value rather than through market dynamics.",
   body2:
     "For this economy to function sustainably, the rate at which credits are issued must remain in balance with the capacity of the Redeemer network to absorb them. Too many credits chasing too few redemption offerings erodes value and destroys incentives. Too few credits stifles participation and interest. The protocol is designed to maintain the equilibrium between Issuance and Redemption through Issuance Caps, Governance feedback loops, and transparent rate guidance for Redeemers.",
 };
