@@ -33,7 +33,7 @@ export default function AppShell({
   activeTab,
   onTabChange,
   accentColor,
-  title,
+  title: _title,
   children,
   leftPanel,
   rightPanel,
