@@ -9,16 +9,18 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-06 (Session 6)
+2026-03-07 (Session 7)
 
 ## Current Branch
 `main`
 
-## Recent Commits (pending `git push` from Mac)
-- `fix: resolve Vercel lint failures — prettier config and unused vars` (26c93bc) ← **Session 6, pending push**
-- `style: run prettier on demo frontend for Vercel lint compliance` (f5053bd) ← pushed in Session 5
-- `feat: add interactive demo frontend at /demo` ← pushed in Session 5
-- `Add demo contract layer: MCE system, identity registries, feedback` ← pushed in Session 5
+## Recent Commits (all pushed)
+- `fix: add required authProviderId to social auth type in Account Kit config` (007c4a1) ← Session 7
+- `fix: use "social" auth type instead of "google" in Account Kit config` (5a552cb) ← Session 7
+- `fix: update Account Kit v4.84.1 API usage` (813574a) ← Session 7
+- `fix: upgrade viem to ^2.45.0 to satisfy Account Kit peer dep` (9e4a513) ← Session 7
+- `feat: add Alchemy Account Kit for embedded wallets + gasless UX` (6879d93) ← Session 6
+- `fix: resolve Vercel lint failures — prettier config and unused vars` (26c93bc) ← Session 6
 
 ---
 
@@ -75,21 +77,56 @@ Full interactive demo built with React, Tailwind, mocked data (no live contract 
 
 **Link:** `/citysync` hub page now has a "Try the Interactive Demo" card pointing to `/demo`.
 
-### Vercel Build Fixes — Session 6
+### Vercel Build Fixes — Sessions 6 & 7
 
-Two rounds of Vercel lint failures diagnosed and resolved.
+Multiple rounds of Vercel build failures diagnosed and resolved across two sessions.
 
-**Session 5 attempt:** Ran `prettier --write` on all demo files. Appeared to fix things locally but Vercel still failed.
+**Round 1 — Prettier config (Session 6, `26c93bc`):**
+- Root cause: `.prettierrc.js` with `require.resolve()` failed silently on Vercel → fell back to 80-char printWidth
+- Fix: replaced with plain JSON `.prettierrc`. Added `varsIgnorePattern: "^_"` to ESLint. Removed 6 dead-code unused vars.
 
-**Root cause (Session 6):** `.prettierrc.js` used `require.resolve("@trivago/prettier-plugin-sort-imports")`. This call was failing silently in Vercel's Node environment, causing Prettier to fall back to its default 80-char `printWidth` instead of our configured 120. Local runs used the cached resolved path and worked fine — Vercel did not.
+**Round 2 — Suspense boundary (Session 6, `1a12257`):**
+- Root cause: `useSearchParams()` in `/citysync/redeem/page.tsx` not wrapped in `<Suspense>`
+- Fix: extracted `RedeemContent` component, wrapped with `<Suspense>`
 
-**Fixes applied (`26c93bc`):**
-- Replaced `.prettierrc.js` with plain JSON `.prettierrc` (no `require.resolve`, no plugins). `printWidth: 120`, `tabWidth: 2`, `arrowParens: "avoid"`, `trailingComma: "all"` preserved.
-- Added `@typescript-eslint/no-unused-vars: ["error", { varsIgnorePattern: "^_", argsIgnorePattern: "^_" }]` to `eslint.config.mjs` — allows `_prefixed` intentional stubs.
-- Removed 6 dead-code unused variables across `issuer/page.tsx`, `participant/page.tsx`, `redeemer/page.tsx`: `TaskCategory` import, `allTasks` prop + type, `availableTasks` destructure, `MOCK_OFFERS` import, `CAT_EMOJI` constant, `canAfford` lambda, `OFFER_CATEGORIES` constant.
-- Verified locally: `eslint --max-warnings 0 app/demo/` exits clean with zero errors/warnings.
+**Round 3 — viem version (Session 7, `9e4a513`):**
+- Root cause: `@account-kit/infra@4.84.1` peer dep requires `viem ^2.45.0`; project pinned `viem: 2.39.0`
+- Fix: bumped `packages/nextjs/package.json` to `"viem": "^2.45.0"`, added root `resolutions: { "viem": "^2.45.0" }`
 
-**Pending:** `git push` from Mac to trigger the clean Vercel rebuild.
+**Round 4 — Account Kit API changes (Session 7, `813574a`):**
+- Root cause 1: `cookieToInitialState` moved from `@account-kit/react` → `@account-kit/core` in v4.84.1
+- Root cause 2: `AlchemyAccountProvider` now requires explicit `queryClient` prop (not just surrounding `QueryClientProvider`)
+- Fix: updated imports in `demo/layout.tsx`, added `queryClient={demoQueryClient}` in `DemoProviders.tsx`
+
+**Round 5 — Social auth type (Sessions 7, `5a552cb` + `007c4a1`):**
+- Root cause 1: auth type `"google"` no longer valid — must use `"social"` with `authProviderId`
+- Root cause 2: `{ type: "social" }` alone fails TypeScript — requires `authProviderId: "google"`
+- Fix: `{ type: "social" as const, authProviderId: "google" as const }`
+
+**Status:** Build `✓ Compiled successfully` confirmed in Round 5 log. Type-check is the remaining gate — latest fix (`007c4a1`) should clear it. Push pending from Mac.
+
+### Account Kit Integration — Session 6–7
+
+Alchemy Account Kit v4 integrated for embedded wallets + gasless UX on the demo.
+
+**Files created:**
+- `app/demo/_config/accountKit.ts` — `createConfig` with Base Sepolia, Alchemy transport, Gas Manager Policy, email + passkey + social(Google) auth sections, SSR cookie storage
+- `app/demo/_components/DemoProviders.tsx` — client component wrapping demo in separate `QueryClient` + `AlchemyAccountProvider` + `DemoProvider`
+- `app/demo/_components/LoginScreen.tsx` — CitySync-branded login screen, opens Account Kit auth modal on button tap
+
+**Files updated:**
+- `app/demo/layout.tsx` — server component reading cookie for SSR initial state via `cookieToInitialState` (from `@account-kit/core`)
+- `app/demo/page.tsx` — auth gate: shows `<LoginScreen />` if `!isConnected`, role chooser otherwise
+
+**Env vars (set in Vercel + local `.env.local`):**
+- `NEXT_PUBLIC_ALCHEMY_API_KEY` = the Alchemy API key (domain-restricted, safe for client)
+- `NEXT_PUBLIC_ALCHEMY_GAS_POLICY_ID` = Gas Manager policy ID
+
+**Key architectural notes:**
+- Separate `QueryClient` scoped to demo (`demoQueryClient`) — avoids conflicts with Scaffold-ETH's QueryClient
+- Same `demoQueryClient` passed to both `QueryClientProvider` and `AlchemyAccountProvider` (required by v4.84.1)
+- `cookieToInitialState` is in `@account-kit/core`, not `@account-kit/react`
+- `NEXT_PUBLIC_` env vars are client-visible by design — Alchemy keys are domain-restricted
 
 ### Smart Contracts (`packages/foundry/contracts/`)
 
@@ -153,12 +190,12 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 ## Pending / Next Steps
 
 ### High Priority
-- **`git push` from Mac** — 1 commit pending (`26c93bc`). Run `git push` from Mac terminal in the citysync repo to trigger clean Vercel rebuild.
-- **Verify Vercel Next.js deployment passes** — after pushing, confirm the `packages/nextjs` Vercel project shows a green build. The root causes are now fixed (see Session 6 below).
+- **Verify Vercel build passes** — latest fix `007c4a1` should clear the final TypeScript error. After pushing, confirm the Vercel project shows a green build and the demo at `city-sync.org` shows the CitySync login screen (not Scaffold-ETH).
+- **Rotate Alchemy API key** — the key was shared in chat during setup. Go to Alchemy dashboard → Apps → CitySync → Edit → Regenerate key. Update `NEXT_PUBLIC_ALCHEMY_API_KEY` in Vercel env vars and local `.env.local`.
+- **Set up `demo.city-sync.org` subdomain** — add CNAME record in GoDaddy: `demo` → `cname.vercel-dns.com`, add domain in Vercel project settings.
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
 - **Broadcast deployment to Base Sepolia** — contracts already deployed (addresses in `packages/foundry/deployments/84532.json`). Commit those deployment files: `git add packages/foundry/deployments/ packages/foundry/broadcast/ && git commit -m "chore: add Base Sepolia deployment artifacts"`
 - **Wire demo frontend to live contracts** — replace `mockData.ts` constants with real contract reads/writes. Swap DemoContext's reducer actions for wagmi hooks + contract calls. EIP712 oracle backend (simple Node.js signer service) needed for task verification flow.
-- **Alchemy Account Kit integration** — ERC-4337 Paymaster setup on Base Sepolia for gasless demo UX. Fund Paymaster from faucets: Alchemy, Coinbase, Superchain.
 - **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo.
 - **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
 - **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder so they're served by Vercel.
@@ -227,6 +264,10 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 | `.prettierrc.js` replaced with plain JSON `.prettierrc` | `require.resolve()` in `.prettierrc.js` silently fails in Vercel's build environment, causing Prettier to fall back to 80-char printWidth and generating hundreds of lint warnings |
 | `varsIgnorePattern: "^_"` added to ESLint no-unused-vars rule | Allows intentional stub variables (dead code kept for near-future wiring) to be prefixed with `_` without triggering build errors |
 | Base Sepolia demo contracts are already deployed | Addresses committed in `deployments/84532.json`; deployment files just need to be committed to git |
+| Separate `QueryClient` for Account Kit, passed explicitly as prop | Account Kit v4.84.1 requires `queryClient` prop on `AlchemyAccountProvider`; using a separate one avoids conflicts with Scaffold-ETH's QueryClient |
+| `cookieToInitialState` imported from `@account-kit/core`, not `@account-kit/react` | Moved packages in Account Kit v4.84.1 — core utilities live in the core package |
+| Social auth type requires `authProviderId: "google"` | Account Kit v4.84.1 requires explicit provider ID with `type: "social"`; bare `{ type: "social" }` fails TypeScript |
+| viem pinned at `^2.45.0` via both package.json and root resolutions | Account Kit v4.84.1 peer dep requires `^2.45.0`; root `resolutions` field forces all transitive deps to use a compatible version |
 
 ---
 
