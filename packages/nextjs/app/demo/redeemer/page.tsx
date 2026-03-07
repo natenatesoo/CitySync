@@ -264,9 +264,9 @@ function getRedeemerPanels(
     case "profile":
       return {
         left: (
-          <PanelCard label="Redeemer Organization" title="Where CITY Meets Real Value" accent={ACCENT}>
+          <PanelCard label="Redeemer Organization" title="Where CITYx Meets Real Value" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
-              Redeemer organizations close the loop between civic participation and tangible rewards. Citizens earn CITY
+              Redeemer organizations close the loop between civic participation and tangible rewards. Citizens earn CITYx
               by completing tasks — you let them spend it in your venue.
             </p>
             <p style={{ margin: 0 }}>
@@ -291,10 +291,10 @@ function getRedeemerPanels(
     case "redemptions":
       return {
         left: (
-          <PanelCard label="Redemption Network" title="Accept CITY, Give Back Value" accent={ACCENT}>
+          <PanelCard label="Redemption Network" title="Accept CITYx, Give Back Value" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
               Each offer you list becomes a redemption point on the network. Citizens scan a QR code at your venue, and
-              the system deducts CITY from their wallet automatically.
+              the system deducts CITYx from their wallet automatically.
             </p>
             <p style={{ margin: 0 }}>
               The queue shows pending redemptions awaiting your confirmation. Processing a redemption triggers an
@@ -310,7 +310,7 @@ function getRedeemerPanels(
               { label: "Pending Queue", value: redeemer.redemptionQueue.length },
               { label: "Total Processed", value: redeemer.processedRedemptions.length },
               {
-                label: "CITY Accepted",
+                label: "CITYx Accepted",
                 value: redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0).toLocaleString(),
               },
             ]}
@@ -365,7 +365,7 @@ function getRedeemerPanels(
             stats={[
               { label: "Total Processed", value: redeemer.processedRedemptions.length },
               {
-                label: "CITY Settled",
+                label: "CITYx Settled",
                 value: redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0).toLocaleString(),
               },
               { label: "Offer Categories", value: new Set(redeemer.offers.map(o => o.category)).size },
@@ -385,7 +385,7 @@ function getRedeemerPanels(
             </p>
             <p style={{ margin: 0 }}>
               MCE participation drives surges of motivated participants to your venue. Event rewards are funded from a
-              pooled treasury, so your CITY acceptance stays profitable.
+              pooled treasury, so your CITYx acceptance stays profitable.
             </p>
           </PanelCard>
         ),
@@ -642,7 +642,7 @@ function ProfileTab({
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Your Role as a Redeemer</div>
         <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          Accept CITY credits from civic participants in exchange for goods and services. Generate QR codes for
+          Accept CITYx credits from civic participants in exchange for goods and services. Generate QR codes for
           in-person redemption, process incoming requests from your queue, and optionally accept MCECredits for expanded
           offerings.
         </p>
@@ -702,14 +702,14 @@ function ProfileTab({
         <StatRow label="Active Offers" value={redeemer.offers.length} />
         <StatRow label="Pending Queue" value={redeemer.redemptionQueue.length} border />
         <StatRow label="Processed" value={redeemer.processedRedemptions.length} border />
-        <StatRow label="CITY Received" value={totalCityReceived} suffix="CITY" border accent />
+        <StatRow label="CITYx Received" value={totalCityReceived} suffix="CITYx" border accent />
       </div>
 
       {redeemer.offers.length === 0 && (
         <EmptyState
           emoji="🏪"
           title="No offers yet"
-          desc="Head to the Redeem tab to add your first offer and start accepting CITY credits."
+          desc="Head to the Redeem tab to add your first offer and start accepting CITYxx credits."
         />
       )}
     </div>
@@ -787,7 +787,7 @@ function RedemptionsTab({
             <EmptyState
               emoji="🏪"
               title="No offers yet"
-              desc="Add an offer to start accepting CITY credits from participants."
+              desc="Add an offer to start accepting CITYxx credits from participants."
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -834,7 +834,7 @@ function RedemptionsTab({
                         )}
                       </div>
                       <div style={{ fontSize: 11, color: DIMMED, marginBottom: 4 }}>{offer.description}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{offer.costCity} CITY</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{offer.costCity} CITYx</div>
                     </div>
                   </div>
 
@@ -921,7 +921,7 @@ function RedemptionsTab({
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>{r.costCity}</div>
-                      <div style={{ fontSize: 11, color: DIMMED }}>CITY</div>
+                      <div style={{ fontSize: 11, color: DIMMED }}>CITYx</div>
                     </div>
                   </div>
                   <button
@@ -966,7 +966,7 @@ function RedemptionsTab({
                       <div style={{ fontFamily: "monospace", fontSize: 11, color: DIMMED }}>{r.citizenAddress}</div>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: ACCENT, flexShrink: 0 }}>
-                      +{r.costCity} CITY
+                      +{r.costCity} CITYxx
                     </div>
                   </div>
                 ))}
@@ -1052,7 +1052,7 @@ function AddOfferSheet({
           <>
             <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Add an Offer</div>
             <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
-              Choose a preset to get started. You can adjust the CITY cost.
+              Choose a preset to get started. You can adjust the CITYx cost.
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {PRESET_OFFERS.map(preset => (
@@ -1097,7 +1097,7 @@ function AddOfferSheet({
                     </div>
                     <div style={{ fontSize: 11, color: DIMMED }}>{preset.desc}</div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0 }}>{preset.cost} CITY</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0 }}>{preset.cost} CITYx</div>
                 </button>
               ))}
             </div>
@@ -1131,7 +1131,7 @@ function AddOfferSheet({
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: MUTED, marginBottom: 8 }}>CITY Cost</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: MUTED, marginBottom: 8 }}>CITYx Cost</div>
               <input
                 type="number"
                 value={customCost}
@@ -1150,7 +1150,7 @@ function AddOfferSheet({
                 }}
                 placeholder={String(selected.cost)}
               />
-              <div style={{ fontSize: 11, color: DIMMED, marginTop: 6 }}>Default: {selected.cost} CITY</div>
+              <div style={{ fontSize: 11, color: DIMMED, marginTop: 6 }}>Default: {selected.cost} CITYx</div>
             </div>
 
             <button
@@ -1244,7 +1244,7 @@ function QRModal({ offerId, offers, onClose }: { offerId: string; offers: Redemp
           }}
         >
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 2 }}>Cost</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT }}>{offer.costCity} CITY</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT }}>{offer.costCity} CITYx</div>
         </div>
 
         {/* URI */}
@@ -1616,7 +1616,7 @@ function DashboardTab({ redeemer }: { redeemer: ReturnType<typeof useDemo>["stat
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
         <MetricCard label="Active Offers" value={redeemer.offers.length} color={ACCENT} />
         <MetricCard label="Processed" value={redeemer.processedRedemptions.length} color="#4169E1" />
-        <MetricCard label="CITY Received" value={totalCity} color="#DD9E33" />
+        <MetricCard label="CITYx Received" value={totalCity} color="#DD9E33" />
         <MetricCard label="Pending Queue" value={redeemer.redemptionQueue.length} color="#a78bfa" />
       </div>
 
@@ -1653,10 +1653,10 @@ function DashboardTab({ redeemer }: { redeemer: ReturnType<typeof useDemo>["stat
       <div style={{ ...surfaceCard, display: "flex", flexDirection: "column", gap: 14 }}>
         {(
           [
-            ["1️⃣", "Create offers", "Add offers from the Redemptions tab with your CITY pricing."],
+            ["1️⃣", "Create offers", "Add offers from the Redemptions tab with your CITYx pricing."],
             ["2️⃣", "Show QR code", "Participants scan your QR in person to initiate a redemption."],
             ["3️⃣", "Confirm in queue", "Redemption request appears in your queue — review and process."],
-            ["4️⃣", "Credits arrive", "CITY is burned from the citizen's wallet and confirmed on-chain."],
+            ["4️⃣", "Credits arrive", "CITYx is burned from the citizen's wallet and confirmed on-chain."],
           ] as [string, string, string][]
         ).map(([num, title, desc]) => (
           <div key={title} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>

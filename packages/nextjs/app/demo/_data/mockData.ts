@@ -11,7 +11,7 @@ export interface Task {
   title: string;
   description: string;
   category: TaskCategory;
-  credits: number; // CITY credits
+  credits: number; // CITYx credits
   voteTokens: number; // VOTE tokens (1:1 with CITY for regular tasks)
   estimatedTime: string;
   location: string;
@@ -23,6 +23,10 @@ export interface Task {
   mceId?: string;
   isMCE?: boolean;
   isOnboarding?: boolean; // claimable only by new members (zero balance)
+  taskDate: string;        // specific date/schedule text
+  successCriteria: string; // what success looks like
+  creditRatePerHr: number; // CITYx per hour rate
+  credentials: string;     // required credentials or "None"
 }
 
 export interface MCEProposal {
@@ -110,54 +114,66 @@ export const MOCK_TASKS: Task[] = [
   // ── Onboarding (visible to all, claimable only by new members) ────────────
   {
     id: "task-onboarding-1",
-    title: "Complete Your Citizen Profile",
+    title: "Account Registration & Identity Verification",
     description:
-      "Add your name and review your wallet address. This takes 2 minutes and gets you oriented with the CitySync platform before claiming your first civic task.",
+      "Visit a certified City/Sync registration kiosk to verify your identity in person and activate your on-chain account. A staff member will confirm your ID and whitelist your wallet address.",
     category: "Onboarding",
     credits: 10,
     voteTokens: 10,
-    estimatedTime: "2 min",
-    location: "In-app",
+    estimatedTime: "15 min",
+    location: "City Hall — Civic Services Desk, Room 101",
     slots: 9999,
     slotsRemaining: 9999,
     issuerName: "Civic Network",
     issuerId: "issuer-3",
-    tags: ["welcome", "setup"],
+    tags: ["welcome", "setup", "in-person"],
     isOnboarding: true,
+    taskDate: "Mon & Wed, 9:00 AM – 4:00 PM (walk-in)",
+    successCriteria: "Staff confirms your ID and marks your account as verified in the system.",
+    creditRatePerHr: 40,
+    credentials: "Valid government-issued photo ID",
   },
   {
     id: "task-onboarding-2",
-    title: "Attend a Neighborhood Welcome Session",
+    title: "New Member In-Person Orientation",
     description:
-      "Join a 30-minute virtual orientation to learn how CitySync works, meet local Issuer organizations, and discover civic tasks in your area. Held every Tuesday at 6pm.",
+      "Attend a 45-minute in-person orientation at the Civic Center. Meet your local Issuer organizations, learn how to claim and complete tasks, and ask questions about how the protocol works.",
     category: "Onboarding",
     credits: 25,
     voteTokens: 25,
-    estimatedTime: "30 min",
-    location: "Virtual (Zoom link provided)",
+    estimatedTime: "45 min",
+    location: "Civic Center — Main Hall, 250 Civic Ave",
     slots: 9999,
     slotsRemaining: 9999,
     issuerName: "Metro Coalition",
     issuerId: "issuer-2",
-    tags: ["welcome", "orientation", "virtual"],
+    tags: ["welcome", "orientation", "in-person"],
     isOnboarding: true,
+    taskDate: "Tue & Thu, 6:00 PM – 6:45 PM",
+    successCriteria: "Attend the full session and sign in with the organizer at the end.",
+    creditRatePerHr: 33,
+    credentials: "None",
   },
   {
     id: "task-onboarding-3",
-    title: "First Civic Walk — Submit a Neighborhood Report",
+    title: "First Civic Walk — Neighborhood Photo Report",
     description:
-      "Take a 20-minute walk in your neighborhood and submit one photo-report of a civic issue: a pothole, overgrown sidewalk, broken park bench, etc. Uses the in-app camera.",
+      "Walk a designated neighborhood route and photograph at least 3 civic issues (potholes, broken fixtures, overgrown sidewalks). Submit geo-tagged photos using the City/Sync app.",
     category: "Onboarding",
     credits: 20,
     voteTokens: 20,
     estimatedTime: "20 min",
-    location: "Your neighborhood",
+    location: "Downtown Civic District — meet at Main St. & 1st Ave",
     slots: 9999,
     slotsRemaining: 9999,
     issuerName: "Metro Coalition",
     issuerId: "issuer-2",
-    tags: ["welcome", "outdoors", "quick"],
+    tags: ["welcome", "outdoors", "in-person"],
     isOnboarding: true,
+    taskDate: "Every Saturday, 8:00 AM – 12:00 PM (self-paced)",
+    successCriteria: "Submit at least 3 geo-tagged photos of civic issues via the in-app report form.",
+    creditRatePerHr: 60,
+    credentials: "None (smartphone with City/Sync app required)",
   },
 
   // ── Environment ────────────────────────────────────────────────────────────
@@ -176,6 +192,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Green Foundation",
     issuerId: "issuer-1",
     tags: ["outdoors", "cleanup", "nature"],
+    taskDate: "Saturday, March 14, 2026 — 9:00 AM – 12:00 PM",
+    successCriteria: "Remove 10+ bags of debris from your assigned 100m trail section.",
+    creditRatePerHr: 25,
+    credentials: "None",
   },
   {
     id: "task-2",
@@ -192,6 +212,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Green Foundation",
     issuerId: "issuer-1",
     tags: ["gardening", "food", "community"],
+    taskDate: "Sunday, March 15, 2026 — 10:00 AM – 12:30 PM",
+    successCriteria: "4 raised beds planted and irrigated, confirmed by a Green Foundation staff member.",
+    creditRatePerHr: 24,
+    credentials: "None",
   },
   {
     id: "task-3",
@@ -208,6 +232,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Civic Network",
     issuerId: "issuer-3",
     tags: ["education", "energy", "outreach"],
+    taskDate: "Saturday, March 21, 2026 — 10:00 AM – 2:00 PM",
+    successCriteria: "Staff the booth for the full 4-hour shift and distribute 20+ informational brochures.",
+    creditRatePerHr: 13,
+    credentials: "None (brief training provided the day before)",
   },
 
   // ── Education ──────────────────────────────────────────────────────────────
@@ -226,6 +254,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Metro Coalition",
     issuerId: "issuer-2",
     tags: ["STEM", "youth", "weekly"],
+    taskDate: "Every Tuesday starting March 17, 2026 — 3:30 PM – 5:30 PM",
+    successCriteria: "Lead students through the weekly robotics module and maintain the session sign-in sheet.",
+    creditRatePerHr: 45,
+    credentials: "Background check required (processed through Metro Coalition)",
   },
   {
     id: "task-5",
@@ -242,6 +274,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Civic Network",
     issuerId: "issuer-3",
     tags: ["seniors", "digital", "library"],
+    taskDate: "Wednesday, March 18, 2026 — 2:00 PM – 4:00 PM",
+    successCriteria: "Complete all 4 workshop modules; participants can independently video call by end of session.",
+    creditRatePerHr: 28,
+    credentials: "None",
   },
 
   // ── Community ──────────────────────────────────────────────────────────────
@@ -260,6 +296,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Metro Coalition",
     issuerId: "issuer-2",
     tags: ["leadership", "ongoing", "civic"],
+    taskDate: "3-month commitment starting April 1, 2026 — monthly meeting 2nd Tuesday at 7:00 PM",
+    successCriteria: "Attend all 3 monthly meetings and distribute city newsletters to every household on your block.",
+    creditRatePerHr: 8,
+    credentials: "None",
   },
   {
     id: "task-7",
@@ -276,6 +316,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Civic Network",
     issuerId: "issuer-3",
     tags: ["outreach", "welcoming", "flexible"],
+    taskDate: "Flexible — coordinate scheduling with City/Sync admin",
+    successCriteria: "Brief at least 1 new resident household and submit the post-visit form via the app.",
+    creditRatePerHr: 27,
+    credentials: "None",
   },
 
   // ── Health ─────────────────────────────────────────────────────────────────
@@ -294,6 +338,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Green Foundation",
     issuerId: "issuer-1",
     tags: ["health", "screening", "community"],
+    taskDate: "Saturday, March 28, 2026 — 8:00 AM – 1:00 PM",
+    successCriteria: "Staff your assigned screening station for the full 5-hour shift and assist 20+ residents.",
+    creditRatePerHr: 13,
+    credentials: "None (basic first aid/CPR certification preferred but not required)",
   },
 
   // ── Infrastructure ─────────────────────────────────────────────────────────
@@ -312,6 +360,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Metro Coalition",
     issuerId: "issuer-2",
     tags: ["infrastructure", "mobile", "quick"],
+    taskDate: "Flexible — any weekday before March 31, 2026",
+    successCriteria: "Submit GPS-tagged photos for all damaged sidewalk sections and potholes on your assigned block.",
+    creditRatePerHr: 23,
+    credentials: "None (City/Sync mobile app required)",
   },
   {
     id: "task-10",
@@ -328,6 +380,10 @@ export const MOCK_TASKS: Task[] = [
     issuerName: "Green Foundation",
     issuerId: "issuer-1",
     tags: ["infrastructure", "seasonal", "outdoor"],
+    taskDate: "March 9 – 20, 2026 — any weekday before rainy season begins",
+    successCriteria: "Complete inspection form for every storm drain on your assigned street route.",
+    creditRatePerHr: 23,
+    credentials: "None",
   },
 
   // ── MCE-linked tasks ───────────────────────────────────────────────────────
@@ -348,6 +404,10 @@ export const MOCK_TASKS: Task[] = [
     tags: ["trees", "data", "MCE"],
     mceId: "mce-1",
     isMCE: true,
+    taskDate: "Saturday March 22 or Sunday March 23, 2026 — 9:00 AM – 12:00 PM",
+    successCriteria: "Complete the canopy measurement protocol for your assigned quadrant using the City/Sync app.",
+    creditRatePerHr: 27,
+    credentials: "None (in-app protocol training takes ~10 min)",
   },
   {
     id: "task-mce-2",
@@ -366,6 +426,10 @@ export const MOCK_TASKS: Task[] = [
     tags: ["compost", "delivery", "MCE"],
     mceId: "mce-2",
     isMCE: true,
+    taskDate: "Saturday, March 14, 2026 — 10:00 AM – 12:00 PM",
+    successCriteria: "Deliver to all 10 assigned households and collect a signature on the delivery form for each.",
+    creditRatePerHr: 35,
+    credentials: "None (vehicle or cargo bike required for delivery)",
   },
 ];
 

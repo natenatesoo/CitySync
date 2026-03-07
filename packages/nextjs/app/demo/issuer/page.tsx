@@ -197,7 +197,7 @@ function getIssuerPanels(
           <PanelCard label="Issuer Organization" title="Your Issuing Authority" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
               As a certified Issuer, you design and deploy community tasks. Your wallet signature is the trust anchor —
-              when you verify a completion, CITY credits and VOTE tokens are minted on-chain with no intermediary.
+              when you verify a completion, CITYx credits and VOTE tokens are minted on-chain with no intermediary.
             </p>
             <p style={{ margin: 0 }}>
               Tasks you post appear to all participants in the Explore tab. You control slot counts and choose from the
@@ -210,7 +210,7 @@ function getIssuerPanels(
             accent={ACCENT}
             stats={[
               { label: "Tasks Created", value: issuer.totalTasksIssued },
-              { label: "Credits Issued", value: `${issuer.totalCreditsIssued} CITY` },
+              { label: "Credits Issued", value: `${issuer.totalCreditsIssued} CITYx` },
               { label: "Pending Verifications", value: totalPending },
               { label: "Catalog Tasks Available", value: catalogSize },
             ]}
@@ -291,7 +291,7 @@ function getIssuerPanels(
             accent={ACCENT}
             stats={[
               { label: "Tasks Posted", value: issuer.totalTasksIssued },
-              { label: "CITY Issued", value: issuer.totalCreditsIssued },
+              { label: "CITYx Issued", value: issuer.totalCreditsIssued },
               { label: "Total Verified", value: totalVerified },
               { label: "Pending Now", value: totalPending },
             ]}
@@ -601,8 +601,8 @@ function ProfileTab({
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Your Role as an Issuer</div>
         <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          You post volunteer tasks, set CITY and VOTE credit rewards, and verify completions from your wallet. When you
-          verify a completion, CITY credits and VOTE tokens are minted to the participant on-chain.
+          You post volunteer tasks, set CITYx and VOTE credit rewards, and verify completions from your wallet. When you
+          verify a completion, CITYx credits and VOTE tokens are minted to the participant on-chain.
         </p>
       </div>
 
@@ -610,7 +610,7 @@ function ProfileTab({
       <SectionLabel text="Issuance Stats" />
       <div style={{ ...surfaceCard, padding: 0, marginBottom: 20, overflow: "hidden" }}>
         <StatRow label="Tasks Created" value={issuer.totalTasksIssued} />
-        <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITY" border />
+        <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border />
         <StatRow label="Pending Verifications" value={totalPending} border accent={totalPending > 0} />
       </div>
 
@@ -636,7 +636,7 @@ function ProfileTab({
                     {t.verifiedCount} verified · {t.pendingCompletions.length} pending
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{t.credits} CITY</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
               </div>
             ))}
           </div>
@@ -746,7 +746,7 @@ function TasksTab({
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITY</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
                       <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
                     </div>
                   </div>
@@ -805,7 +805,7 @@ function TasksTab({
                   >
                     <span>Reward on verification</span>
                     <span>
-                      <span style={{ color: ACCENT }}>{task.credits} CITY</span>
+                      <span style={{ color: ACCENT }}>{task.credits} CITYx</span>
                       {" + "}
                       <span style={{ color: "#4169E1" }}>{task.voteTokens} VOTE</span>
                     </span>
@@ -913,7 +913,7 @@ function CreateTaskSheet({ onClose, onCreate }: { onClose: () => void; onCreate:
                     </div>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
-                    {task.credits} CITY
+                    {task.credits} CITYx
                   </div>
                 </button>
               ))}
@@ -958,7 +958,7 @@ function CreateTaskSheet({ onClose, onCreate }: { onClose: () => void; onCreate:
             >
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT }}>{selected.credits}</div>
-                <div style={{ fontSize: 11, color: MUTED }}>CITY per completion</div>
+                <div style={{ fontSize: 11, color: MUTED }}>CITYx per completion</div>
               </div>
               <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.1)" }} />
               <div style={{ textAlign: "center" }}>
@@ -1301,7 +1301,7 @@ function DashboardTab({ issuer }: { issuer: ReturnType<typeof useDemo>["state"][
       <SectionLabel text="Performance" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
         <MetricCard label="Tasks Posted" value={issuer.totalTasksIssued} color={ACCENT} />
-        <MetricCard label="CITY Issued" value={issuer.totalCreditsIssued} color="#4169E1" />
+        <MetricCard label="CITYx Issued" value={issuer.totalCreditsIssued} color="#4169E1" />
         <MetricCard label="Verifications" value={totalVerified} color="#34eeb6" />
         <MetricCard label="Completion Rate" value={`${completionRate}%`} color="#a78bfa" />
       </div>
@@ -1346,7 +1346,7 @@ function DashboardTab({ issuer }: { issuer: ReturnType<typeof useDemo>["state"][
             ["1️⃣", "Post a task", "Choose from the admin-curated catalog and publish it to participants."],
             ["2️⃣", "Citizens claim", "Participants claim a slot and complete the task in the real world."],
             ["3️⃣", "You verify", "Review completion evidence and click Verify — this triggers on-chain minting."],
-            ["4️⃣", "Credits minted", "CITY and VOTE tokens land in the citizen's wallet automatically."],
+            ["4️⃣", "Credits minted", "CITYx and VOTE tokens land in the citizen's wallet automatically."],
           ] as [string, string, string][]
         ).map(([num, title, desc]) => (
           <div key={title} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>

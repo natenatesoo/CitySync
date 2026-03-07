@@ -98,34 +98,26 @@ function getParticipantPanels(
     case "profile":
       return {
         left: (
-          <PanelCard label="Civic Participant" title="Your Civic Wallet" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Every task you complete earns CITY credits and VOTE tokens — minted directly to your address on Base. No
-              intermediary. The issuing organization&apos;s verification triggers on-chain transfer.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {(
-                [
-                  ["🏙️", "CITY credits", "spendable at partner venues"],
-                  ["🗳️", "VOTE tokens", "governance weight in MCE votes"],
-                  ["⚡", "MCECredits", "bonus rewards from city-wide events"],
-                ] as [string, string, string][]
-              ).map(([icon, term, desc]) => (
-                <div key={term} style={{ display: "flex", gap: 8 }}>
-                  <span>{icon}</span>
-                  <span>
-                    <strong style={{ color: "rgba(255,255,255,0.75)" }}>{term}</strong> — {desc}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </PanelCard>
+          <>
+            <PanelCard label="Account Login" title="Welcome to City/Sync" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                When you first log in with your email, you are provisioned an on-chain account. This account serves as your
+                wallet and holds all of your City/Sync tokens — CITYx, VOTE, and special MCE credits.
+              </p>
+            </PanelCard>
+            <PanelCard label="My Profile" title="Your City/Sync Profile" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                The Profile tab lets you edit your City/Sync identity, track your token balances, and view your completed
+                tasks and voting history.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
             accent={ACCENT}
             stats={[
-              { label: "CITY Balance", value: participant.cityBalance },
+              { label: "CITYx Balance", value: participant.cityBalance },
               { label: "VOTE Balance", value: participant.voteBalance },
               { label: "Tasks Completed", value: participant.completedTasks.length },
               { label: "Active Issuers", value: uniqueIssuers },
@@ -137,16 +129,30 @@ function getParticipantPanels(
     case "explore":
       return {
         left: (
-          <PanelCard label="Task Catalog" title="Claim & Complete" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Tasks are reviewed by the city administration and issued by certified organizations. Each has a fixed slot
-              count, reward, and a verification requirement — credits are released only after the issuing org confirms
-              your work.
-            </p>
-            <p style={{ margin: 0 }}>
-              Onboarding tasks have unlimited slots and are always available for new participants with a zero balance.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="Task Catalog" title="Onboarding Tasks" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                All new Civic Participants must complete an in-person onboarding task to activate their account. All
+                certified Issuers offer a continuous set of onboarding tasks. The initial task is how the protocol ensures
+                real community membership. Upon completion, your account is whitelisted and can interact with all City/Sync
+                smart contracts. Once this is done, you are free to claim any available tasks from the Task Catalog.
+              </p>
+            </PanelCard>
+            <PanelCard label="Task Management" title="Earning CITYx Credits" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                When you claim a task, you are reserving it for execution. Citizens can claim a maximum of 2 tasks at any
+                given time. Once you claim a task, it will appear in the My Tasks tab. After completing the task, you can
+                submit proof for verification. Once verified, you will receive your CITYx and VOTE tokens.
+              </p>
+            </PanelCard>
+            <PanelCard label="DEMO Limitations" title="Verification" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                Once a task is completed, the issuing organization is responsible for reviewing and verifying your work.
+                Once approved, your CITYx and VOTE will be distributed. For the purpose of this DEMO, verification is
+                automatically approved.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
@@ -155,7 +161,7 @@ function getParticipantPanels(
               { label: "Open Tasks", value: openTasks.length },
               { label: "Claimed by You", value: participant.claimedTaskIds.length },
               { label: "Issuing Orgs", value: uniqueIssuers },
-              { label: "CITY Available", value: `${totalCreditsAvailable}+` },
+              { label: "CITYx Available", value: `${totalCreditsAvailable}+` },
             ]}
           />
         ),
@@ -221,7 +227,7 @@ function getParticipantPanels(
         left: (
           <PanelCard label="Redemption" title="Close the Loop" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
-              CITY credits were minted because you did real civic work. Spend them at partner venues — the credit burns
+              CITYx credits were minted because you did real civic work. Spend them at partner venues — the credit burns
               on-chain, and the venue receives confirmation instantly.
             </p>
             <p style={{ margin: 0 }}>
@@ -236,7 +242,7 @@ function getParticipantPanels(
             stats={[
               { label: "Partner Venues", value: uniqueRedeemers },
               { label: "Offer Categories", value: 5 },
-              { label: "Your CITY", value: participant.cityBalance },
+              { label: "Your CITYx", value: participant.cityBalance },
               { label: "Past Redemptions", value: pastRedemptions.length },
             ]}
           />
@@ -538,6 +544,10 @@ function VerifyOverlay() {
 // ─── Execute Task Modal ───────────────────────────────────────────────────────
 
 function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () => void; onClose: () => void }) {
+  const [notes, setNotes] = React.useState("");
+  const [fileName, setFileName] = React.useState<string | null>(null);
+  const fileRef = React.useRef<HTMLInputElement>(null);
+
   return (
     <div
       style={{
@@ -558,10 +568,12 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
           padding: "24px 20px 32px",
+          maxHeight: "85vh",
+          overflowY: "auto",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Complete Task</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Submit for Verification</span>
           <button
             onClick={onClose}
             style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
@@ -597,7 +609,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
             }}
           >
             <div style={{ fontSize: 18, fontWeight: 700, color: TEAL }}>+{task.credits}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>CITY</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>CITYx</div>
           </div>
           <div
             style={{
@@ -629,6 +641,71 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
           )}
         </div>
 
+        {/* File upload */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
+            Proof of Completion (optional)
+          </div>
+          <button
+            onClick={() => fileRef.current?.click()}
+            style={{
+              width: "100%",
+              padding: "12px 0",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px dashed rgba(255,255,255,0.18)",
+              borderRadius: 10,
+              color: fileName ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.4)",
+              fontSize: 13,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            {fileName ?? "Upload photo or document"}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx"
+            style={{ display: "none" }}
+            onChange={e => setFileName(e.target.files?.[0]?.name ?? null)}
+          />
+        </div>
+
+        {/* Notes */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
+            Notes to Issuer (optional)
+          </div>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Describe how you completed the task, any relevant context, or questions for the issuer..."
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10,
+              color: "white",
+              fontSize: 13,
+              lineHeight: 1.5,
+              resize: "none",
+              outline: "none",
+              boxSizing: "border-box",
+              fontFamily: "inherit",
+            }}
+          />
+        </div>
+
         <div
           style={{
             fontSize: 12,
@@ -640,8 +717,8 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
             lineHeight: 1.5,
           }}
         >
-          In production, task completion is verified by the Issuer before credits are minted. In this demo, verification
-          is automated — a 12-second countdown simulates on-chain activity.
+          In production, the issuer reviews your submission before minting credits. In this DEMO, verification is
+          automatically approved — a 12-second countdown simulates on-chain activity.
         </div>
 
         <button
@@ -658,7 +735,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
             cursor: "pointer",
           }}
         >
-          Confirm &amp; Verify
+          Submit Proof for Verification
         </button>
       </div>
     </div>
@@ -979,7 +1056,7 @@ function ProfileTab({ onTabChange }: { onTabChange: (tab: string) => void }) {
         {/* Balances */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           {[
-            { label: "CITY", value: p.cityBalance, color: TEAL },
+            { label: "CITYx", value: p.cityBalance, color: TEAL },
             { label: "VOTE", value: p.voteBalance, color: ACCENT },
             { label: "MCE", value: p.mceBalance, color: GOLD },
           ].map(b => (
@@ -1047,7 +1124,7 @@ function ProfileTab({ onTabChange }: { onTabChange: (tab: string) => void }) {
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>+{t.credits} CITY</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>+{t.credits} CITYx</div>
                 <div style={{ fontSize: 11, color: `${ACCENT}cc`, marginTop: 1 }}>+{t.voteTokens} VOTE</div>
               </div>
             </div>
@@ -1202,7 +1279,7 @@ function TaskCard({
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{task.credits}</div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>CITY</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>CITYx</div>
         </div>
       </div>
 
@@ -1222,9 +1299,38 @@ function TaskCard({
       >
         {expanded ? task.description : task.description.slice(0, 90) + (task.description.length > 90 ? "…" : "")}
         {task.description.length > 90 && (
-          <span style={{ color: ACCENT, marginLeft: 4 }}>{expanded ? " less" : " more"}</span>
+          <span style={{ color: ACCENT, marginLeft: 4 }}>{expanded ? " see less" : " see more"}</span>
         )}
       </div>
+
+      {expanded && (
+        <div
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 10,
+            padding: "12px 14px",
+            marginBottom: 12,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          {[
+            { label: "📅 Date / Schedule", value: task.taskDate },
+            { label: "✅ Success Looks Like", value: task.successCriteria },
+            { label: "💰 Credit Rate", value: `${task.creditRatePerHr} CITYx / hr` },
+            { label: "📋 Credentials", value: task.credentials },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.35)", marginBottom: 3 }}>
+                {label}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {locked && (
         <div
@@ -1241,7 +1347,9 @@ function TaskCard({
           }}
         >
           <IconLock />
-          Available to new members only (zero balance &amp; completions required)
+          {task.isOnboarding
+            ? "Available to new members only — complete your onboarding task first to access the full catalog."
+            : "Complete your onboarding task first to unlock the full task catalog."}
         </div>
       )}
 
@@ -1436,7 +1544,7 @@ function ExploreTab() {
               key={task.id}
               task={task}
               isClaimed={p.claimedTaskIds.includes(task.id)}
-              locked={!!(task.isOnboarding && !isNewMember)}
+              locked={task.isOnboarding ? !isNewMember : isNewMember}
               showClaimButton
               onClaim={() => handleClaim(task)}
               onExecute={() => setExecuteTask(task)}
@@ -1946,7 +2054,7 @@ function VoteTab() {
 // REDEEM TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
-type CreditFilter = "All" | "CITY" | "MCE";
+type CreditFilter = "All" | "CITYx" | "MCE";
 
 function RedeemTab() {
   const { state, redeemOffer } = useDemo();
@@ -1957,7 +2065,7 @@ function RedeemTab() {
 
   const filtered = state.offers.filter(o => {
     if (filter === "MCE") return o.mceOnly;
-    if (filter === "CITY") return !o.mceOnly;
+    if (filter === "CITYx") return !o.mceOnly;
     return true;
   });
 
@@ -1975,7 +2083,7 @@ function RedeemTab() {
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>{p.cityBalance}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITY Available</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITYx Available</div>
         </div>
         <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{p.mceBalance}</div>
@@ -1985,7 +2093,7 @@ function RedeemTab() {
 
       {/* Credit filter pills */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {(["All", "CITY", "MCE"] as CreditFilter[]).map(f => (
+        {(["All", "CITYx", "MCE"] as CreditFilter[]).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -1996,12 +2104,12 @@ function RedeemTab() {
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              background: filter === f ? (f === "MCE" ? GOLD : f === "CITY" ? TEAL : ACCENT) : "rgba(255,255,255,0.06)",
+              background: filter === f ? (f === "MCE" ? GOLD : f === "CITYx" ? TEAL : ACCENT) : "rgba(255,255,255,0.06)",
               color: filter === f ? "#15151E" : "rgba(255,255,255,0.55)",
               transition: "all 0.15s",
             }}
           >
-            {f === "All" ? "All Offers" : f === "CITY" ? "CITY Only" : "MCE Only"}
+            {f === "All" ? "All Offers" : f === "CITYx" ? "CITYx Only" : "MCE Only"}
           </button>
         ))}
       </div>
@@ -2049,7 +2157,7 @@ function RedeemTab() {
                     <div style={{ fontSize: 16, fontWeight: 700, color: offer.mceOnly ? GOLD : TEAL }}>
                       {offer.costCity}
                     </div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{offer.mceOnly ? "MCE" : "CITY"}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{offer.mceOnly ? "MCE" : "CITYx"}</div>
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.45, marginBottom: 10 }}>

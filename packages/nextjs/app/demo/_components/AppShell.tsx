@@ -52,27 +52,51 @@ export default function AppShell({
       >
         {/* Header */}
         <header
-          className="flex shrink-0 items-center justify-between px-5"
           style={{
-            paddingTop: "max(12px, env(safe-area-inset-top))",
-            paddingBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "max(12px, env(safe-area-inset-top)) 16px 12px",
             borderBottom: "1px solid rgba(255,255,255,0.07)",
             background: "#15151E",
+            flexShrink: 0,
           }}
         >
-          <Link href="/demo" className="flex items-center gap-2">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold"
-              style={{ background: accentColor, color: "#15151E" }}
-            >
-              CS
-            </div>
-            <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
-              {title}
-            </span>
+          {/* Left: Switch Roles */}
+          <Link
+            href="/demo"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              color: "rgba(255,255,255,0.55)",
+              textDecoration: "none",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.01em" }}>Switch Roles</span>
           </Link>
 
-          {/* Wallet button */}
+          {/* Center: // logo */}
+          <div
+            style={{
+              background: accentColor,
+              borderRadius: 10,
+              padding: "5px 10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg viewBox="47 2 30 32" width="20" height="22" aria-hidden="true">
+              <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#15151E" strokeWidth="2" />
+              <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="rgba(21,21,30,0.5)" strokeWidth="2" />
+            </svg>
+          </div>
+
+          {/* Right: Wallet button */}
           <button
             onClick={() => setWalletOpen(true)}
             className="flex items-center gap-2 rounded-xl px-3 py-1.5 transition"
