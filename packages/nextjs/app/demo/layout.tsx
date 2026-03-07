@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { cookieToInitialState } from "@account-kit/react";
+import { cookieToInitialState } from "@account-kit/core";
 import { accountKitConfig } from "./_config/accountKit";
 import { DemoProviders } from "./_components/DemoProviders";
 

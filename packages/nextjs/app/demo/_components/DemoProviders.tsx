@@ -20,7 +20,7 @@ export function DemoProviders({
 }) {
   return (
     <QueryClientProvider client={demoQueryClient}>
-      <AlchemyAccountProvider config={accountKitConfig} initialState={initialState}>
+      <AlchemyAccountProvider config={accountKitConfig} initialState={initialState} queryClient={demoQueryClient}>
         <DemoProvider>{children}</DemoProvider>
       </AlchemyAccountProvider>
     </QueryClientProvider>
