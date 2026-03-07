@@ -200,6 +200,213 @@ function SuccessToast({ message, onDone }: { message: string; onDone: () => void
   );
 }
 
+// ─── Panel helpers ────────────────────────────────────────────────────────────
+
+function PanelCard({
+  label,
+  title,
+  accent,
+  children,
+}: {
+  label: string;
+  title: string;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: accent, textTransform: "uppercase" }}>
+        {label}
+      </p>
+      <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 700, color: "#fff" }}>{title}</h3>
+      <div style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(255,255,255,0.55)" }}>{children}</div>
+    </div>
+  );
+}
+
+function PanelStats({ stats, accent }: { stats: { label: string; value: string | number }[]; accent: string }) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 12,
+        padding: "14px 16px",
+        marginTop: 16,
+      }}
+    >
+      {stats.map((s, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "7px 0",
+            borderBottom: i < stats.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+          }}
+        >
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{s.label}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: accent }}>{s.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function getRedeemerPanels(
+  activeTab: string,
+  state: ReturnType<typeof useDemo>["state"],
+): { left: React.ReactNode; right: React.ReactNode } {
+  const { redeemer, mces, posts } = state;
+
+  switch (activeTab) {
+    case "profile":
+      return {
+        left: (
+          <PanelCard label="Redeemer Organization" title="Where CITY Meets Real Value" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Redeemer organizations close the loop between civic participation and tangible rewards. Citizens earn CITY
+              by completing tasks — you let them spend it in your venue.
+            </p>
+            <p style={{ margin: 0 }}>
+              Registering your organization unlocks access to the full redemption network, MCE rewards, and on-chain
+              proof of community engagement.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Active Offers", value: redeemer.offers.length },
+              { label: "Processed Redemptions", value: redeemer.processedRedemptions.length },
+              { label: "Queue Length", value: redeemer.redemptionQueue.length },
+              { label: "MCE Partner", value: redeemer.acceptsMCE ? "Yes ✓" : "No" },
+            ]}
+          />
+        ),
+      };
+
+    case "redemptions":
+      return {
+        left: (
+          <PanelCard label="Redemption Network" title="Accept CITY, Give Back Value" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Each offer you list becomes a redemption point on the network. Citizens scan a QR code at your venue, and
+              the system deducts CITY from their wallet automatically.
+            </p>
+            <p style={{ margin: 0 }}>
+              The queue shows pending redemptions awaiting your confirmation. Processing a redemption triggers an
+              on-chain settlement, instantly verifiable by anyone.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Active Offers", value: redeemer.offers.length },
+              { label: "Pending Queue", value: redeemer.redemptionQueue.length },
+              { label: "Total Processed", value: redeemer.processedRedemptions.length },
+              {
+                label: "CITY Accepted",
+                value: redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0).toLocaleString(),
+              },
+            ]}
+          />
+        ),
+      };
+
+    case "mycity":
+      return {
+        left: (
+          <PanelCard label="City Feed" title="Connect with Your Community" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Post promotions, events, and announcements to the city-wide feed. Your posts reach every participant and
+              organization in the network.
+            </p>
+            <p style={{ margin: 0 }}>
+              Use the feed to announce limited-time offers, new redemption categories, or upcoming MCE events where your
+              venue participates as a reward partner.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Total Posts", value: posts.length },
+              { label: "Active Orgs", value: 3 },
+              { label: "Your Offers Listed", value: redeemer.offers.length },
+              { label: "Categories", value: new Set(redeemer.offers.map(o => o.category)).size },
+            ]}
+          />
+        ),
+      };
+
+    case "dashboard":
+      return {
+        left: (
+          <PanelCard label="Impact Dashboard" title="Your Redemption Record" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Every redemption your organization processes is permanently settled on Base. Your dashboard reflects
+              real-time community impact — no invoices, no chargebacks.
+            </p>
+            <p style={{ margin: 0 }}>
+              Participants trust venues with strong redemption records. A growing history signals that your offers are
+              popular and your settlement is reliable.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Total Processed", value: redeemer.processedRedemptions.length },
+              {
+                label: "CITY Settled",
+                value: redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0).toLocaleString(),
+              },
+              { label: "Offer Categories", value: new Set(redeemer.offers.map(o => o.category)).size },
+              { label: "Queue Pending", value: redeemer.redemptionQueue.length },
+            ]}
+          />
+        ),
+      };
+
+    case "mces":
+      return {
+        left: (
+          <PanelCard label="MCE Program" title="Amplify with Mass Events" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Mass Coordination Events are city-wide mobilizations voted on by the community. Opting in makes your
+              venue a featured reward destination during the event.
+            </p>
+            <p style={{ margin: 0 }}>
+              MCE participation drives surges of motivated participants to your venue. Event rewards are funded from a
+              pooled treasury, so your CITY acceptance stays profitable.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Total MCEs", value: mces.length },
+              { label: "Voting Now", value: mces.filter(m => m.status === "Voting").length },
+              { label: "Active Events", value: mces.filter(m => m.status === "Active").length },
+              { label: "MCE Partner", value: redeemer.acceptsMCE ? "Opted In ✓" : "Opted Out" },
+            ]}
+          />
+        ),
+      };
+
+    default:
+      return { left: null, right: null };
+  }
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RedeemerApp() {
@@ -221,6 +428,7 @@ export default function RedeemerApp() {
 
   const { redeemer, mces } = state;
   const allPosts = [...localPosts, ...state.posts];
+  const { left: leftPanel, right: rightPanel } = getRedeemerPanels(activeTab, state);
 
   React.useEffect(() => {
     setRole("redeemer");
@@ -262,6 +470,8 @@ export default function RedeemerApp() {
         onTabChange={setActiveTab}
         accentColor={ACCENT}
         title="Redeemer"
+        leftPanel={leftPanel}
+        rightPanel={rightPanel}
       >
         {activeTab === "profile" && (
           <ProfileTab redeemer={redeemer} onToggleMCE={redeemerToggleMCE} dispatch={dispatch} />

@@ -109,6 +109,228 @@ const BG = "#15151E";
 const MUTED = "rgba(255,255,255,0.45)";
 const DIMMED = "rgba(255,255,255,0.25)";
 
+// ─── Panel helpers ────────────────────────────────────────────────────────────
+
+function PanelCard({
+  label,
+  title,
+  accent,
+  children,
+}: {
+  label: string;
+  title: string;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 16,
+        padding: "20px",
+        marginBottom: 12,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.12em",
+          color: accent,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 10, lineHeight: 1.3 }}>{title}</div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.65 }}>{children}</div>
+    </div>
+  );
+}
+
+function PanelStats({
+  stats,
+  accent,
+}: {
+  stats: { label: string; value: string | number }[];
+  accent: string;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {stats.map(({ label, value }) => (
+        <div
+          key={label}
+          style={{
+            background: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            borderRadius: 12,
+            padding: "12px 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{label}</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: accent }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function getIssuerPanels(
+  activeTab: string,
+  state: ReturnType<typeof useDemo>["state"],
+): { left: React.ReactNode; right: React.ReactNode } {
+  const { issuer, mces, posts, availableTasks } = state;
+  const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
+  const totalVerified = issuer.tasks.reduce((n, t) => n + t.verifiedCount, 0);
+  const catalogSize = availableTasks.filter(t => !t.isMCE && !t.isOnboarding).length;
+  const totalParticipants = mces.reduce((n, m) => n + m.participantCount, 0);
+
+  switch (activeTab) {
+    case "profile":
+      return {
+        left: (
+          <PanelCard label="Issuer Organization" title="Your Issuing Authority" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              As a certified Issuer, you design and deploy community tasks. Your wallet signature is the trust anchor —
+              when you verify a completion, CITY credits and VOTE tokens are minted on-chain with no intermediary.
+            </p>
+            <p style={{ margin: 0 }}>
+              Tasks you post appear to all participants in the Explore tab. You control slot counts and choose from the
+              admin-curated catalog to ensure quality.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Tasks Created", value: issuer.totalTasksIssued },
+              { label: "Credits Issued", value: `${issuer.totalCreditsIssued} CITY` },
+              { label: "Pending Verifications", value: totalPending },
+              { label: "Catalog Tasks Available", value: catalogSize },
+            ]}
+          />
+        ),
+      };
+
+    case "tasks":
+      return {
+        left: (
+          <PanelCard label="Task Catalog" title="Admin-Curated Quality" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              All tasks pass a moderation queue before appearing here. This prevents spam and ensures every task
+              represents genuine civic value. You pick which to post and how many participant slots to open.
+            </p>
+            <p style={{ margin: 0 }}>
+              When a participant submits a completion, it lands in your Pending queue. Verify it from your wallet to
+              release their credits instantly.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Catalog Size", value: catalogSize },
+              { label: "Your Posted Tasks", value: issuer.tasks.length },
+              { label: "Pending Completions", value: totalPending },
+              { label: "Total Verified", value: totalVerified },
+            ]}
+          />
+        ),
+      };
+
+    case "mycity":
+      return {
+        left: (
+          <PanelCard label="City Feed" title="Your Voice in the City" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Post announcements, events, and opportunities directly to all participants and orgs. Your posts appear in
+              the city-wide MyCity feed — your primary channel for outreach and community building.
+            </p>
+            <p style={{ margin: 0 }}>
+              Use categories to help participants find what&apos;s relevant to them. Events and Opportunities tend to
+              drive the most engagement.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Posts in Feed", value: posts.length },
+              { label: "Active Orgs Posting", value: new Set(posts.map(p => p.authorId)).size },
+              { label: "Post Categories", value: 4 },
+              { label: "Your Posted Tasks", value: issuer.tasks.length },
+            ]}
+          />
+        ),
+      };
+
+    case "dashboard":
+      return {
+        left: (
+          <PanelCard label="Impact Dashboard" title="Your On-Chain Ledger" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Every credit you&apos;ve issued is permanently recorded on Base. This dashboard reflects your real impact:
+              tasks deployed, completions verified, and civic value created in the city.
+            </p>
+            <p style={{ margin: 0 }}>
+              Your completion rate reflects how quickly you process pending verifications. Participants see your
+              organization&apos;s track record when choosing tasks.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Tasks Posted", value: issuer.totalTasksIssued },
+              { label: "CITY Issued", value: issuer.totalCreditsIssued },
+              { label: "Total Verified", value: totalVerified },
+              { label: "Pending Now", value: totalPending },
+            ]}
+          />
+        ),
+      };
+
+    case "mces":
+      return {
+        left: (
+          <PanelCard label="MCE System" title="Mass Coordination Events" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              MCEs are city-wide initiatives voted on by VOTE token holders. As a certified Issuer, you can propose
+              MCEs. If a proposal passes, the city mobilizes around a shared goal.
+            </p>
+            <p style={{ margin: 0 }}>
+              MCE participants earn a separate MCECredit stream — redeemable at an expanded set of venues that opted
+              into the MCE program.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Total MCEs", value: mces.length },
+              { label: "Currently Voting", value: mces.filter(m => m.status === "Voting").length },
+              { label: "Active MCEs", value: mces.filter(m => m.status === "Active").length },
+              { label: "Total Participants", value: totalParticipants.toLocaleString() },
+            ]}
+          />
+        ),
+      };
+
+    default:
+      return { left: null, right: null };
+  }
+}
+
 const surfaceCard: React.CSSProperties = {
   background: SURFACE,
   border: "1px solid rgba(255,255,255,0.06)",
@@ -177,6 +399,7 @@ export default function IssuerApp() {
   const [toast, setToast] = useState<string | null>(null);
 
   const { issuer, mces } = state;
+  const { left: leftPanel, right: rightPanel } = getIssuerPanels(activeTab, state);
 
   React.useEffect(() => {
     setRole("issuer");
@@ -216,6 +439,8 @@ export default function IssuerApp() {
         onTabChange={setActiveTab}
         accentColor={ACCENT}
         title="Issuer"
+        leftPanel={leftPanel}
+        rightPanel={rightPanel}
       >
         {activeTab === "profile" && <ProfileTab issuer={issuer} totalPending={totalPending} />}
         {activeTab === "tasks" && (

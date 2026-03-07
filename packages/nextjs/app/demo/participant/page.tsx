@@ -12,6 +12,242 @@ const ACCENT = "#4169E1";
 const TEAL = "#34eeb6";
 const GOLD = "#DD9E33";
 
+// ─── Panel helpers ────────────────────────────────────────────────────────────
+
+function PanelCard({
+  label,
+  title,
+  accent,
+  children,
+}: {
+  label: string;
+  title: string;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 16,
+        padding: "20px",
+        marginBottom: 12,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.12em",
+          color: accent,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 10, lineHeight: 1.3 }}>{title}</div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.65 }}>{children}</div>
+    </div>
+  );
+}
+
+function PanelStats({
+  stats,
+  accent,
+}: {
+  stats: { label: string; value: string | number }[];
+  accent: string;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {stats.map(({ label, value }) => (
+        <div
+          key={label}
+          style={{
+            background: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            borderRadius: 12,
+            padding: "12px 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{label}</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: accent }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function getParticipantPanels(
+  activeTab: string,
+  state: ReturnType<typeof useDemo>["state"],
+): { left: React.ReactNode; right: React.ReactNode } {
+  const { participant, mces, epoch2Proposals, posts, availableTasks, offers, pastRedemptions } = state;
+  const openTasks = availableTasks.filter(t => t.slotsRemaining > 0 && !t.isOnboarding);
+  const uniqueIssuers = new Set(availableTasks.map(t => t.issuerId)).size;
+  const uniqueRedeemers = new Set(offers.map(o => o.redeemerId)).size;
+  const totalAllocated = Object.values(participant.mceVoteAllocations).reduce((a, b) => a + b, 0);
+  const totalCreditsAvailable = openTasks.reduce((n, t) => n + t.credits, 0);
+
+  switch (activeTab) {
+    case "profile":
+      return {
+        left: (
+          <PanelCard label="Civic Participant" title="Your Civic Wallet" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Every task you complete earns CITY credits and VOTE tokens — minted directly to your address on Base. No
+              intermediary. The issuing organization&apos;s verification triggers on-chain transfer.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {(
+                [
+                  ["🏙️", "CITY credits", "spendable at partner venues"],
+                  ["🗳️", "VOTE tokens", "governance weight in MCE votes"],
+                  ["⚡", "MCECredits", "bonus rewards from city-wide events"],
+                ] as [string, string, string][]
+              ).map(([icon, term, desc]) => (
+                <div key={term} style={{ display: "flex", gap: 8 }}>
+                  <span>{icon}</span>
+                  <span>
+                    <strong style={{ color: "rgba(255,255,255,0.75)" }}>{term}</strong> — {desc}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "CITY Balance", value: participant.cityBalance },
+              { label: "VOTE Balance", value: participant.voteBalance },
+              { label: "Tasks Completed", value: participant.completedTasks.length },
+              { label: "Active Issuers", value: uniqueIssuers },
+            ]}
+          />
+        ),
+      };
+
+    case "explore":
+      return {
+        left: (
+          <PanelCard label="Task Catalog" title="Claim & Complete" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Tasks are reviewed by the city administration and issued by certified organizations. Each has a fixed slot
+              count, reward, and a verification requirement — credits are released only after the issuing org confirms
+              your work.
+            </p>
+            <p style={{ margin: 0 }}>
+              Onboarding tasks have unlimited slots and are always available for new participants with a zero balance.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Open Tasks", value: openTasks.length },
+              { label: "Claimed by You", value: participant.claimedTaskIds.length },
+              { label: "Issuing Orgs", value: uniqueIssuers },
+              { label: "CITY Available", value: `${totalCreditsAvailable}+` },
+            ]}
+          />
+        ),
+      };
+
+    case "mycity":
+      return {
+        left: (
+          <PanelCard label="City Feed" title="Your City's Bulletin Board" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              Certified Issuer Organizations and Redeemer Venues post here directly — announcements, events, volunteer
+              opportunities, and deals.
+            </p>
+            <p style={{ margin: 0 }}>
+              No ads. No algorithms. Just your city&apos;s orgs talking to you. Like posts to boost their visibility in
+              the community feed.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Posts in Feed", value: posts.length },
+              { label: "Active Orgs", value: new Set(posts.map(p => p.authorId)).size },
+              { label: "Post Categories", value: 4 },
+              { label: "Liked by You", value: participant.likedPostIds.length },
+            ]}
+          />
+        ),
+      };
+
+    case "vote":
+      return {
+        left: (
+          <PanelCard label="MCE Governance" title="Governance by Participation" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              VOTE tokens are non-transferable — you can&apos;t buy them, only earn them through civic work. Your vote
+              weight is proportional to your earned balance.
+            </p>
+            <p style={{ margin: 0 }}>
+              In Epoch 1, allocate tokens across active proposals. In Epoch 2, signal support for upcoming ideas — the
+              top-liked proposals advance to the next voting cycle.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Your VOTE Balance", value: participant.voteBalance },
+              { label: "Allocated", value: totalAllocated },
+              { label: "Remaining", value: participant.voteBalance - totalAllocated },
+              { label: "Epoch 1 Proposals", value: mces.length },
+              { label: "Epoch 2 Proposals", value: epoch2Proposals.length },
+            ]}
+          />
+        ),
+      };
+
+    case "redeem":
+      return {
+        left: (
+          <PanelCard label="Redemption" title="Close the Loop" accent={ACCENT}>
+            <p style={{ margin: "0 0 12px" }}>
+              CITY credits were minted because you did real civic work. Spend them at partner venues — the credit burns
+              on-chain, and the venue receives confirmation instantly.
+            </p>
+            <p style={{ margin: 0 }}>
+              MCECredits unlock additional offers from venues that opted into Mass Coordination Events. No cash, no
+              extra apps — just a QR code scan at the counter.
+            </p>
+          </PanelCard>
+        ),
+        right: (
+          <PanelStats
+            accent={ACCENT}
+            stats={[
+              { label: "Partner Venues", value: uniqueRedeemers },
+              { label: "Offer Categories", value: 5 },
+              { label: "Your CITY", value: participant.cityBalance },
+              { label: "Past Redemptions", value: pastRedemptions.length },
+            ]}
+          />
+        ),
+      };
+
+    default:
+      return { left: null, right: null };
+  }
+}
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const IconUser = () => (
@@ -1927,6 +2163,8 @@ export default function ParticipantPage() {
     if (!state.role) setRole("participant");
   }, [state.role, setRole]);
 
+  const { left: leftPanel, right: rightPanel } = getParticipantPanels(activeTab, state);
+
   return (
     <>
       <AppShell
@@ -1940,6 +2178,8 @@ export default function ParticipantPage() {
         onTabChange={setActiveTab}
         accentColor={ACCENT}
         title="CitySync · Citizen"
+        leftPanel={leftPanel}
+        rightPanel={rightPanel}
       >
         {activeTab === "profile" && <ProfileTab onTabChange={setActiveTab} />}
         {activeTab === "explore" && <ExploreTab />}

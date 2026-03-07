@@ -18,6 +18,8 @@ interface AppShellProps {
   accentColor: string;
   title: string;
   children: React.ReactNode;
+  leftPanel?: React.ReactNode;
+  rightPanel?: React.ReactNode;
 }
 
 export default function AppShell({
@@ -33,6 +35,8 @@ export default function AppShell({
   accentColor,
   title,
   children,
+  leftPanel,
+  rightPanel,
 }: AppShellProps) {
   const [walletOpen, setWalletOpen] = useState(false);
 
@@ -93,6 +97,40 @@ export default function AppShell({
         {/* Bottom navigation */}
         <BottomNav tabs={tabs} active={activeTab} onChange={onTabChange} />
       </div>
+
+      {/* Left context panel — visible on xl+ screens */}
+      {leftPanel && (
+        <div
+          className="hidden xl:flex flex-col overflow-y-auto"
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            right: "calc(50% + 260px)",
+            width: 300,
+            padding: "72px 20px 40px",
+          }}
+        >
+          {leftPanel}
+        </div>
+      )}
+
+      {/* Right context panel — visible on xl+ screens */}
+      {rightPanel && (
+        <div
+          className="hidden xl:flex flex-col overflow-y-auto"
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: "calc(50% + 260px)",
+            width: 300,
+            padding: "72px 20px 40px",
+          }}
+        >
+          {rightPanel}
+        </div>
+      )}
 
       {/* Wallet modal */}
       {walletOpen && (
