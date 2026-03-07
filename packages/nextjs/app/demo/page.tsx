@@ -19,37 +19,42 @@ function SlashIcon({ width = 20, height = 22 }: { width?: number; height?: numbe
 
 function HeroLogo() {
   return (
-    <svg
-      viewBox="-8 0 168 35"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="CITY//SYNC"
-      style={{ width: 220, height: 52 }}
-    >
-      <text
-        x="-6"
-        y="30"
-        fontFamily="'Rajdhani','Arial Black',sans-serif"
-        fontWeight="700"
-        fontSize="28"
-        letterSpacing="2"
-        fill="#FFFFFF"
+    <>
+      {/* Load Rajdhani so the SVG font matches the landing page exactly */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');`}</style>
+      <svg
+        viewBox="-8 0 215 35"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="CITY//SYNC"
+        style={{ width: 280, height: 46 }}
       >
-        CITY
-      </text>
-      <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#FFFFFF" strokeWidth="1" />
-      <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="#DD9E33" strokeWidth="1" />
-      <text
-        x="75"
-        y="26"
-        fontFamily="'Rajdhani','Arial Black',sans-serif"
-        fontWeight="700"
-        fontSize="28"
-        letterSpacing="2"
-        fill="#DD9E33"
-      >
-        SYNC
-      </text>
-    </svg>
+        <text
+          x="-6"
+          y="30"
+          fontFamily="'Rajdhani','Arial Black',sans-serif"
+          fontWeight="700"
+          fontSize="28"
+          letterSpacing="2"
+          fill="#FFFFFF"
+        >
+          CITY
+        </text>
+        <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#FFFFFF" strokeWidth="1" />
+        <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="#DD9E33" strokeWidth="1" />
+        <text
+          x="75"
+          y="26"
+          fontFamily="'Rajdhani','Arial Black',sans-serif"
+          fontWeight="700"
+          fontSize="28"
+          letterSpacing="2"
+          fill="#DD9E33"
+        >
+          SYNC
+        </text>
+      </svg>
+    </>
   );
 }
 
@@ -239,7 +244,7 @@ export default function DemoHome() {
         <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ background: "#4169E1" }}
+            style={{ background: "#23128F" }}
           >
             <SlashIcon width={20} height={22} />
           </div>
@@ -272,7 +277,7 @@ export default function DemoHome() {
         <p className="mb-2 text-sm font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
           Programmable Civic Coordination Infrastructure
         </p>
-        <p className="mx-auto mb-3 max-w-2xl text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+        <p className="mx-auto mb-3 max-w-2xl text-center text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
           In this DEMO you can move between the 3 different roles that serve as the fundamental incentive engine for a
           Public-Sector Economy.
         </p>
@@ -284,7 +289,7 @@ export default function DemoHome() {
       {/* ── Role cards ─────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-6 pb-20">
         <h2 className="mb-3 text-center text-2xl font-bold text-white">Choose Your Role</h2>
-        <p className="mb-12 text-center text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.4)", marginBottom: 48 }}>
           All three roles share the same state — switch freely to see the full loop.
         </p>
 
