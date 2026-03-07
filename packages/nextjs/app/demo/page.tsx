@@ -189,32 +189,32 @@ const ECONOMY_CARDS = [
   {
     icon: "📊",
     title: "Issuance Caps",
-    body: "The total number of $CITY credits that can be issued at any given time is governed by an Issuance Cap — a protocol-level limit that keeps the civic economy from inflating beyond what the Redemption side can absorb. Each Issuer's allocation is determined by dividing the cap by the number of active Issuers, ensuring no single organization can dominate credit creation.",
+    body: "The Issuance Cap is the total amount of $CITY credits that can be issued for a given time period. This is an economic control tool that keeps the civic economy from inflating beyond what the Redemption side can absorb. The Issuance Cap is determined by the amount of unused Credits in circulation and the maximum absorption capacity of the smallest redeemer. This ensures that Redeemer Organizations cannot get overwhelmed. Each Issuer is allocated Credits from this cap evenly, ensuring no single organization can dominate credit creation.",
   },
   {
     icon: "⚖️",
     title: "Issuance & Redemption Balance",
-    body: "The health of the public sector economy depends on a fundamental balance: credits issued must be redeemable. If credits are issued faster than Redeemers can absorb them, the value of civic participation erodes. City/Sync's governance model is designed to monitor this balance in real time, with Issuance Caps adjusted periodically to reflect the capacity of the active Redeemer network.",
+    body: "The health of the public-sector economy depends on a fundamental balance between Issuance & Redemption. The primary economic objective of this system is throughput optimization: increasing the volume and efficiency of civic contribution without destabilizing institutional capacity. The system only works if two things feel true at the same time: (1) it feels possible to earn credits, and (2) it feels possible to use them. City/Sync's governance model is designed to monitor this balance in real time, and establish Issuance Caps that are adjusted with growth, redemption targets, and building our network of Issuers and Redeemers.",
   },
   {
     icon: "🧭",
     title: "Rate Guidance",
-    body: "Redeemers set their own credit rates, but they don't do so blindly. The platform provides guidance benchmarks based on the current credit supply, average redemption volumes, and community feedback — giving Redeemers a principled starting point for valuing their offerings. The Representative Redeemer Committee also plays a governance role in flagging rates that fall outside community norms.",
+    body: "Redeemers set their own credit rates, but they don't do so blindly. The platform provides guidance benchmarks based on the current credit supply, average redemption volumes, and community feedback that provides Redeemers a principled starting point for valuing their offerings. The Representative Redeemer Committee also plays a governance role in flagging rates that fall outside of community norms.",
   },
   {
     icon: "🌐",
     title: "Mass Coordination Events",
-    body: "Mass Coordination Events (MCEs) are city-wide initiatives that mobilize civic participation at scale. Proposed by community members and voted on using $VOTE tokens, MCEs enter a Planning phase where Issuer Organizations create specialized tasks. During an active MCE, participants earn a dedicated MCE Credit alongside $CITY — a unique on-chain credential tied to a specific civic moment in their city's history.",
+    body: "Mass Coordination Events (MCEs) are city-wide initiatives that mobilize civic participation at scale for a common purpose or mission (remove unwanted graffiti city-wide, park restorations, etc.). MCEs can be proposed by participating Issuer & Redeemer Organizations, and voted on by Civic Participants using their earned $VOTE tokens. Once an MCE has been selected, it enters a Planning phase where Issuer Organizations create specialized tasks to execute the mission. During an active MCE, participants earn a dedicated MCE Credit that can be used to expand the redemption universe, and new entities (restaurants, coffee shops, and other fiat-based businesses) agree to accept those special credits for a limited time period. As a result, it creates more powerful incentives for Civic Participants to execute, and a pathway for the private-sector to give back to their city.",
   },
   {
     icon: "📋",
     title: "Task Catalog",
-    body: "The Task Catalog is a curated, governance-approved list of civic-labor opportunities available to Issuer Organizations. Tasks are proposed by Issuers and reviewed by the Representative Issuer Committee, which defines scope, time commitment, success criteria, and credit value for each entry. This standardization ensures consistency across the network, predictable credit supply for public planning, and prevents tasks from displacing paid work.",
+    body: "The Task Catalog is a curated, governance-approved list of civic-labor opportunities available to Issuer Organizations. Tasks are proposed by Issuers and reviewed by the Representative Issuer Committee, which defines scope, time commitment, success criteria, and credit value for each entry. This standardization ensures consistency among Issuer Organizations and creates a predictable supply of credits when executing formal public planning. Additionally, the categorization of tasks will establish how task credential requirements are handled (elder care, specialization functions), and will reserve some categories of tasks toward equity and inclusion initiatives (tasks for disabled, mentally impaired, etc.).",
   },
   {
     icon: "🏛️",
     title: "Role Governance",
-    body: "Each role in the protocol is self-governed by a Representative Committee. The Representative Issuer Committee manages the Task Catalog, Task Rules, Issuer onboarding, and the Issuance Cap. The Representative Redeemer Committee governs redemption rules, rate guidance targets, and Redeemer onboarding. The Representative Civic Committee — drawn from top participants by $VOTE balance — aggregates community feedback and resolves conflicts across governance bodies.",
+    body: "Each role in the protocol is self-governed by a Representative Committee. The Representative Issuer Committee manages the Task Catalog, Task Rules, Issuer onboarding, and the Issuance Cap. The Representative Redeemer Committee governs redemption rules, rate guidance targets, and Redeemer onboarding. The Representative Civic Committee, which is drawn from top participants by $VOTE balance, will aggregate community feedback and resolve conflicts across governance bodies.",
   },
 ];
 
