@@ -6,6 +6,53 @@ import { useLogout, useSignerStatus } from "@account-kit/react";
 import { LoginScreen } from "./_components/LoginScreen";
 import { useDemo } from "./_context/DemoContext";
 
+// ─── Double-slash logo (matches CITY//SYNC website logo) ─────────────────────
+
+function SlashIcon({ width = 20, height = 22 }: { width?: number; height?: number }) {
+  return (
+    <svg viewBox="47 2 30 32" xmlns="http://www.w3.org/2000/svg" width={width} height={height} aria-hidden="true">
+      <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+      <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="#DD9E33" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function HeroLogo() {
+  return (
+    <svg
+      viewBox="-8 0 168 35"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="CITY//SYNC"
+      style={{ width: 220, height: 52 }}
+    >
+      <text
+        x="-6"
+        y="30"
+        fontFamily="'Rajdhani','Arial Black',sans-serif"
+        fontWeight="700"
+        fontSize="28"
+        letterSpacing="2"
+        fill="#FFFFFF"
+      >
+        CITY
+      </text>
+      <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#FFFFFF" strokeWidth="1" />
+      <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="#DD9E33" strokeWidth="1" />
+      <text
+        x="75"
+        y="26"
+        fontFamily="'Rajdhani','Arial Black',sans-serif"
+        fontWeight="700"
+        fontSize="28"
+        letterSpacing="2"
+        fill="#DD9E33"
+      >
+        SYNC
+      </text>
+    </svg>
+  );
+}
+
 // ─── Role definitions ─────────────────────────────────────────────────────────
 
 const ROLES = [
@@ -17,70 +64,127 @@ const ROLES = [
     tagline: "Earn. Vote. Redeem.",
     accent: "#4169E1",
     description:
-      "Civic Participants are the heartbeat of the City/Sync protocol. As a community member, you complete local volunteer tasks — from neighborhood cleanups to civic surveys — and earn CITY credits and VOTE tokens for your contributions. Those credits can be redeemed at partner businesses and services, while your VOTE tokens let you have a direct say in Mass Coordination Events that shape the direction of your city.",
+      "Civic Participants are the core of the City/Sync protocol. As a community member, you will complete local civic-labor tasks ranging from neighborhood cleanups to civic surveys, and by doing so, will earn $CITY credits and $VOTE tokens for your contributions. $CITY credits can be redeemed at partner businesses and services, while your $VOTE tokens let you have a direct say in selecting Mass Coordination Events, Participatory Budgeting decisions, and future applications that will shape the direction of your city.",
     tabs: [
-      { key: "Profile", desc: "View your wallet, earned credits, VOTE balance, and a history of completed tasks and verifications." },
-      { key: "Explore", desc: "Browse available volunteer tasks, filter by category, and claim tasks you want to complete for civic credit rewards." },
-      { key: "MyCity", desc: "See your personal impact — total credits earned, tasks completed, and your on-chain contribution record." },
-      { key: "Vote", desc: "Cast VOTE-weighted votes on active Mass Coordination Events and track the outcomes of initiatives you've supported." },
-      { key: "Redemptions", desc: "Browse partner offers and redeem your CITY credits for goods, services, and exclusive community benefits." },
+      {
+        key: "Profile",
+        desc: "Edit your City/Sync Identity, Track Token Balances, and View your completed tasks and Voting History.",
+      },
+      {
+        key: "Explore",
+        desc: "Browse Issued tasks from Issuers, filter by category, and claim tasks you want to complete for $CITY credits. Each $CITY is matched 1:1 with $VOTE.",
+      },
+      {
+        key: "MyCity",
+        desc: "See the impact the network is having on your City, Keep track of upcoming events, and get engaged with your community.",
+      },
+      {
+        key: "Vote",
+        desc: "Cast $VOTE to support upcoming Mass Coordination Events and Participatory Budgeting Proposals.",
+      },
+      {
+        key: "Redeem",
+        desc: "Browse offerings within the Redemption Universe, and redeem your $CITY credits for goods, services, and exclusive community benefits.",
+      },
     ],
     eligibility: {
       title: "Onboarding for Civic Participants",
-      body: "New Participants must complete an in-person onboarding event to activate their wallet and join the platform. This initial task is how the protocol ensures real community membership — not just an email address. Upon completion, your wallet is whitelisted and you receive your first CITY credits as a welcome reward. From there, you're free to explore and claim any available task on the platform.",
+      body: "New Participants must complete an in-person onboarding task to activate their wallet and join the platform. All issuers will provide a continuous set of onboarding tasks available to new participants. This initial task is how the protocol ensures real community membership. Upon completion, your wallet is whitelisted and you will receive your first $CITY credits. From there, you're free to explore and claim any available tasks on the platform.",
     },
+    buttonLabel: "Enter as Civic Participant",
   },
   {
     key: "issuer" as const,
     href: "/demo/issuer",
     emoji: "📋",
-    title: "Task Issuer",
+    title: "Issuer Organization",
     tagline: "Create. Verify. Distribute.",
     accent: "#DD9E33",
     description:
-      "Task Issuers are the organizations that power the civic economy. As an Issuer, you represent a community organization, public agency, or public-benefit entity that creates and manages volunteer opportunities. You post tasks from the curated catalog, set CITY and VOTE reward amounts, and verify completions directly from your wallet — triggering on-chain credit minting to deserving Participants.",
+      "Issuer Organizations are the public-sector organizations that power the civic economy. As an Issuer, you represent a community organization, public agency, or public-benefit entity that creates and manages civic-labor opportunities. You will be able to post tasks from the approved and curated Task Catalog, propose new tasks to the Task Catalog for approval, and set $CITY credit rates for tasks. Issuers will also be responsible for verifying task completion, providing feedback on participants, and distributing rewards.",
     tabs: [
-      { key: "Profile", desc: "Manage your organization profile, view your registered name, and track your total issuance activity." },
-      { key: "Tasks", desc: "Create new tasks from the approved catalog, set reward amounts, and manage your active and completed task listings." },
-      { key: "MyCity", desc: "See city-wide statistics — total credits in circulation, task volume, and how your organization compares to peers." },
-      { key: "Dashboard", desc: "Track your issuance metrics: total credits issued, tasks verified, pending completions, and category breakdowns." },
-      { key: "MCEs", desc: "View active Mass Coordination Events, monitor community vote outcomes, and create MCE-linked tasks during Planning phase." },
+      {
+        key: "Profile",
+        desc: "Manage your organizational profile, view the amount of $CITY credits available for issuance, and track your Issuance history.",
+      },
+      {
+        key: "Tasks",
+        desc: "Issue tasks, propose new tasks to the task catalog, and manage your task listings.",
+      },
+      {
+        key: "MyCity",
+        desc: "See the impact the network is having on your City, Keep track of upcoming events, and get engaged with your community.",
+      },
+      {
+        key: "Verify",
+        desc: "View task performance data, Verify completed tasks, and distribute rewards to Civic Participants.",
+      },
+      {
+        key: "MCE",
+        desc: "View active Mass Coordination Events, Propose new MCE's, and monitor community vote outcomes.",
+      },
     ],
     eligibility: {
-      title: "Becoming a Task Issuer",
-      body: "Issuers must apply to join the platform and must represent an organization that is providing a measurable public good or service. Approved Issuers are granted a credit allocation based on the total number of active Issuers and the platform's Issuance Cap — a mechanism that keeps the civic economy balanced. The more Issuers participating, the more thoughtfully each one must allocate their credits across their task portfolio.",
+      title: "Becoming an Issuer Organization",
+      body: "To become an Issuer Organization, you need to apply and satisfy the eligibility requirements. Eligible organizations are initially defined as any public-sector organization that is providing a measurable public good or service. Approved Issuers are granted a credit allocation based on the total number of active issuers and the platform's Issuance Cap, which is a mechanism that keeps the civic economy balanced. The more Issuers participating, the more thoughtfully each one must allocate their credits across their task portfolio.",
     },
+    buttonLabel: "Enter as Issuer Organization",
   },
   {
     key: "redeemer" as const,
     href: "/demo/redeemer",
     emoji: "🏪",
-    title: "Redeemer",
-    tagline: "Accept. Fulfill. Track.",
+    title: "Redeemer Organization",
+    tagline: "Incentivize. Reward. Track.",
     accent: "#34eeb6",
     description:
-      "Redeemers are the businesses, venues, and service providers that give CITY credits real-world value. As a Redeemer, you decide which offerings you want to present, the credit rates for each, and the terms of redemption — all within the framework set by the Representative Redeemer Committee. You can also opt in to accept MCE Credits, a specialized credit tied to Mass Coordination Events, and set the duration for which specific offers remain valid.",
+      "Redeemer organizations are any businesses, venues, or service providers that give $CITY credits real-world value, and create the incentives for activating latent civic capacity. As a Redeemer Organization, you decide what type of offering you want to present, the credit rate for each offering, and the terms of that redemption. Most private-sector entities will be unable to provide continuous offerings, but will be able to opt-in by providing offerings for specific MCE events that they support and make an impact on their city.",
     tabs: [
-      { key: "Profile", desc: "Manage your organization profile, MCE opt-in status, and your registered offering portfolio." },
-      { key: "Redemptions", desc: "View incoming redemption requests, process fulfillments, and generate QR codes for in-person redemption flows." },
-      { key: "MyCity", desc: "See platform-wide economic activity — total redemptions processed, credit volumes, and community engagement data." },
-      { key: "Dashboard", desc: "Track your redemption metrics: total credits accepted, offers processed, queue activity, and fulfillment history." },
-      { key: "MCEs", desc: "Monitor Mass Coordination Events, view MCE Credit volumes, and manage MCE-specific time-limited offer windows." },
+      {
+        key: "Profile",
+        desc: "Manage your organization profile, and track your Redemption History.",
+      },
+      {
+        key: "Offerings",
+        desc: "Create Redemption Offerings, set and modify Rates, and generate QR codes for in-person point-of-sale flows.",
+      },
+      {
+        key: "MyCity",
+        desc: "See the impact the network is having on your City, Keep track of upcoming events, and get engaged with your community.",
+      },
+      {
+        key: "Dashboard",
+        desc: "Track your redemption metrics: total credits accepted, $ value of redemptions issued, and statistical history of each of your offerings.",
+      },
+      {
+        key: "MCE",
+        desc: "View active Mass Coordination Events, Propose new MCE's, and monitor community vote outcomes.",
+      },
     ],
     eligibility: {
-      title: "Becoming a Redeemer",
-      body: "Redeemers must apply to join the platform. Any company or organization — from a local coffee shop to a transit authority — is eligible, as long as they commit to honoring their offerings according to the rules set by the Representative Redeemer Committee. Redeemers have full autonomy over what they offer and at what credit rates, and can create time-limited offers tied to specific credit types like MCE Credits. This flexibility allows both small businesses and large public service providers to participate on their own terms.",
+      title: "Becoming a Redeemer Organization",
+      body: "To become a Redeemer Organization, you need to apply to become a Redeemer Organization. Redeemer Organizations can be any entity ranging from a local coffee shop to a transit authority, as long as they commit to honoring their offerings according to the rules set by the Representative Redeemer Committee. Redeemers have full autonomy over what they offer and at what credit rates, and can create time-limited offers tied to specific credit types like MCE's. This flexibility allows both small businesses and large public service providers to participate on their own terms.",
     },
+    buttonLabel: "Enter as Redeemer Organization",
   },
 ] as const;
 
 // ─── Economy section data ─────────────────────────────────────────────────────
 
+const ECONOMY_INTRO = {
+  sectionLabel: "The Public Sector Economy",
+  heading: "How it Works",
+  body1:
+    "City/Sync proposes the creation of a bifurcated economy that exists entirely within the public-sector, and separate from speculative financial markets and fiat currency. $CITY credits cannot be bought or sold. They are earned through civic-labor contributions and spent on access to public goods and services. This keeps the system grounded in real civic value rather than through market dynamics.",
+  body2:
+    "For this economy to function sustainably, the rate at which credits are issued must remain in balance with the capacity of the Redeemer network to absorb them. Too many credits chasing too few redemption offerings erodes value and destroys incentives. Too few credits stifles participation and interest. The protocol is designed to maintain the equilibrium between Issuance and Redemption through Issuance Caps, Governance feedback loops, and transparent rate guidance for Redeemers.",
+};
+
 const ECONOMY_CARDS = [
   {
     icon: "📊",
     title: "Issuance Caps",
-    body: "The total number of CITY credits that can be issued at any given time is governed by an Issuance Cap — a protocol-level limit that keeps the civic economy from inflating beyond what the Redemption side can absorb. Each Issuer's allocation is determined by dividing the cap by the number of active Issuers, ensuring no single organization can dominate credit creation.",
+    body: "The total number of $CITY credits that can be issued at any given time is governed by an Issuance Cap — a protocol-level limit that keeps the civic economy from inflating beyond what the Redemption side can absorb. Each Issuer's allocation is determined by dividing the cap by the number of active Issuers, ensuring no single organization can dominate credit creation.",
   },
   {
     icon: "⚖️",
@@ -91,6 +195,21 @@ const ECONOMY_CARDS = [
     icon: "🧭",
     title: "Rate Guidance",
     body: "Redeemers set their own credit rates, but they don't do so blindly. The platform provides guidance benchmarks based on the current credit supply, average redemption volumes, and community feedback — giving Redeemers a principled starting point for valuing their offerings. The Representative Redeemer Committee also plays a governance role in flagging rates that fall outside community norms.",
+  },
+  {
+    icon: "🌐",
+    title: "Mass Coordination Events",
+    body: "Mass Coordination Events (MCEs) are city-wide initiatives that mobilize civic participation at scale. Proposed by community members and voted on using $VOTE tokens, MCEs enter a Planning phase where Issuer Organizations create specialized tasks. During an active MCE, participants earn a dedicated MCE Credit alongside $CITY — a unique on-chain credential tied to a specific civic moment in their city's history.",
+  },
+  {
+    icon: "📋",
+    title: "Task Catalog",
+    body: "The Task Catalog is a curated, governance-approved list of civic-labor opportunities available to Issuer Organizations. Tasks are proposed by Issuers and reviewed by the Representative Issuer Committee, which defines scope, time commitment, success criteria, and credit value for each entry. This standardization ensures consistency across the network, predictable credit supply for public planning, and prevents tasks from displacing paid work.",
+  },
+  {
+    icon: "🏛️",
+    title: "Role Governance",
+    body: "Each role in the protocol is self-governed by a Representative Committee. The Representative Issuer Committee manages the Task Catalog, Task Rules, Issuer onboarding, and the Issuance Cap. The Representative Redeemer Committee governs redemption rules, rate guidance targets, and Redeemer onboarding. The Representative Civic Committee — drawn from top participants by $VOTE balance — aggregates community feedback and resolves conflicts across governance bodies.",
   },
 ];
 
@@ -105,32 +224,37 @@ export default function DemoHome() {
 
   return (
     <div
-      className="min-h-screen w-full"
+      className="fixed inset-0 z-50 overflow-y-auto"
       style={{ background: "#0D0D14", fontFamily: "system-ui, -apple-system, sans-serif", color: "#fff" }}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-40 flex items-center justify-between px-6 py-4"
-        style={{ background: "rgba(13,13,20,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+        style={{
+          background: "rgba(13,13,20,0.9)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+        }}
       >
         <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold"
-            style={{ background: "#4169E1", color: "#fff" }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl"
+            style={{ background: "#4169E1" }}
           >
-            CS
+            <SlashIcon width={20} height={22} />
           </div>
-          <span className="text-base font-bold text-white">City/Sync</span>
+          <span className="text-base font-bold text-white">City/Sync DEMO</span>
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-sm" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>
-            city-sync.org
-          </Link>
           <button
             onClick={() => logout()}
             className="rounded-xl px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)" }}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.7)",
+            }}
           >
             Sign Out
           </button>
@@ -142,18 +266,15 @@ export default function DemoHome() {
         className="px-6 py-20 text-center"
         style={{ background: "linear-gradient(180deg, #0D0D14 0%, #111128 50%, #0D0D14 100%)" }}
       >
-        <div
-          className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold"
-          style={{ background: "#4169E1", boxShadow: "0 0 48px rgba(65,105,225,0.4)" }}
-        >
-          CS
+        <div className="mx-auto mb-6 flex items-center justify-center">
+          <HeroLogo />
         </div>
-        <h1 className="mb-4 text-4xl font-bold tracking-tight text-white">
-          City<span style={{ color: "#4169E1" }}>/</span>Sync Demo
-        </h1>
+        <p className="mb-2 text-sm font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
+          Programmable Civic Coordination Infrastructure
+        </p>
         <p className="mx-auto mb-3 max-w-2xl text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-          Programmable civic infrastructure for local communities. Explore the protocol from the inside — choose a role
-          and see how credits are earned, issued, and redeemed in a living civic economy.
+          In this DEMO you can move between the 3 different roles that serve as the fundamental incentive engine for a
+          Public-Sector Economy.
         </p>
         <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
           Live demo on Base Sepolia Testnet · No real funds required
@@ -197,15 +318,26 @@ export default function DemoHome() {
 
               {/* Tabs */}
               <div className="p-6 pb-4">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>
-                  What you can do
+                <div
+                  className="mb-3 text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: "rgba(255,255,255,0.3)" }}
+                >
+                  What You Can Do{" "}
+                  <span style={{ color: "rgba(255,255,255,0.2)", textTransform: "none", letterSpacing: "normal" }}>
+                    (Tabs on the Mobile Application)
+                  </span>
                 </div>
                 <div className="flex flex-col gap-3">
                   {role.tabs.map(tab => (
                     <div key={tab.key} className="flex gap-3">
                       <span
                         className="mt-0.5 shrink-0 rounded-lg px-2 py-0.5 text-xs font-semibold"
-                        style={{ background: `${role.accent}18`, color: role.accent, minWidth: 90, textAlign: "center" }}
+                        style={{
+                          background: `${role.accent}18`,
+                          color: role.accent,
+                          minWidth: 90,
+                          textAlign: "center",
+                        }}
                       >
                         {tab.key}
                       </span>
@@ -238,9 +370,15 @@ export default function DemoHome() {
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold transition-opacity hover:opacity-90"
                   style={{ background: role.accent, color: "#0D0D14", textDecoration: "none" }}
                 >
-                  Enter as {role.title}
+                  {role.buttonLabel}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M5 12h14M12 5l7 7-7 7"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </Link>
               </div>
@@ -258,21 +396,20 @@ export default function DemoHome() {
           {/* Prose intro */}
           <div className="mx-auto mb-14 max-w-3xl text-center">
             <div className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
-              The Public Sector Economy
+              {ECONOMY_INTRO.sectionLabel}
             </div>
-            <h2 className="mb-5 text-3xl font-bold text-white">How the Civic Economy Works</h2>
+            <h2 className="mb-5 text-3xl font-bold text-white">{ECONOMY_INTRO.heading}</h2>
             <p className="mb-4 text-base leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-              City/Sync operates a bifurcated economy — one that exists entirely within the public sector, separate from
-              speculative financial markets. CITY credits are not bought or sold. They are <em>earned through
-              contribution</em> and <em>spent on access</em>. This keeps the system grounded in real civic value rather
-              than market dynamics.
+              {ECONOMY_INTRO.body1}
             </p>
             <p className="text-base leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-              For this economy to function sustainably, the rate at which credits are issued must remain in balance with
-              the capacity of the Redeemer network to absorb them. Too many credits chasing too few redemptions erodes
-              value. Too few credits stifles participation. The protocol is designed to keep this equilibrium — through
-              Issuance Caps, governance feedback loops, and transparent rate guidance for Redeemers.
+              {ECONOMY_INTRO.body2}
             </p>
+          </div>
+
+          {/* Key Concepts heading */}
+          <div className="mb-8 text-center">
+            <h3 className="text-xl font-bold text-white">Key Concepts</h3>
           </div>
 
           {/* Visual cards */}
