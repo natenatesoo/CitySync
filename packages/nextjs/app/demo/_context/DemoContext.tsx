@@ -3,12 +3,16 @@
 import React, { ReactNode, createContext, useCallback, useContext, useReducer } from "react";
 import {
   CompletedTask,
+  Epoch2Proposal,
   FAKE_WALLETS,
   MCEProposal,
+  MOCK_EPOCH2_PROPOSALS,
   MOCK_MCES,
   MOCK_OFFERS,
+  MOCK_POSTS,
   MOCK_TASKS,
   PastRedemption,
+  Post,
   RedemptionOffer,
   Task,
 } from "../_data/mockData";
@@ -23,12 +27,15 @@ export interface IssuerTask extends Task {
 }
 
 export interface ParticipantState {
+  citizenName: string;
   cityBalance: number;
   voteBalance: number;
   mceBalance: number;
   claimedTaskIds: string[];
   completedTasks: CompletedTask[];
-  mceVotes: Record<string, "for" | "against">; // mceId → vote
+  mceVoteAllocations: Record<string, number>; // mceId → allocated VOTE tokens
+  likedPostIds: string[];
+  likedEpoch2Ids: string[];
 }
 
 export interface IssuerState {
@@ -79,6 +86,8 @@ export interface DemoState {
   issuer: IssuerState;
   redeemer: RedeemerState;
   mces: MCEProposal[];
+  epoch2Proposals: Epoch2Proposal[];
+  posts: Post[];
   availableTasks: Task[];
   offers: RedemptionOffer[];
   verifying: VerifyingState | null;
@@ -90,11 +99,15 @@ export interface DemoState {
 
 type Action =
   | { type: "SET_ROLE"; role: Role }
+  | { type: "SET_CITIZEN_NAME"; name: string }
   | { type: "CLAIM_TASK"; taskId: string }
+  | { type: "UNCLAIM_TASK"; taskId: string }
   | { type: "START_VERIFY"; taskId: string; taskTitle: string }
   | { type: "TICK_VERIFY" }
   | { type: "COMPLETE_VERIFY" }
-  | { type: "VOTE_MCE"; mceId: string; direction: "for" | "against"; weight: number }
+  | { type: "ALLOCATE_MCE_VOTE"; mceId: string; amount: number }
+  | { type: "LIKE_POST"; postId: string }
+  | { type: "LIKE_EPOCH2"; proposalId: string }
   | { type: "REDEEM_OFFER"; offerId: string }
   | { type: "ISSUER_REGISTER"; orgName: string }
   | { type: "ISSUER_CREATE_TASK"; task: Task }
@@ -146,12 +159,15 @@ export const generateRedeemerName = (seed: number) =>
 const INITIAL_STATE: DemoState = {
   role: null,
   participant: {
+    citizenName: "",
     cityBalance: 0,
     voteBalance: 0,
     mceBalance: 0,
     claimedTaskIds: [],
     completedTasks: [],
-    mceVotes: {},
+    mceVoteAllocations: {},
+    likedPostIds: [],
+    likedEpoch2Ids: [],
   },
   issuer: {
     orgName: "",
@@ -169,6 +185,8 @@ const INITIAL_STATE: DemoState = {
     processedRedemptions: [],
   },
   mces: MOCK_MCES,
+  epoch2Proposals: MOCK_EPOCH2_PROPOSALS,
+  posts: MOCK_POSTS,
   availableTasks: MOCK_TASKS,
   offers: MOCK_OFFERS,
   verifying: null,
@@ -202,17 +220,52 @@ function reducer(state: DemoState, action: Action): DemoState {
       return { ...state, role: action.role };
     }
 
+    case "SET_CITIZEN_NAME": {
+      return {
+        ...state,
+        participant: { ...state.participant, citizenName: action.name },
+      };
+    }
+
     case "CLAIM_TASK": {
       if (state.participant.claimedTaskIds.includes(action.taskId)) return state;
-      // Reduce available slot count
-      const updatedTasks = state.availableTasks.map(t =>
-        t.id === action.taskId ? { ...t, slotsRemaining: Math.max(0, t.slotsRemaining - 1) } : t,
-      );
+      const task = state.availableTasks.find(t => t.id === action.taskId);
+      if (!task) return state;
+
+      // For onboarding tasks, don't decrement slots (infinite pool)
+      const updatedTasks = task.isOnboarding
+        ? state.availableTasks
+        : state.availableTasks.map(t =>
+            t.id === action.taskId ? { ...t, slotsRemaining: Math.max(0, t.slotsRemaining - 1) } : t,
+          );
+
       return {
         ...state,
         participant: {
           ...state.participant,
           claimedTaskIds: [...state.participant.claimedTaskIds, action.taskId],
+        },
+        availableTasks: updatedTasks,
+      };
+    }
+
+    case "UNCLAIM_TASK": {
+      if (!state.participant.claimedTaskIds.includes(action.taskId)) return state;
+      const task = state.availableTasks.find(t => t.id === action.taskId);
+
+      // Restore slot on unclaim (except onboarding tasks)
+      const updatedTasks =
+        task && !task.isOnboarding
+          ? state.availableTasks.map(t =>
+              t.id === action.taskId ? { ...t, slotsRemaining: Math.min(t.slots, t.slotsRemaining + 1) } : t,
+            )
+          : state.availableTasks;
+
+      return {
+        ...state,
+        participant: {
+          ...state.participant,
+          claimedTaskIds: state.participant.claimedTaskIds.filter(id => id !== action.taskId),
         },
         availableTasks: updatedTasks,
       };
@@ -261,22 +314,56 @@ function reducer(state: DemoState, action: Action): DemoState {
       };
     }
 
-    case "VOTE_MCE": {
-      if (state.participant.mceVotes[action.mceId]) return state; // already voted
-      const updatedMces = state.mces.map(m => {
-        if (m.id !== action.mceId) return m;
-        return {
-          ...m,
-          votesFor: action.direction === "for" ? m.votesFor + action.weight : m.votesFor,
-          votesAgainst: action.direction === "against" ? m.votesAgainst + action.weight : m.votesAgainst,
-        };
+    case "ALLOCATE_MCE_VOTE": {
+      const currentAllocations = state.participant.mceVoteAllocations;
+      const currentForThis = currentAllocations[action.mceId] ?? 0;
+      const totalAllocated = Object.values(currentAllocations).reduce((a, b) => a + b, 0);
+      const remaining = state.participant.voteBalance - totalAllocated;
+
+      // Clamp: new amount can't exceed current + remaining, and can't go below 0
+      const newAmount = Math.max(0, Math.min(action.amount, currentForThis + remaining));
+
+      return {
+        ...state,
+        participant: {
+          ...state.participant,
+          mceVoteAllocations: { ...currentAllocations, [action.mceId]: newAmount },
+        },
+      };
+    }
+
+    case "LIKE_POST": {
+      const alreadyLiked = state.participant.likedPostIds.includes(action.postId);
+      const updatedPosts = state.posts.map(p => {
+        if (p.id !== action.postId) return p;
+        return { ...p, likes: alreadyLiked ? p.likes - 1 : p.likes + 1 };
       });
       return {
         ...state,
-        mces: updatedMces,
+        posts: updatedPosts,
         participant: {
           ...state.participant,
-          mceVotes: { ...state.participant.mceVotes, [action.mceId]: action.direction },
+          likedPostIds: alreadyLiked
+            ? state.participant.likedPostIds.filter(id => id !== action.postId)
+            : [...state.participant.likedPostIds, action.postId],
+        },
+      };
+    }
+
+    case "LIKE_EPOCH2": {
+      const alreadyLiked = state.participant.likedEpoch2Ids.includes(action.proposalId);
+      const updatedProposals = state.epoch2Proposals.map(p => {
+        if (p.id !== action.proposalId) return p;
+        return { ...p, likes: alreadyLiked ? p.likes - 1 : p.likes + 1 };
+      });
+      return {
+        ...state,
+        epoch2Proposals: updatedProposals,
+        participant: {
+          ...state.participant,
+          likedEpoch2Ids: alreadyLiked
+            ? state.participant.likedEpoch2Ids.filter(id => id !== action.proposalId)
+            : [...state.participant.likedEpoch2Ids, action.proposalId],
         },
       };
     }
@@ -447,9 +534,13 @@ function reducer(state: DemoState, action: Action): DemoState {
 interface DemoContextValue {
   state: DemoState;
   setRole: (role: Role) => void;
+  setCitizenName: (name: string) => void;
   claimTask: (taskId: string) => void;
+  unclaimTask: (taskId: string) => void;
   startVerify: (taskId: string, taskTitle: string) => void;
-  voteOnMCE: (mceId: string, direction: "for" | "against") => void;
+  allocateMceVote: (mceId: string, amount: number) => void;
+  likePost: (postId: string) => void;
+  likeEpoch2: (proposalId: string) => void;
   redeemOffer: (offerId: string) => void;
   issuerCreateTask: (task: Task) => void;
   issuerVerifyCompletion: (taskId: string, citizenAddress: string) => void;
@@ -466,7 +557,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   const setRole = useCallback((role: Role) => dispatch({ type: "SET_ROLE", role }), []);
+  const setCitizenName = useCallback((name: string) => dispatch({ type: "SET_CITIZEN_NAME", name }), []);
   const claimTask = useCallback((taskId: string) => dispatch({ type: "CLAIM_TASK", taskId }), []);
+  const unclaimTask = useCallback((taskId: string) => dispatch({ type: "UNCLAIM_TASK", taskId }), []);
 
   const startVerify = useCallback((taskId: string, taskTitle: string) => {
     dispatch({ type: "START_VERIFY", taskId, taskTitle });
@@ -481,13 +574,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     }, 1000);
   }, []);
 
-  const voteOnMCE = useCallback(
-    (mceId: string, direction: "for" | "against") => {
-      const weight = Math.max(1, state.participant.voteBalance);
-      dispatch({ type: "VOTE_MCE", mceId, direction, weight });
-    },
-    [state.participant.voteBalance],
+  const allocateMceVote = useCallback(
+    (mceId: string, amount: number) => dispatch({ type: "ALLOCATE_MCE_VOTE", mceId, amount }),
+    [],
   );
+
+  const likePost = useCallback((postId: string) => dispatch({ type: "LIKE_POST", postId }), []);
+  const likeEpoch2 = useCallback((proposalId: string) => dispatch({ type: "LIKE_EPOCH2", proposalId }), []);
 
   const redeemOffer = useCallback((offerId: string) => dispatch({ type: "REDEEM_OFFER", offerId }), []);
 
@@ -517,9 +610,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         setRole,
+        setCitizenName,
         claimTask,
+        unclaimTask,
         startVerify,
-        voteOnMCE,
+        allocateMceVote,
+        likePost,
+        likeEpoch2,
         redeemOffer,
         issuerCreateTask,
         issuerVerifyCompletion,

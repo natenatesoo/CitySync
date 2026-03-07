@@ -9,12 +9,13 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-07 (Session 9)
+2026-03-07 (Session 10)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (all pushed)
+- **UNCOMMITTED** → Civic Participant demo rebuild (Session 10) — needs commit + push
 - `feat: overhaul demo role-chooser page content and UI` (e192f8c) ← Session 9
 - `fix: add mode popup to social auth config` (0287b6b) ← Session 8 ✅ BUILD PASSING
 - `fix: add required authProviderId to social auth type in Account Kit config` (007c4a1) ← Session 7
@@ -63,15 +64,15 @@ Full brand asset suite created. True colors extracted from Nate's SVG source fil
 Full interactive demo built with React, Tailwind, mocked data (no live contract calls yet). Three roles, each a standalone mobile-first app with 5 tabs. Shared `DemoContext` (useReducer) holds all cross-role state — credits earned as Participant are spendable at Redeemer offers, Issuer verifications increment stats, etc.
 
 **Files:**
-- `_data/mockData.ts` — 10 tasks (5 categories + 2 MCE-linked), 4 MCE proposals, 7 redemption offers, 3 issuer profiles. All seed data.
-- `_context/DemoContext.tsx` — Full reducer covering: claim/verify tasks, vote on MCEs, redeem offers, create/verify issuer tasks, add/process redeemer offers, MCE opt-in toggle. Verification triggers a real 12-second countdown with `setInterval`.
+- `_data/mockData.ts` — **UPDATED Session 10.** Now 13 tasks (added Onboarding category with 3 tasks), 5 Epoch 1 MCE proposals (all Voting), 6 Epoch 2 proposals, 7 mock org Posts, 7 redemption offers, 3 issuer profiles. New types: `Epoch2Proposal`, `Post`. `isOnboarding` flag on tasks (infinite pool, zero-balance gate).
+- `_context/DemoContext.tsx` — **UPDATED Session 10.** ParticipantState adds: `citizenName`, `mceVoteAllocations: Record<string,number>`, `likedPostIds`, `likedEpoch2Ids`. DemoState adds: `posts`, `epoch2Proposals`. New actions: `SET_CITIZEN_NAME`, `UNCLAIM_TASK`, `ALLOCATE_MCE_VOTE`, `LIKE_POST`, `LIKE_EPOCH2`. CLAIM_TASK preserves infinite pool for onboarding tasks. VOTE is now allocatable (not binary for/against) at 5-VOTE per step. Context exposes: `setCitizenName`, `unclaimTask`, `allocateMceVote`, `likePost`, `likeEpoch2`.
 - `_components/AppShell.tsx` — Full-screen fixed overlay (hides Scaffold-ETH header). Phone-width container (max-width 480px), header with wallet button, scrollable content, BottomNav.
 - `_components/BottomNav.tsx` — 5-tab bottom navigation; active tab highlighted in role accent color.
 - `_components/WalletModal.tsx` — Bottom sheet showing CITY/VOTE/MCE balances, wallet address, role badge.
 - `_components/VerifyingOverlay.tsx` — 12-second oracle verification animation. Circular progress ring, step-by-step status messages ("Submitting proof to oracle…", "Minting CITY credits…"), animated progress dots.
 - `layout.tsx` — Wraps all /demo routes in `<DemoProvider>`.
 - `page.tsx` — Role chooser. Full-screen fixed overlay (z-50, suppresses Scaffold-ETH header/footer). CITY//SYNC SVG logo (matches website), 3 role cards (Civic Participant, Issuer Organization, Redeemer Organization) with full content rewrites, 6-card Key Concepts section (Issuance Caps, Balance, Rate Guidance, MCEs, Task Catalog, Role Governance).
-- `participant/page.tsx` — Profile (balances, stats, recent completions), Explore (category filter, task cards, claim→verify flow), MyCity (impact + tx history), Vote (MCE list, VOTE-weighted voting, status badges), Redemptions (offer cards, confirm modal, burn CITY).
+- `participant/page.tsx` — **REBUILT Session 10.** Profile (editable citizen name, CITY/VOTE/MCE balance cards, tasks completed/credits earned stats, active vote allocations with link to Vote tab), Explore (Open Tasks / My Tasks toggle; category filter including Onboarding; onboarding tasks locked for non-new members; Unclaim + Execute buttons in My Tasks; Execute triggers 12s countdown overlay), MyCity (simulated org post feed, Recent/Top toggle, like/boost per post), Vote (Epoch 1: 5 MCE proposals with allocatable VOTE tokens via +/− steppers, progress bar; Epoch 2: browse upcoming proposals, like to signal interest), Redeem (CITY/MCE filter pills, confirm modal with QR note, past redemptions history).
 - `issuer/page.tsx` — Profile (org name, stats), Tasks (catalog picker sheet + pending verification queue), MyCity (city overview), Dashboard (metrics, category breakdown, how-it-works), MCEs (all MCEs with vote bars).
 - `redeemer/page.tsx` — Profile (MCECredit opt-in toggle), Redemptions (offers + QR modal + incoming queue), MyCity, Dashboard, MCEs. QR codes are deterministic SVG pixel art grids (no external lib needed).
 
@@ -213,6 +214,7 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 ## Pending / Next Steps
 
 ### High Priority
+- **~~Civic Participant demo rebuild~~** — ✅ Done (Session 10). Commit + push pending.
 - **~~Verify Vercel build passes~~** — ✅ Done. Build passing as of Session 8 (`0287b6b`).
 - **Rotate Alchemy API key** — the key was shared in chat during setup. Go to Alchemy dashboard → Apps → CitySync → Edit → Regenerate key. Update `NEXT_PUBLIC_ALCHEMY_API_KEY` in Vercel env vars and local `.env.local`.
 - **Set up `demo.city-sync.org` subdomain** — add CNAME record in GoDaddy: `demo` → `cname.vercel-dns.com`, add domain in Vercel project settings.

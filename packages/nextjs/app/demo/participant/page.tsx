@@ -1,1133 +1,1955 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AppShell from "../_components/AppShell";
-import VerifyingOverlay from "../_components/VerifyingOverlay";
+import { NavTab } from "../_components/BottomNav";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, Task, TaskCategory } from "../_data/mockData";
+import { FAKE_WALLETS, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
 
-// ─── Tab icons ────────────────────────────────────────────────────────────────
+// ─── Brand ────────────────────────────────────────────────────────────────────
 
-const icons = {
-  profile: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
-  explore: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
-      <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
-  mycity: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M3 21h18M3 7l9-4 9 4v14H3V7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M9 21v-6h6v6" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-    </svg>
-  ),
-  vote: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path
-        d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  ),
-  redemptions: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <path
-        d="M2 17l10 5 10-5M2 12l10 5 10-5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  ),
-};
+const ACCENT = "#4169E1";
+const TEAL = "#34eeb6";
+const GOLD = "#DD9E33";
 
-const TABS = [
-  { key: "profile", label: "Profile", icon: icons.profile },
-  { key: "explore", label: "Explore", icon: icons.explore },
-  { key: "mycity", label: "MyCity", icon: icons.mycity },
-  { key: "vote", label: "Vote", icon: icons.vote },
-  { key: "redemptions", label: "Redeem", icon: icons.redemptions },
-];
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
-const CATEGORY_COLORS: Record<TaskCategory, string> = {
-  Environment: "#34eeb6",
-  Education: "#4169E1",
-  Community: "#DD9E33",
-  Health: "#ff6b9d",
-  Infrastructure: "#a78bfa",
-};
+const IconUser = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+  </svg>
+);
+const IconCompass = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+  </svg>
+);
+const IconCity = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+const IconVote = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 20V10" />
+    <path d="M12 20V4" />
+    <path d="M6 20v-6" />
+  </svg>
+);
+const IconGift = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="20 12 20 22 4 22 4 12" />
+    <rect x="2" y="7" width="20" height="5" />
+    <line x1="12" y1="22" x2="12" y2="7" />
+    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+  </svg>
+);
+const IconPencil = ({ size = 14 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+const IconCheck = ({ size = 14 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconXSmall = ({ size = 14 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const IconHeart = ({ filled }: { filled: boolean }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill={filled ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+const IconArrow = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+const IconLock = () => (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export default function ParticipantApp() {
-  const { state, setRole, claimTask, startVerify, voteOnMCE, redeemOffer } = useDemo();
-  const [activeTab, setActiveTab] = useState("explore");
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "All">("All");
-  const [redeemConfirm, setRedeemConfirm] = useState<string | null>(null);
-
-  const { participant, mces, availableTasks, verifying, pastRedemptions, offers } = state;
-
-  // Ensure role is set
-  React.useEffect(() => {
-    setRole("participant");
-  }, [setRole]);
-
-  const filteredTasks =
-    selectedCategory === "All" ? availableTasks : availableTasks.filter(t => t.category === selectedCategory);
-
-  return (
-    <>
-      {verifying && <VerifyingOverlay taskTitle={verifying.taskTitle} secondsRemaining={verifying.secondsRemaining} />}
-
-      <AppShell
-        role="participant"
-        address={FAKE_WALLETS.participant}
-        cityBalance={participant.cityBalance}
-        voteBalance={participant.voteBalance}
-        mceBalance={participant.mceBalance}
-        tabs={TABS}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        accentColor="#4169E1"
-        title="Participant"
-      >
-        {activeTab === "profile" && <ProfileTab participant={participant} />}
-        {activeTab === "explore" && (
-          <ExploreTab
-            tasks={filteredTasks}
-            claimedIds={participant.claimedTaskIds}
-            completedIds={participant.completedTasks.map(t => t.taskId)}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            onSelectTask={setSelectedTask}
-            onClaim={claimTask}
-            onVerify={startVerify}
-          />
-        )}
-        {activeTab === "mycity" && (
-          <MyCityTab
-            completedTasks={participant.completedTasks}
-            cityBalance={participant.cityBalance}
-            voteBalance={participant.voteBalance}
-            mceBalance={participant.mceBalance}
-          />
-        )}
-        {activeTab === "vote" && (
-          <VoteTab mces={mces} votes={participant.mceVotes} voteBalance={participant.voteBalance} onVote={voteOnMCE} />
-        )}
-        {activeTab === "redemptions" && (
-          <RedemptionsTab
-            offers={offers}
-            cityBalance={participant.cityBalance}
-            mceBalance={participant.mceBalance}
-            pastRedemptions={pastRedemptions}
-            confirmId={redeemConfirm}
-            onSelectConfirm={setRedeemConfirm}
-            onRedeem={offerId => {
-              redeemOffer(offerId);
-              setRedeemConfirm(null);
-            }}
-          />
-        )}
-      </AppShell>
-
-      {/* Task detail sheet */}
-      {selectedTask && (
-        <TaskDetailSheet
-          task={selectedTask}
-          isClaimed={participant.claimedTaskIds.includes(selectedTask.id)}
-          isCompleted={participant.completedTasks.some(t => t.taskId === selectedTask.id)}
-          onClaim={() => {
-            claimTask(selectedTask.id);
-            setSelectedTask(null);
-          }}
-          onVerify={() => {
-            startVerify(selectedTask.id, selectedTask.title);
-            setSelectedTask(null);
-          }}
-          onClose={() => setSelectedTask(null)}
-        />
-      )}
-    </>
-  );
+function timeAgo(iso: string): string {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
 }
 
-// ─── Profile Tab ──────────────────────────────────────────────────────────────
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
-function ProfileTab({ participant }: { participant: ReturnType<typeof useDemo>["state"]["participant"] }) {
-  const completionCount = participant.completedTasks.length;
+// ─── Shared card style ────────────────────────────────────────────────────────
+
+const card: React.CSSProperties = {
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 14,
+  padding: "16px",
+};
+
+// ─── Category pill colors ─────────────────────────────────────────────────────
+
+const CAT_COLORS: Record<string, string> = {
+  Onboarding: "#34eeb6",
+  Environment: "#4CAF50",
+  Education: "#9C27B0",
+  Community: "#FF9800",
+  Health: "#E91E63",
+  Infrastructure: "#607D8B",
+};
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+const TABS: NavTab[] = [
+  { key: "profile", label: "Profile", icon: <IconUser /> },
+  { key: "explore", label: "Explore", icon: <IconCompass /> },
+  { key: "mycity", label: "MyCity", icon: <IconCity /> },
+  { key: "vote", label: "Vote", icon: <IconVote /> },
+  { key: "redeem", label: "Redeem", icon: <IconGift /> },
+];
+
+// ─── Verification Overlay ─────────────────────────────────────────────────────
+
+function VerifyOverlay() {
+  const { state } = useDemo();
+  const v = state.verifying;
+  if (!v) return null;
+
+  const pct = Math.round(((12 - v.secondsRemaining) / 12) * 100);
 
   return (
-    <div className="px-5 py-6">
-      {/* Welcome banner */}
-      <div className="mb-6 rounded-3xl p-5" style={{ background: "linear-gradient(135deg, #4169E1 0%, #23128F 100%)" }}>
-        <div className="mb-1 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.6)" }}>
-          Welcome back
-        </div>
-        <div className="mb-3 text-xl font-bold text-white">Demo Citizen</div>
-        <div className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-          {FAKE_WALLETS.participant}
-        </div>
-        <div className="mt-4 flex gap-3">
-          <StatusPill label="Active" color="#34eeb6" />
-          <StatusPill label="Base Sepolia" color="rgba(255,255,255,0.5)" />
-        </div>
-      </div>
-
-      {/* Balances */}
-      <SectionHeader title="Your Balances" />
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        <BalanceCard label="CITY" value={participant.cityBalance} color="#4169E1" desc="Civic Credits" />
-        <BalanceCard label="VOTE" value={participant.voteBalance} color="#DD9E33" desc="Vote Power" />
-        <BalanceCard label="MCE" value={participant.mceBalance} color="#34eeb6" desc="MCE Credits" />
-      </div>
-
-      {/* Stats */}
-      <SectionHeader title="Participation" />
-      <div className="mb-6 rounded-2xl" style={{ background: "#1E1E2C" }}>
-        <StatRow label="Tasks Completed" value={completionCount} />
-        <StatRow label="Credits Earned" value={participant.cityBalance} suffix="CITY" border />
-        <StatRow label="Votes Cast" value={Object.keys(participant.mceVotes).length} />
-      </div>
-
-      {/* Recent completions */}
-      {participant.completedTasks.length > 0 && (
-        <>
-          <SectionHeader title="Recent Activity" />
-          <div className="space-y-2">
-            {participant.completedTasks.slice(0, 3).map(ct => (
-              <div
-                key={ct.txHash}
-                className="flex items-center justify-between rounded-2xl px-4 py-3"
-                style={{ background: "#1E1E2C" }}
-              >
-                <div>
-                  <div className="text-sm font-medium text-white">{ct.title}</div>
-                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    {ct.issuerName} · {new Date(ct.completedAt).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-semibold" style={{ color: "#4169E1" }}>
-                    +{ct.credits} CITY
-                  </div>
-                  <div className="text-xs" style={{ color: "#DD9E33" }}>
-                    +{ct.voteTokens} VOTE
-                  </div>
-                </div>
-              </div>
-            ))}
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(13,13,20,0.92)",
+      }}
+    >
+      <div style={{ ...card, maxWidth: 320, width: "90%", textAlign: "center", padding: 28 }}>
+        <div style={{ position: "relative", width: 80, height: 80, margin: "0 auto 20px" }}>
+          <svg width="80" height="80" style={{ transform: "rotate(-90deg)" }}>
+            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              fill="none"
+              stroke={TEAL}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 34}`}
+              strokeDashoffset={`${2 * Math.PI * 34 * (1 - pct / 100)}`}
+              style={{ transition: "stroke-dashoffset 0.9s linear" }}
+            />
+          </svg>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 22,
+              fontWeight: 700,
+              color: "white",
+            }}
+          >
+            {v.secondsRemaining}
           </div>
-        </>
-      )}
-
-      {participant.completedTasks.length === 0 && (
-        <EmptyState
-          emoji="🏙️"
-          title="Ready to participate?"
-          desc="Head to Explore to browse volunteer tasks and start earning CITY credits."
-        />
-      )}
+        </div>
+        <div style={{ color: TEAL, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Verifying on-chain…</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5 }}>{v.taskTitle}</div>
+        <div
+          style={{
+            marginTop: 16,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 8,
+            padding: "10px 14px",
+            fontSize: 12,
+            color: "rgba(255,255,255,0.4)",
+          }}
+        >
+          Demo: auto-verification simulates the on-chain completion flow
+        </div>
+      </div>
     </div>
   );
 }
 
-// ─── Explore Tab ─────────────────────────────────────────────────────────────
+// ─── Execute Task Modal ───────────────────────────────────────────────────────
 
-const CATEGORIES: Array<TaskCategory | "All"> = [
-  "All",
-  "Environment",
-  "Community",
-  "Education",
-  "Health",
-  "Infrastructure",
-];
-
-function ExploreTab({
-  tasks,
-  claimedIds,
-  completedIds,
-  selectedCategory,
-  onCategoryChange,
-  onSelectTask,
-  onClaim,
-  onVerify,
-}: {
-  tasks: Task[];
-  claimedIds: string[];
-  completedIds: string[];
-  selectedCategory: TaskCategory | "All";
-  onCategoryChange: (c: TaskCategory | "All") => void;
-  onSelectTask: (t: Task) => void;
-  onClaim: (id: string) => void;
-  onVerify: (id: string, title: string) => void;
-}) {
+function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () => void; onClose: () => void }) {
   return (
-    <div>
-      {/* Category filter */}
-      <div className="px-5 pb-2 pt-5">
-        <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => onCategoryChange(cat)}
-              className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition"
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 180,
+        background: "rgba(13,13,20,0.88)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          ...card,
+          width: "100%",
+          maxWidth: 480,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          padding: "24px 20px 32px",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Complete Task</span>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+          >
+            <IconXSmall size={18} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "14px 16px",
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 10,
+          }}
+        >
+          <div style={{ fontWeight: 600, fontSize: 14, color: "white", marginBottom: 4 }}>{task.title}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+            {task.issuerName} · {task.estimatedTime}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              flex: 1,
+              background: "rgba(52,238,182,0.08)",
+              border: "1px solid rgba(52,238,182,0.2)",
+              borderRadius: 8,
+              padding: "10px 0",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: TEAL }}>+{task.credits}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>CITY</div>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              background: "rgba(65,105,225,0.08)",
+              border: "1px solid rgba(65,105,225,0.2)",
+              borderRadius: 8,
+              padding: "10px 0",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>+{task.voteTokens}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>VOTE</div>
+          </div>
+          {task.isMCE && (
+            <div
               style={{
-                background:
-                  selectedCategory === cat
-                    ? cat === "All"
-                      ? "#4169E1"
-                      : CATEGORY_COLORS[cat as TaskCategory]
-                    : "rgba(255,255,255,0.07)",
-                color: selectedCategory === cat ? "#15151E" : "rgba(255,255,255,0.6)",
+                flex: 1,
+                background: "rgba(221,158,51,0.08)",
+                border: "1px solid rgba(221,158,51,0.2)",
+                borderRadius: 8,
+                padding: "10px 0",
+                textAlign: "center",
               }}
             >
-              {cat}
-            </button>
+              <div style={{ fontSize: 18, fontWeight: 700, color: GOLD }}>+{task.credits}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>MCE</div>
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            fontSize: 12,
+            color: "rgba(255,255,255,0.4)",
+            background: "rgba(255,255,255,0.03)",
+            borderRadius: 8,
+            padding: "10px 12px",
+            marginBottom: 20,
+            lineHeight: 1.5,
+          }}
+        >
+          In production, task completion is verified by the Issuer before credits are minted. In this demo, verification
+          is automated — a 12-second countdown simulates on-chain activity.
+        </div>
+
+        <button
+          onClick={onConfirm}
+          style={{
+            width: "100%",
+            padding: "14px 0",
+            background: ACCENT,
+            color: "white",
+            border: "none",
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: "pointer",
+          }}
+        >
+          Confirm &amp; Verify
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Redeem Confirm Modal ─────────────────────────────────────────────────────
+
+function QRIcon() {
+  return (
+    <svg
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none" />
+      <path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function RedeemModal({
+  offer,
+  onConfirm,
+  onClose,
+}: {
+  offer: RedemptionOffer;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 180,
+        background: "rgba(13,13,20,0.88)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          ...card,
+          width: "100%",
+          maxWidth: 480,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          padding: "24px 20px 32px",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Confirm Redemption</span>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+          >
+            <IconXSmall size={18} />
+          </button>
+        </div>
+
+        <div style={{ textAlign: "center", padding: "20px 0 16px" }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>{offer.emoji}</div>
+          <div style={{ fontWeight: 700, fontSize: 18, color: "white", marginBottom: 4 }}>{offer.offerTitle}</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>{offer.redeemerName}</div>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: "rgba(52,238,182,0.1)",
+              border: "1px solid rgba(52,238,182,0.25)",
+              borderRadius: 20,
+              padding: "6px 14px",
+            }}
+          >
+            <span style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{offer.costCity} CITY</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>will be spent</span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            alignItems: "flex-start",
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 10,
+            padding: "14px",
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0, marginTop: 2 }}>
+            <QRIcon />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
+              QR Code at Point of Redemption
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+              In production, a redemption QR code is generated on-chain and scanned by the Redeemer to confirm. In this
+              demo, the transaction is simulated instantly.
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={onConfirm}
+          style={{
+            width: "100%",
+            padding: "14px 0",
+            background: TEAL,
+            color: "#15151E",
+            border: "none",
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: "pointer",
+          }}
+        >
+          Redeem Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Success Toast ────────────────────────────────────────────────────────────
+
+function SuccessToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 3000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 90,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 300,
+        background: "#1a2e20",
+        border: "1px solid rgba(52,238,182,0.3)",
+        borderRadius: 12,
+        padding: "12px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        maxWidth: 340,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span style={{ color: TEAL }}>
+        <IconCheck size={16} />
+      </span>
+      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{message}</span>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PROFILE TAB
+// ═════════════════════════════════════════════════════════════════════════════
+
+function ProfileTab({ onTabChange }: { onTabChange: (tab: string) => void }) {
+  const { state, setCitizenName } = useDemo();
+  const p = state.participant;
+  const [editing, setEditing] = useState(false);
+  const [nameInput, setNameInput] = useState(p.citizenName);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const saveEdit = () => {
+    const trimmed = nameInput.trim();
+    if (trimmed) setCitizenName(trimmed);
+    setEditing(false);
+  };
+  const cancelEdit = () => {
+    setNameInput(p.citizenName);
+    setEditing(false);
+  };
+
+  const totalAllocated = Object.values(p.mceVoteAllocations).reduce((a, b) => a + b, 0);
+  const votedMceIds = Object.entries(p.mceVoteAllocations)
+    .filter(([, v]) => v > 0)
+    .map(([id]) => id);
+  const activeMces = state.mces.filter(m => votedMceIds.includes(m.id));
+  const creditsEarned = p.completedTasks.reduce((sum, t) => sum + t.credits, 0);
+
+  return (
+    <div style={{ padding: "20px 16px 24px" }}>
+      {/* Identity card */}
+      <div style={{ ...card, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: `linear-gradient(135deg, ${ACCENT}, #6b8fff)`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 18,
+                fontWeight: 700,
+                color: "white",
+                flexShrink: 0,
+              }}
+            >
+              {p.citizenName ? p.citizenName[0].toUpperCase() : "?"}
+            </div>
+            <div>
+              {editing ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    ref={inputRef}
+                    value={nameInput}
+                    onChange={e => setNameInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") saveEdit();
+                      if (e.key === "Escape") cancelEdit();
+                    }}
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(65,105,225,0.5)",
+                      borderRadius: 8,
+                      padding: "6px 10px",
+                      color: "white",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      outline: "none",
+                      width: 150,
+                    }}
+                  />
+                  <button
+                    onClick={saveEdit}
+                    style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", padding: 0 }}
+                  >
+                    <IconCheck size={16} />
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "rgba(255,255,255,0.4)",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <IconXSmall size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{ fontSize: 16, fontWeight: 700, color: p.citizenName ? "white" : "rgba(255,255,255,0.3)" }}
+                  >
+                    {p.citizenName || "Tap to set your name"}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setNameInput(p.citizenName);
+                      setEditing(true);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "rgba(255,255,255,0.35)",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <IconPencil size={14} />
+                  </button>
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 3, fontFamily: "monospace" }}>
+                {FAKE_WALLETS.participant}
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              background: "rgba(52,238,182,0.1)",
+              border: "1px solid rgba(52,238,182,0.2)",
+              borderRadius: 20,
+              padding: "4px 12px",
+              fontSize: 12,
+              color: TEAL,
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            Citizen
+          </span>
+        </div>
+
+        {/* Balances */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {[
+            { label: "CITY", value: p.cityBalance, color: TEAL },
+            { label: "VOTE", value: p.voteBalance, color: ACCENT },
+            { label: "MCE", value: p.mceBalance, color: GOLD },
+          ].map(b => (
+            <div
+              key={b.label}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 10,
+                padding: "12px 0",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 20, fontWeight: 700, color: b.color }}>{b.value.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{b.label}</div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Count */}
-      <div className="px-5 pb-3 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-        {tasks.length} {tasks.length === 1 ? "task" : "tasks"} available
+      {/* Stats */}
+      <div style={{ ...card, marginBottom: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ textAlign: "center", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "white" }}>{p.completedTasks.length}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Tasks Completed</div>
+        </div>
+        <div style={{ textAlign: "center", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: TEAL }}>{creditsEarned.toLocaleString()}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Credits Earned</div>
+        </div>
       </div>
 
-      {/* Task list */}
-      <div className="space-y-3 px-5 pb-6">
-        {tasks.map(task => {
-          const isClaimed = claimedIds.includes(task.id);
-          const isCompleted = completedIds.includes(task.id);
-          return (
-            <TaskCard
-              key={task.id}
-              task={task}
-              isClaimed={isClaimed}
-              isCompleted={isCompleted}
-              onTap={() => onSelectTask(task)}
-              onClaim={() => onClaim(task.id)}
-              onVerify={() => onVerify(task.id, task.title)}
-            />
-          );
-        })}
+      {/* Recent completed tasks */}
+      {p.completedTasks.length > 0 && (
+        <div style={{ ...card, marginBottom: 14 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.5)",
+              marginBottom: 12,
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+            }}
+          >
+            Recent Tasks
+          </div>
+          {p.completedTasks.slice(0, 3).map((t, i) => (
+            <div
+              key={t.taskId}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: i < Math.min(p.completedTasks.length, 3) - 1 ? 10 : 0,
+                marginBottom: i < Math.min(p.completedTasks.length, 3) - 1 ? 10 : 0,
+                borderBottom:
+                  i < Math.min(p.completedTasks.length, 3) - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{t.title}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                  {fmtDate(t.completedAt)}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>+{t.credits} CITY</div>
+                <div style={{ fontSize: 11, color: `${ACCENT}cc`, marginTop: 1 }}>+{t.voteTokens} VOTE</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Active vote allocations */}
+      <div style={{ ...card }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.5)",
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+            }}
+          >
+            Active Votes
+          </div>
+          <button
+            onClick={() => onTabChange("vote")}
+            style={{
+              background: "none",
+              border: "none",
+              color: ACCENT,
+              cursor: "pointer",
+              fontSize: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              padding: 0,
+            }}
+          >
+            Vote tab <IconArrow />
+          </button>
+        </div>
+
+        {activeMces.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "12px 0 4px" }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+              {p.voteBalance === 0
+                ? "Complete tasks to earn VOTE tokens, then allocate them to MCE proposals."
+                : `You have ${p.voteBalance} VOTE — head to the Vote tab to allocate.`}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>
+              {totalAllocated} of {p.voteBalance} VOTE allocated
+            </div>
+            {activeMces.map(m => (
+              <div
+                key={m.id}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
+              >
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", flex: 1, paddingRight: 12 }}>
+                  {m.title}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>
+                  {p.mceVoteAllocations[m.id] ?? 0} VOTE
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// EXPLORE TAB
+// ═════════════════════════════════════════════════════════════════════════════
+
+const ALL_CATEGORIES: TaskCategory[] = [
+  "Onboarding",
+  "Environment",
+  "Education",
+  "Community",
+  "Health",
+  "Infrastructure",
+];
+
 function TaskCard({
   task,
   isClaimed,
-  isCompleted,
-  onTap,
+  locked,
+  showClaimButton,
+  showUnclaimButton,
   onClaim,
-  onVerify,
+  onUnclaim,
+  onExecute,
 }: {
   task: Task;
   isClaimed: boolean;
-  isCompleted: boolean;
-  onTap: () => void;
-  onClaim: () => void;
-  onVerify: () => void;
+  locked: boolean;
+  showClaimButton?: boolean;
+  showUnclaimButton?: boolean;
+  onClaim?: () => void;
+  onUnclaim?: () => void;
+  onExecute?: () => void;
 }) {
-  const catColor = CATEGORY_COLORS[task.category];
+  const [expanded, setExpanded] = useState(false);
+  const catColor = CAT_COLORS[task.category] ?? "#666";
 
   return (
-    <div
-      className="rounded-3xl p-4 transition"
-      style={{
-        background: isCompleted ? "rgba(52,238,182,0.06)" : "#1E1E2C",
-        border: isCompleted
-          ? "1px solid rgba(52,238,182,0.2)"
-          : isClaimed
-            ? "1px solid rgba(65,105,225,0.3)"
-            : "1px solid rgba(255,255,255,0.06)",
-      }}
-    >
-      {/* Header row */}
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <button className="flex-1 text-left" onClick={onTap}>
-          <div className="flex items-start gap-2">
+    <div style={{ ...card, marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+        <div style={{ flex: 1, paddingRight: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
             <span
-              className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ background: `${catColor}18`, color: catColor }}
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 20,
+                background: `${catColor}22`,
+                color: catColor,
+                border: `1px solid ${catColor}44`,
+              }}
             >
               {task.category}
             </span>
             {task.isMCE && (
               <span
-                className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                style={{ background: "rgba(221,158,51,0.15)", color: "#DD9E33" }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 20,
+                  background: "rgba(221,158,51,0.15)",
+                  color: GOLD,
+                  border: "1px solid rgba(221,158,51,0.3)",
+                }}
               >
                 MCE
               </span>
             )}
           </div>
-          <div className="mt-2 text-sm font-semibold text-white">{task.title}</div>
-          <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-            {task.issuerName} · {task.estimatedTime} · {task.location}
-          </div>
-        </button>
-
-        {/* Reward */}
-        <div className="shrink-0 text-right">
-          <div className="text-sm font-bold" style={{ color: "#4169E1" }}>
-            {task.credits} CITY
-          </div>
-          <div className="text-xs" style={{ color: "#DD9E33" }}>
-            +{task.voteTokens} VOTE
-          </div>
-        </div>
-      </div>
-
-      {/* Slots */}
-      <div className="mb-3 flex items-center gap-1.5">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
           <div
-            className="h-full rounded-full"
             style={{
-              width: `${Math.max(5, (task.slotsRemaining / task.slots) * 100)}%`,
-              background: catColor,
+              fontSize: 14,
+              fontWeight: 700,
+              color: locked ? "rgba(255,255,255,0.4)" : "white",
+              lineHeight: 1.3,
             }}
-          />
+          >
+            {task.title}
+          </div>
         </div>
-        <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-          {task.slotsRemaining}/{task.slots} spots
-        </span>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{task.credits}</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>CITY</div>
+        </div>
       </div>
 
-      {/* Action */}
-      {isCompleted ? (
+      <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>⏱ {task.estimatedTime}</span>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>📍 {task.location}</span>
+        {!task.isOnboarding && (
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+            {task.slotsRemaining}/{task.slots} slots
+          </span>
+        )}
+      </div>
+
+      <div
+        style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, cursor: "pointer", marginBottom: 12 }}
+        onClick={() => setExpanded(e => !e)}
+      >
+        {expanded ? task.description : task.description.slice(0, 90) + (task.description.length > 90 ? "…" : "")}
+        {task.description.length > 90 && (
+          <span style={{ color: ACCENT, marginLeft: 4 }}>{expanded ? " less" : " more"}</span>
+        )}
+      </div>
+
+      {locked && (
         <div
-          className="flex items-center justify-center gap-1.5 rounded-2xl py-2 text-xs font-medium"
-          style={{ background: "rgba(52,238,182,0.12)", color: "#34eeb6" }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M20 6L9 17l-5-5"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Completed
-        </div>
-      ) : isClaimed ? (
-        <button
-          onClick={onVerify}
-          className="w-full rounded-2xl py-2 text-xs font-semibold transition"
-          style={{ background: "#4169E1", color: "#fff" }}
-        >
-          Submit for Verification →
-        </button>
-      ) : (
-        <button
-          onClick={onClaim}
-          disabled={task.slotsRemaining === 0}
-          className="w-full rounded-2xl py-2 text-xs font-semibold transition"
           style={{
-            background: task.slotsRemaining === 0 ? "rgba(255,255,255,0.07)" : "rgba(65,105,225,0.2)",
-            color: task.slotsRemaining === 0 ? "rgba(255,255,255,0.25)" : "#4169E1",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 12px",
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: 8,
+            marginBottom: 10,
+            fontSize: 12,
+            color: "rgba(255,255,255,0.35)",
           }}
         >
-          {task.slotsRemaining === 0 ? "Full" : "Claim Task"}
-        </button>
+          <IconLock />
+          Available to new members only (zero balance &amp; completions required)
+        </div>
       )}
-    </div>
-  );
-}
 
-// ─── Task Detail Sheet ────────────────────────────────────────────────────────
-
-function TaskDetailSheet({
-  task,
-  isClaimed,
-  isCompleted,
-  onClaim,
-  onVerify,
-  onClose,
-}: {
-  task: Task;
-  isClaimed: boolean;
-  isCompleted: boolean;
-  onClaim: () => void;
-  onVerify: () => void;
-  onClose: () => void;
-}) {
-  const catColor = CATEGORY_COLORS[task.category];
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full rounded-t-3xl p-6 pb-10"
-        style={{ background: "#1E1E2C", maxWidth: 480, maxHeight: "80vh", overflowY: "auto" }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="mx-auto mb-5 h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-
-        <div className="mb-1 flex items-center gap-2">
-          <span
-            className="rounded-full px-2 py-0.5 text-xs font-medium"
-            style={{ background: `${catColor}18`, color: catColor }}
-          >
-            {task.category}
-          </span>
-          {task.isMCE && (
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ background: "rgba(221,158,51,0.15)", color: "#DD9E33" }}
-            >
-              MCE
-            </span>
-          )}
-        </div>
-
-        <h2 className="mb-2 text-xl font-bold text-white">{task.title}</h2>
-        <p className="mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-          {task.description}
-        </p>
-
-        {/* Details grid */}
-        <div className="mb-5 grid grid-cols-2 gap-3">
-          <DetailItem icon="⏱" label="Time" value={task.estimatedTime} />
-          <DetailItem icon="📍" label="Location" value={task.location} />
-          <DetailItem icon="🏢" label="Issuer" value={task.issuerName} />
-          <DetailItem icon="👥" label="Spots Left" value={`${task.slotsRemaining} / ${task.slots}`} />
-        </div>
-
-        {/* Rewards */}
-        <div
-          className="mb-5 flex items-center justify-around rounded-2xl py-4"
-          style={{ background: "rgba(65,105,225,0.1)", border: "1px solid rgba(65,105,225,0.2)" }}
-        >
-          <RewardItem label="CITY Credits" value={task.credits} color="#4169E1" />
-          <div className="h-10 w-px" style={{ background: "rgba(255,255,255,0.1)" }} />
-          <RewardItem label="VOTE Tokens" value={task.voteTokens} color="#DD9E33" />
-        </div>
-
-        {/* Tags */}
-        <div className="mb-6 flex flex-wrap gap-1.5">
-          {task.tags.map(tag => (
-            <span
-              key={tag}
-              className="rounded-full px-2.5 py-0.5 text-xs"
-              style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)" }}
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        {isCompleted ? (
-          <div
-            className="flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-medium"
-            style={{ background: "rgba(52,238,182,0.12)", color: "#34eeb6" }}
-          >
-            ✓ Completed
-          </div>
-        ) : isClaimed ? (
-          <button
-            onClick={onVerify}
-            className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition"
-            style={{ background: "#4169E1" }}
-          >
-            Submit for Verification
-          </button>
-        ) : (
+      <div style={{ display: "flex", gap: 8 }}>
+        {showClaimButton && !isClaimed && !locked && (
           <button
             onClick={onClaim}
-            disabled={task.slotsRemaining === 0}
-            className="w-full rounded-2xl py-3.5 text-sm font-semibold transition"
             style={{
-              background: task.slotsRemaining === 0 ? "rgba(255,255,255,0.07)" : "#4169E1",
-              color: task.slotsRemaining === 0 ? "rgba(255,255,255,0.25)" : "#fff",
+              flex: 1,
+              padding: "10px 0",
+              background: ACCENT,
+              color: "white",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
             }}
           >
-            {task.slotsRemaining === 0 ? "No Spots Available" : "Claim This Task"}
+            Claim
           </button>
+        )}
+        {showClaimButton && isClaimed && (
+          <div
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              background: "rgba(52,238,182,0.08)",
+              color: TEAL,
+              border: "1px solid rgba(52,238,182,0.2)",
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              textAlign: "center",
+            }}
+          >
+            ✓ Claimed — go to My Tasks
+          </div>
+        )}
+        {showUnclaimButton && (
+          <>
+            <button
+              onClick={onUnclaim}
+              style={{
+                padding: "10px 18px",
+                background: "rgba(255,255,255,0.05)",
+                color: "rgba(255,255,255,0.55)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Unclaim
+            </button>
+            <button
+              onClick={onExecute}
+              style={{
+                flex: 1,
+                padding: "10px 0",
+                background: ACCENT,
+                color: "white",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Execute →
+            </button>
+          </>
         )}
       </div>
     </div>
   );
 }
 
-// ─── MyCity Tab ───────────────────────────────────────────────────────────────
+function ExploreTab() {
+  const { state, claimTask, unclaimTask, startVerify } = useDemo();
+  const [view, setView] = useState<"open" | "mine">("open");
+  const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
+  const [executeTask, setExecuteTask] = useState<Task | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-function MyCityTab({
-  completedTasks,
-  cityBalance,
-  voteBalance,
-  mceBalance,
-}: {
-  completedTasks: ReturnType<typeof useDemo>["state"]["participant"]["completedTasks"];
-  cityBalance: number;
-  voteBalance: number;
-  mceBalance: number;
-}) {
-  const totalCategories = [...new Set(completedTasks.map(t => t.issuerName))].length;
+  const p = state.participant;
+  const isNewMember = p.cityBalance === 0 && p.completedTasks.length === 0 && p.claimedTaskIds.length === 0;
 
-  return (
-    <div className="px-5 py-6">
-      {/* Impact header */}
-      <div
-        className="mb-6 rounded-3xl p-5"
-        style={{
-          background: "linear-gradient(135deg, #23128F 0%, #15151E 100%)",
-          border: "1px solid rgba(65,105,225,0.3)",
-        }}
-      >
-        <div className="mb-3 text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-          Your City Impact
-        </div>
-        <div className="mb-4 text-3xl font-bold text-white">{completedTasks.length}</div>
-        <div className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-          {completedTasks.length === 1 ? "task completed" : "tasks completed"} across {totalCategories}{" "}
-          {totalCategories === 1 ? "organization" : "organizations"}
-        </div>
-      </div>
+  // Open Tasks: always show onboarding; show non-claimed regular tasks
+  const openTasks = state.availableTasks.filter(t => t.isOnboarding || !p.claimedTaskIds.includes(t.id));
+  const filteredOpenTasks = catFilter === "All" ? openTasks : openTasks.filter(t => t.category === catFilter);
 
-      {/* Contribution breakdown */}
-      <SectionHeader title="Your Contributions" />
-      <div className="mb-6 rounded-2xl" style={{ background: "#1E1E2C" }}>
-        <StatRow label="Tasks Completed" value={completedTasks.length} />
-        <StatRow label="CITY Earned" value={cityBalance} suffix="CITY" border />
-        <StatRow label="VOTE Earned" value={voteBalance} suffix="VOTE" border />
-        <StatRow label="MCE Credits" value={mceBalance} suffix="MCE" border />
-      </div>
+  const myTasks = p.claimedTaskIds.map(id => state.availableTasks.find(t => t.id === id)).filter(Boolean) as Task[];
 
-      {/* Completed task list */}
-      {completedTasks.length > 0 ? (
-        <>
-          <SectionHeader title="Completed Tasks" />
-          <div className="space-y-2">
-            {completedTasks.map(ct => (
-              <div
-                key={ct.txHash}
-                className="rounded-2xl px-4 py-3"
-                style={{ background: "#1E1E2C", border: "1px solid rgba(52,238,182,0.12)" }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-white">{ct.title}</div>
-                    <div className="mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                      {ct.issuerName}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold" style={{ color: "#34eeb6" }}>
-                      +{ct.credits} CITY
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: "#34eeb6" }} />
-                  <span className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    {ct.txHash.slice(0, 10)}…{ct.txHash.slice(-6)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <EmptyState
-          emoji="🌆"
-          title="Your city impact starts here"
-          desc="Complete tasks in the Explore tab to see your civic contributions tracked here."
-        />
-      )}
-    </div>
-  );
-}
+  const handleClaim = (task: Task) => {
+    if (task.isOnboarding && !isNewMember) return;
+    claimTask(task.id);
+    setToast(`Claimed: ${task.title}`);
+  };
 
-// ─── Vote Tab ─────────────────────────────────────────────────────────────────
+  const handleUnclaim = (task: Task) => {
+    unclaimTask(task.id);
+    setToast(`Removed from My Tasks`);
+  };
 
-function VoteTab({
-  mces,
-  votes,
-  voteBalance,
-  onVote,
-}: {
-  mces: ReturnType<typeof useDemo>["state"]["mces"];
-  votes: Record<string, "for" | "against">;
-  voteBalance: number;
-  onVote: (mceId: string, dir: "for" | "against") => void;
-}) {
-  const STATUS_COLOR: Record<string, string> = {
-    Voting: "#4169E1",
-    Planning: "#DD9E33",
-    Active: "#34eeb6",
-    Closed: "rgba(255,255,255,0.3)",
-    Rejected: "#ff6b9d",
+  const handleExecuteConfirm = () => {
+    if (!executeTask) return;
+    const task = executeTask;
+    setExecuteTask(null);
+    startVerify(task.id, task.title);
   };
 
   return (
-    <div className="px-5 py-6">
-      {/* Vote power banner */}
+    <div style={{ padding: "20px 16px 24px" }}>
+      {/* Open / My Tasks toggle */}
       <div
-        className="mb-5 flex items-center justify-between rounded-2xl px-4 py-3"
-        style={{ background: "rgba(221,158,51,0.1)", border: "1px solid rgba(221,158,51,0.2)" }}
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
+          marginBottom: 16,
+        }}
       >
-        <div>
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Your Vote Power
-          </div>
-          <div className="text-xl font-bold" style={{ color: "#DD9E33" }}>
-            {voteBalance.toLocaleString()} VOTE
-          </div>
-        </div>
-        <div className="text-2xl">🗳️</div>
+        {(["open", "mine"] as const).map(v => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+              background: view === v ? ACCENT : "transparent",
+              color: view === v ? "white" : "rgba(255,255,255,0.45)",
+              transition: "all 0.15s",
+            }}
+          >
+            {v === "open" ? "Open Tasks" : `My Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`}
+          </button>
+        ))}
       </div>
 
-      <SectionHeader title="Mass Coordination Events" />
-
-      <div className="space-y-4">
-        {mces.map(mce => {
-          const myVote = votes[mce.id];
-          const totalVotes = mce.votesFor + mce.votesAgainst;
-          const forPct = totalVotes > 0 ? (mce.votesFor / totalVotes) * 100 : 50;
-          const isVotable = mce.status === "Voting";
-          const statusColor = STATUS_COLOR[mce.status] ?? "#4169E1";
-
-          return (
-            <div
-              key={mce.id}
-              className="rounded-3xl p-5"
-              style={{ background: "#1E1E2C", border: "1px solid rgba(255,255,255,0.06)" }}
+      {/* Category filter — Open Tasks only */}
+      {view === "open" && (
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            paddingBottom: 14,
+            marginBottom: 2,
+            scrollbarWidth: "none",
+          }}
+        >
+          {(["All", ...ALL_CATEGORIES] as (TaskCategory | "All")[]).map(c => (
+            <button
+              key={c}
+              onClick={() => setCatFilter(c)}
+              style={{
+                flexShrink: 0,
+                padding: "6px 14px",
+                borderRadius: 20,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+                background: catFilter === c ? (c === "All" ? ACCENT : CAT_COLORS[c]) : "rgba(255,255,255,0.06)",
+                color: catFilter === c ? (c === "Onboarding" ? "#15151E" : "white") : "rgba(255,255,255,0.55)",
+                transition: "all 0.15s",
+              }}
             >
-              <div className="mb-3 flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="mb-1">
-                    <span
-                      className="rounded-full px-2 py-0.5 text-xs font-medium"
-                      style={{ background: `${statusColor}18`, color: statusColor }}
-                    >
-                      {mce.status}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 text-base font-semibold text-white">{mce.title}</div>
-                  <div className="mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    Proposed by {mce.proposerName}
-                  </div>
-                </div>
-              </div>
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
-              <p className="mb-4 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-                {mce.description.slice(0, 140)}…
-              </p>
+      {/* Task list */}
+      {view === "open" ? (
+        filteredOpenTasks.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+            No tasks in this category
+          </div>
+        ) : (
+          filteredOpenTasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              isClaimed={p.claimedTaskIds.includes(task.id)}
+              locked={!!(task.isOnboarding && !isNewMember)}
+              showClaimButton
+              onClaim={() => handleClaim(task)}
+              onExecute={() => setExecuteTask(task)}
+            />
+          ))
+        )
+      ) : myTasks.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "48px 0" }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No claimed tasks yet</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Head to Open Tasks to claim one</div>
+        </div>
+      ) : (
+        myTasks.map(task => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            isClaimed
+            locked={false}
+            showUnclaimButton
+            onUnclaim={() => handleUnclaim(task)}
+            onExecute={() => setExecuteTask(task)}
+          />
+        ))
+      )}
 
-              {/* Vote bar */}
-              <div className="mb-3">
-                <div className="mb-1.5 flex justify-between text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  <span>For: {mce.votesFor.toLocaleString()}</span>
-                  <span>Against: {mce.votesAgainst.toLocaleString()}</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${forPct}%`,
-                      background: "linear-gradient(90deg, #4169E1, #34eeb6)",
-                      transition: "width 0.5s ease",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* MCE meta */}
-              <div className="mb-4 flex gap-3 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                <span>🗓 Ends {new Date(mce.votingEndsAt).toLocaleDateString()}</span>
-                <span>·</span>
-                <span>📋 {mce.taskCount} tasks</span>
-                <span>·</span>
-                <span>🏅 {mce.mceCreditsPerTask} MCE/task</span>
-              </div>
-
-              {/* Vote buttons */}
-              {isVotable ? (
-                myVote ? (
-                  <div
-                    className="flex items-center justify-center gap-1.5 rounded-2xl py-2.5 text-sm font-medium"
-                    style={{
-                      background: myVote === "for" ? "rgba(52,238,182,0.12)" : "rgba(255,107,157,0.12)",
-                      color: myVote === "for" ? "#34eeb6" : "#ff6b9d",
-                    }}
-                  >
-                    {myVote === "for" ? "✓ You voted FOR" : "✗ You voted AGAINST"}
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onVote(mce.id, "for")}
-                      className="flex-1 rounded-2xl py-2.5 text-sm font-semibold transition"
-                      style={{ background: "rgba(52,238,182,0.15)", color: "#34eeb6" }}
-                    >
-                      Vote For
-                    </button>
-                    <button
-                      onClick={() => onVote(mce.id, "against")}
-                      className="flex-1 rounded-2xl py-2.5 text-sm font-semibold transition"
-                      style={{ background: "rgba(255,107,157,0.12)", color: "#ff6b9d" }}
-                    >
-                      Vote Against
-                    </button>
-                  </div>
-                )
-              ) : (
-                <div
-                  className="rounded-2xl py-2.5 text-center text-xs"
-                  style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)" }}
-                >
-                  Voting {mce.status === "Voting" ? "open" : "closed"} · {mce.participantCount.toLocaleString()}{" "}
-                  participants
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {executeTask && (
+        <ExecuteModal task={executeTask} onConfirm={handleExecuteConfirm} onClose={() => setExecuteTask(null)} />
+      )}
+      {toast && <SuccessToast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 }
 
-// ─── Redemptions Tab ──────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// MYCITY TAB
+// ═════════════════════════════════════════════════════════════════════════════
 
-const _CAT_EMOJI: Record<string, string> = {
-  Food: "🍱",
-  Fitness: "🏋️",
-  Transit: "🚌",
-  Culture: "🎨",
-  Essentials: "🛒",
-};
+function MyCityTab() {
+  const { state, likePost } = useDemo();
+  const [sort, setSort] = useState<"recent" | "top">("recent");
 
-function RedemptionsTab({
-  offers,
-  cityBalance,
-  mceBalance,
-  pastRedemptions,
-  confirmId,
-  onSelectConfirm,
-  onRedeem,
-}: {
-  offers: ReturnType<typeof useDemo>["state"]["offers"];
-  cityBalance: number;
-  mceBalance: number;
-  pastRedemptions: ReturnType<typeof useDemo>["state"]["pastRedemptions"];
-  confirmId: string | null;
-  onSelectConfirm: (id: string | null) => void;
-  onRedeem: (id: string) => void;
-}) {
-  const confirmOffer = confirmId ? offers.find(o => o.id === confirmId) : null;
-  const _canAfford = (o: typeof confirmOffer) => o && cityBalance >= o.costCity;
+  const sorted = [...state.posts].sort((a, b) =>
+    sort === "recent" ? new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime() : b.likes - a.likes,
+  );
+
+  const AUTHOR_COLORS: Record<string, string> = {
+    "issuer-1": "#4CAF50",
+    "issuer-2": "#FF9800",
+    "issuer-3": "#9C27B0",
+    "redeemer-1": TEAL,
+    "redeemer-2": ACCENT,
+    "redeemer-4": GOLD,
+  };
+  const CAT_BADGE: Record<string, string> = {
+    Announcement: ACCENT,
+    Event: "#9C27B0",
+    Update: "#607D8B",
+    Opportunity: TEAL,
+  };
 
   return (
-    <div className="px-5 py-6">
-      {/* Balance summary */}
-      <div className="mb-5 flex gap-3">
-        <div
-          className="flex-1 rounded-2xl p-3 text-center"
-          style={{ background: "rgba(65,105,225,0.1)", border: "1px solid rgba(65,105,225,0.2)" }}
-        >
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Available
-          </div>
-          <div className="text-xl font-bold" style={{ color: "#4169E1" }}>
-            {cityBalance}
-          </div>
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            CITY
-          </div>
-        </div>
-        <div
-          className="flex-1 rounded-2xl p-3 text-center"
-          style={{ background: "rgba(52,238,182,0.08)", border: "1px solid rgba(52,238,182,0.15)" }}
-        >
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-            MCE Credits
-          </div>
-          <div className="text-xl font-bold" style={{ color: "#34eeb6" }}>
-            {mceBalance}
-          </div>
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            MCE
-          </div>
-        </div>
-      </div>
-
-      <SectionHeader title="Available Offers" />
-
-      <div className="mb-6 space-y-3">
-        {offers.map(offer => {
-          const canAffordOffer = cityBalance >= offer.costCity;
-          return (
-            <div
-              key={offer.id}
-              className="rounded-3xl p-4"
+    <div style={{ padding: "20px 16px 24px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>City Feed</div>
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3 }}>
+          {(["recent", "top"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setSort(s)}
               style={{
-                background: "#1E1E2C",
-                border: offer.mceOnly ? "1px solid rgba(221,158,51,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                padding: "6px 14px",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+                background: sort === s ? "rgba(255,255,255,0.1)" : "transparent",
+                color: sort === s ? "white" : "rgba(255,255,255,0.45)",
               }}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl"
-                    style={{ background: "rgba(255,255,255,0.06)" }}
-                  >
-                    {offer.emoji}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="text-sm font-semibold text-white">{offer.offerTitle}</div>
-                      {offer.mceOnly && (
-                        <span
-                          className="rounded-full px-1.5 py-0.5 text-xs"
-                          style={{ background: "rgba(221,158,51,0.2)", color: "#DD9E33" }}
-                        >
-                          MCE
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                      {offer.redeemerName}
-                    </div>
-                    <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                      {offer.description}
-                    </div>
-                  </div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div
-                    className="text-base font-bold"
-                    style={{ color: canAffordOffer ? "#4169E1" : "rgba(255,255,255,0.25)" }}
-                  >
-                    {offer.costCity}
-                  </div>
-                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    CITY
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => canAffordOffer && onSelectConfirm(offer.id)}
-                disabled={!canAffordOffer}
-                className="mt-3 w-full rounded-2xl py-2 text-xs font-semibold transition"
-                style={{
-                  background: canAffordOffer ? "rgba(65,105,225,0.2)" : "rgba(255,255,255,0.05)",
-                  color: canAffordOffer ? "#4169E1" : "rgba(255,255,255,0.2)",
-                }}
-              >
-                {canAffordOffer
-                  ? `Redeem for ${offer.costCity} CITY →`
-                  : `Need ${offer.costCity - cityBalance} more CITY`}
-              </button>
-            </div>
-          );
-        })}
+              {s === "recent" ? "Recent" : "Top"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Past redemptions */}
-      {pastRedemptions.length > 0 && (
-        <>
-          <SectionHeader title="Past Redemptions" />
-          <div className="space-y-2">
-            {pastRedemptions.map(r => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between rounded-2xl px-4 py-3"
-                style={{ background: "#1E1E2C" }}
-              >
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16 }}>
+        Updates from Issuer and Redeemer organizations in your city
+      </div>
+
+      {sorted.map(post => {
+        const liked = state.participant.likedPostIds.includes(post.id);
+        const avatarColor = AUTHOR_COLORS[post.authorId] ?? ACCENT;
+        const badgeColor = CAT_BADGE[post.category] ?? "#666";
+
+        return (
+          <div key={post.id} style={{ ...card, marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    background: `${avatarColor}26`,
+                    border: `1.5px solid ${avatarColor}55`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: avatarColor,
+                  }}
+                >
+                  {post.authorName[0]}
+                </div>
                 <div>
-                  <div className="text-sm font-medium text-white">{r.offerTitle}</div>
-                  <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    {r.redeemerName} · {new Date(r.redeemedAt).toLocaleDateString()}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "white" }}>{post.authorName}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                    {post.authorType === "issuer" ? "Issuer Org" : "Redeemer Org"} · {timeAgo(post.postedAt)}
                   </div>
                 </div>
-                <div className="text-sm font-semibold" style={{ color: "#ff6b9d" }}>
-                  -{r.costCity} CITY
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "3px 9px",
+                  borderRadius: 20,
+                  background: `${badgeColor}22`,
+                  color: badgeColor,
+                  border: `1px solid ${badgeColor}44`,
+                }}
+              >
+                {post.category}
+              </span>
+            </div>
+
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.6, marginBottom: 14 }}>
+              {post.content}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => likePost(post.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: liked ? "rgba(255,90,100,0.12)" : "rgba(255,255,255,0.05)",
+                  border: liked ? "1px solid rgba(255,90,100,0.3)" : "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 20,
+                  padding: "6px 14px",
+                  cursor: "pointer",
+                  color: liked ? "#ff5a64" : "rgba(255,255,255,0.5)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  transition: "all 0.15s",
+                }}
+              >
+                <IconHeart filled={liked} />
+                {post.likes}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// VOTE TAB
+// ═════════════════════════════════════════════════════════════════════════════
+
+function VoteTab() {
+  const { state, allocateMceVote, likeEpoch2 } = useDemo();
+  const p = state.participant;
+  const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
+
+  const totalAllocated = Object.values(p.mceVoteAllocations).reduce((a, b) => a + b, 0);
+  const remaining = p.voteBalance - totalAllocated;
+  const epoch1Mces = state.mces.filter(m => m.status === "Voting");
+  const STEP = 5;
+
+  const adjust = (mceId: string, delta: number) => {
+    const current = p.mceVoteAllocations[mceId] ?? 0;
+    allocateMceVote(mceId, current + delta);
+  };
+
+  return (
+    <div style={{ padding: "20px 16px 24px" }}>
+      {/* Epoch toggle */}
+      <div
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
+          marginBottom: 20,
+        }}
+      >
+        {(
+          [
+            { key: "epoch1", label: "Epoch 1 · Voting" },
+            { key: "epoch2", label: "Epoch 2 · Upcoming" },
+          ] as const
+        ).map(s => (
+          <button
+            key={s.key}
+            onClick={() => setSection(s.key)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              background: section === s.key ? ACCENT : "transparent",
+              color: section === s.key ? "white" : "rgba(255,255,255,0.45)",
+              transition: "all 0.15s",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {section === "epoch1" && (
+        <>
+          {/* Vote balance summary */}
+          <div
+            style={{
+              ...card,
+              marginBottom: 16,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>VOTE Balance</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: "white" }}>{p.voteBalance.toLocaleString()}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>Unallocated</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: remaining > 0 ? TEAL : "rgba(255,255,255,0.3)" }}>
+                {remaining.toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          {p.voteBalance === 0 ? (
+            <div style={{ ...card, marginBottom: 16, textAlign: "center", padding: "24px 16px" }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>🗳️</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>
+                No VOTE tokens yet
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
+                Complete civic tasks to earn VOTE tokens. Each CITY credit earned also mints 1 VOTE — both are issued
+                1:1 for every completed task.
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    borderRadius: 3,
+                    width: `${Math.min(100, (totalAllocated / p.voteBalance) * 100)}%`,
+                    background: `linear-gradient(90deg, ${ACCENT}, ${TEAL})`,
+                    transition: "width 0.2s",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{totalAllocated} allocated</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{p.voteBalance} total</span>
+              </div>
+            </div>
+          )}
+
+          {epoch1Mces.map((mce, i) => {
+            const allocated = p.mceVoteAllocations[mce.id] ?? 0;
+            const totalVotes = mce.votesFor + mce.votesAgainst + allocated;
+            const pct = totalVotes > 0 ? Math.round(((mce.votesFor + allocated) / totalVotes) * 100) : 0;
+
+            return (
+              <div key={mce.id} style={{ ...card, marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ flex: 1, paddingRight: 10 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>MCE-0{i + 1}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35 }}>{mce.title}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                      by {mce.proposerName}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: allocated > 0 ? ACCENT : "rgba(255,255,255,0.25)",
+                      }}
+                    >
+                      {allocated}
+                    </div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>your VOTE</div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginBottom: 12 }}>
+                  {mce.description.slice(0, 120)}…
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${pct}%`,
+                        background: TEAL,
+                        borderRadius: 3,
+                        transition: "width 0.2s",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                      {(mce.votesFor + allocated).toLocaleString()} for
+                    </span>
+                    <span style={{ fontSize: 11, color: TEAL }}>{pct}%</span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                      {mce.votesAgainst.toLocaleString()} against
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", flex: 1 }}>
+                    Allocate ({STEP} VOTE per step):
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      onClick={() => adjust(mce.id, -STEP)}
+                      disabled={allocated === 0}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.06)",
+                        cursor: allocated === 0 ? "not-allowed" : "pointer",
+                        color: allocated === 0 ? "rgba(255,255,255,0.2)" : "white",
+                        fontSize: 18,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      −
+                    </button>
+                    <span
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: allocated > 0 ? ACCENT : "rgba(255,255,255,0.25)",
+                        minWidth: 36,
+                        textAlign: "center",
+                      }}
+                    >
+                      {allocated}
+                    </span>
+                    <button
+                      onClick={() => adjust(mce.id, STEP)}
+                      disabled={remaining < STEP}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: remaining >= STEP ? `${ACCENT}33` : "rgba(255,255,255,0.06)",
+                        color: remaining >= STEP ? ACCENT : "rgba(255,255,255,0.2)",
+                        cursor: remaining < STEP ? "not-allowed" : "pointer",
+                        fontSize: 18,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
+
+          <div
+            style={{
+              fontSize: 12,
+              color: "rgba(255,255,255,0.25)",
+              textAlign: "center",
+              marginTop: 8,
+              lineHeight: 1.5,
+            }}
+          >
+            Allocations can be adjusted during the open voting period.
           </div>
         </>
       )}
 
-      {/* Confirm modal */}
-      {confirmOffer && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.7)" }}
-          onClick={() => onSelectConfirm(null)}
-        >
-          <div
-            className="w-full rounded-t-3xl p-6 pb-10"
-            style={{ background: "#1E1E2C", maxWidth: 480 }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="mx-auto mb-5 h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-            <div className="mb-4 text-xl font-bold text-white">Confirm Redemption</div>
-            <div className="mb-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.05)" }}>
-              <div className="text-sm font-semibold text-white">{confirmOffer.offerTitle}</div>
-              <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-                {confirmOffer.redeemerName}
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  Cost
-                </span>
-                <span className="text-lg font-bold" style={{ color: "#4169E1" }}>
-                  {confirmOffer.costCity} CITY
-                </span>
-              </div>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  Remaining
-                </span>
-                <span className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  {cityBalance - confirmOffer.costCity} CITY
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => onSelectConfirm(null)}
-                className="flex-1 rounded-2xl py-3 text-sm font-semibold"
-                style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => onRedeem(confirmOffer.id)}
-                className="flex-1 rounded-2xl py-3 text-sm font-semibold text-white"
-                style={{ background: "#4169E1" }}
-              >
-                Confirm Burn
-              </button>
+      {section === "epoch2" && (
+        <>
+          <div style={{ ...card, marginBottom: 16, padding: "14px 16px" }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+              These proposals are gathering community support for the next voting epoch. Like the ones you want
+              considered — the top-liked proposals may be selected by the committee for Epoch 2 voting.
             </div>
           </div>
-        </div>
+
+          {state.epoch2Proposals.map(prop => {
+            const liked = state.participant.likedEpoch2Ids.includes(prop.id);
+            return (
+              <div key={prop.id} style={{ ...card, marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "2px 8px",
+                      borderRadius: 20,
+                      background: prop.proposerType === "org" ? "rgba(65,105,225,0.15)" : "rgba(52,238,182,0.12)",
+                      color: prop.proposerType === "org" ? ACCENT : TEAL,
+                      border: `1px solid ${prop.proposerType === "org" ? "rgba(65,105,225,0.3)" : "rgba(52,238,182,0.25)"}`,
+                    }}
+                  >
+                    {prop.proposerType === "org" ? "Org" : "Citizen"}
+                  </span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{timeAgo(prop.proposedAt)}</span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35, marginBottom: 4 }}>
+                  {prop.title}
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+                  by {prop.proposerName}
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 12 }}>
+                  {prop.description.slice(0, 130)}…
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                  {prop.tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(255,255,255,0.05)",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => likeEpoch2(prop.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      background: liked ? "rgba(255,90,100,0.12)" : "rgba(255,255,255,0.05)",
+                      border: liked ? "1px solid rgba(255,90,100,0.3)" : "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 20,
+                      padding: "7px 16px",
+                      cursor: "pointer",
+                      color: liked ? "#ff5a64" : "rgba(255,255,255,0.5)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <IconHeart filled={liked} /> {prop.likes}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </>
       )}
     </div>
   );
 }
 
-// ─── Shared micro-components ──────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// REDEEM TAB
+// ═════════════════════════════════════════════════════════════════════════════
 
-function SectionHeader({ title }: { title: string }) {
+type CreditFilter = "All" | "CITY" | "MCE";
+
+function RedeemTab() {
+  const { state, redeemOffer } = useDemo();
+  const p = state.participant;
+  const [filter, setFilter] = useState<CreditFilter>("All");
+  const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const filtered = state.offers.filter(o => {
+    if (filter === "MCE") return o.mceOnly;
+    if (filter === "CITY") return !o.mceOnly;
+    return true;
+  });
+
+  const handleConfirm = () => {
+    if (!confirmOffer) return;
+    const offer = confirmOffer;
+    redeemOffer(offer.id);
+    setToast(`Redeemed: ${offer.offerTitle}`);
+    setConfirmOffer(null);
+  };
+
   return (
-    <div className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
-      {title}
+    <div style={{ padding: "20px 16px 24px" }}>
+      {/* Balances */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>{p.cityBalance}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITY Available</div>
+        </div>
+        <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{p.mceBalance}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>MCE Credits</div>
+        </div>
+      </div>
+
+      {/* Credit filter pills */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {(["All", "CITY", "MCE"] as CreditFilter[]).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            style={{
+              padding: "7px 18px",
+              borderRadius: 20,
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+              background: filter === f ? (f === "MCE" ? GOLD : f === "CITY" ? TEAL : ACCENT) : "rgba(255,255,255,0.06)",
+              color: filter === f ? "#15151E" : "rgba(255,255,255,0.55)",
+              transition: "all 0.15s",
+            }}
+          >
+            {f === "All" ? "All Offers" : f === "CITY" ? "CITY Only" : "MCE Only"}
+          </button>
+        ))}
+      </div>
+
+      {/* Offers */}
+      {filtered.map(offer => {
+        const canAfford = p.cityBalance >= offer.costCity;
+        const needsMce = offer.mceOnly && p.mceBalance < offer.costCity;
+        const disabled = !canAfford || needsMce;
+
+        return (
+          <div key={offer.id} style={{ ...card, marginBottom: 10, opacity: disabled ? 0.55 : 1 }}>
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  flexShrink: 0,
+                  background: "rgba(255,255,255,0.06)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 24,
+                }}
+              >
+                {offer.emoji}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 3,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "white" }}>{offer.offerTitle}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+                      {offer.redeemerName}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", paddingLeft: 8, flexShrink: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: offer.mceOnly ? GOLD : TEAL }}>
+                      {offer.costCity}
+                    </div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{offer.mceOnly ? "MCE" : "CITY"}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.45, marginBottom: 10 }}>
+                  {offer.description}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {offer.mceOnly && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          padding: "2px 8px",
+                          borderRadius: 20,
+                          background: "rgba(221,158,51,0.15)",
+                          color: GOLD,
+                          border: "1px solid rgba(221,158,51,0.3)",
+                        }}
+                      >
+                        MCE Only
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(255,255,255,0.05)",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      {offer.category}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => !disabled && setConfirmOffer(offer)}
+                    disabled={disabled}
+                    style={{
+                      padding: "8px 18px",
+                      borderRadius: 10,
+                      border: "none",
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      background: disabled ? "rgba(255,255,255,0.07)" : TEAL,
+                      color: disabled ? "rgba(255,255,255,0.3)" : "#15151E",
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {!canAfford ? "Can't Afford" : needsMce ? "Need MCE" : "Redeem"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Past Redemptions */}
+      {state.pastRedemptions.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.45)",
+              marginBottom: 12,
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+            }}
+          >
+            Past Redemptions
+          </div>
+          {state.pastRedemptions.map(r => (
+            <div key={r.id} style={{ ...card, marginBottom: 8, padding: "12px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{r.offerTitle}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                    {r.redeemerName} · {fmtDate(r.redeemedAt)}
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "monospace", marginTop: 2 }}>
+                    {r.txHash.slice(0, 22)}…
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,100,100,0.85)" }}>−{r.costCity}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>CITY</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {confirmOffer && (
+        <RedeemModal offer={confirmOffer} onConfirm={handleConfirm} onClose={() => setConfirmOffer(null)} />
+      )}
+      {toast && <SuccessToast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 }
 
-function StatusPill({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
-      style={{ background: `${color}20`, color }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-      {label}
-    </span>
-  );
-}
+// ═════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═════════════════════════════════════════════════════════════════════════════
 
-function BalanceCard({ label, value, color, desc }: { label: string; value: number; color: string; desc: string }) {
-  return (
-    <div className="rounded-2xl p-3 text-center" style={{ background: "#1E1E2C" }}>
-      <div className="text-xs font-semibold" style={{ color }}>
-        {label}
-      </div>
-      <div className="mt-1 text-xl font-bold text-white">{value}</div>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-        {desc}
-      </div>
-    </div>
-  );
-}
+export default function ParticipantPage() {
+  const { state, setRole } = useDemo();
+  const [activeTab, setActiveTab] = useState("profile");
 
-function StatRow({
-  label,
-  value,
-  suffix,
-  border,
-}: {
-  label: string;
-  value: number;
-  suffix?: string;
-  border?: boolean;
-}) {
-  return (
-    <div
-      className="flex items-center justify-between px-4 py-3"
-      style={{ borderTop: border ? "1px solid rgba(255,255,255,0.06)" : undefined }}
-    >
-      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-        {label}
-      </span>
-      <span className="text-sm font-semibold text-white">
-        {value.toLocaleString()}
-        {suffix && (
-          <span className="ml-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            {suffix}
-          </span>
-        )}
-      </span>
-    </div>
-  );
-}
+  useEffect(() => {
+    if (!state.role) setRole("participant");
+  }, [state.role, setRole]);
 
-function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.05)" }}>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-        {icon} {label}
-      </div>
-      <div className="mt-1 text-sm font-medium text-white">{value}</div>
-    </div>
-  );
-}
+    <>
+      <AppShell
+        role="participant"
+        address={FAKE_WALLETS.participant}
+        cityBalance={state.participant.cityBalance}
+        voteBalance={state.participant.voteBalance}
+        mceBalance={state.participant.mceBalance}
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        accentColor={ACCENT}
+        title="CitySync · Citizen"
+      >
+        {activeTab === "profile" && <ProfileTab onTabChange={setActiveTab} />}
+        {activeTab === "explore" && <ExploreTab />}
+        {activeTab === "mycity" && <MyCityTab />}
+        {activeTab === "vote" && <VoteTab />}
+        {activeTab === "redeem" && <RedeemTab />}
+      </AppShell>
 
-function RewardItem({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="text-center">
-      <div className="text-2xl font-bold" style={{ color }}>
-        {value}
-      </div>
-      <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ emoji, title, desc }: { emoji: string; title: string; desc: string }) {
-  return (
-    <div className="flex flex-col items-center py-12 text-center">
-      <div className="mb-4 text-5xl">{emoji}</div>
-      <div className="mb-2 text-base font-semibold text-white">{title}</div>
-      <div className="max-w-xs text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-        {desc}
-      </div>
-    </div>
+      {/* Verification overlay rendered outside AppShell so it covers all layers */}
+      <VerifyOverlay />
+    </>
   );
 }
