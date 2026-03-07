@@ -12,7 +12,10 @@ export const accountKitConfig = createConfig(
   },
   {
     auth: {
-      sections: [[{ type: "email" as const }], [{ type: "passkey" as const }, { type: "social" as const }]],
+      sections: [
+        [{ type: "email" as const }],
+        [{ type: "passkey" as const }, { type: "social" as const, authProviderId: "google" as const }],
+      ],
       addPasskeyOnSignup: false,
     },
   },
