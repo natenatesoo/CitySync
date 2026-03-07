@@ -299,10 +299,16 @@ export default function DemoHome() {
           {ROLES.map(role => (
             <div
               key={role.key}
-              className="flex flex-col rounded-3xl overflow-hidden"
-              style={{ background: "#15151E", border: `1px solid rgba(255,255,255,0.07)` }}
+              className="rounded-3xl overflow-hidden"
+              style={{
+                background: "#15151E",
+                border: `1px solid rgba(255,255,255,0.07)`,
+                display: "grid",
+                /* row 1: header  row 2: tabs (grows)  row 3: eligibility  row 4: CTA */
+                gridTemplateRows: "auto 1fr auto auto",
+              }}
             >
-              {/* Card header */}
+              {/* Card header — row 1 */}
               <div className="p-6 pb-4" style={{ borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
                 <div className="mb-4 flex items-center gap-3">
                   <div
@@ -323,9 +329,8 @@ export default function DemoHome() {
                 </p>
               </div>
 
-              {/* Tabs — flex-1 so this section grows to fill card height,
-                  aligning the eligibility block at the same Y across all cards */}
-              <div className="flex-1 p-6 pb-4">
+              {/* Tabs — row 2 (1fr): grows to fill remaining card height */}
+              <div className="p-6 pb-4">
                 <div
                   className="mb-3 text-xs font-semibold uppercase tracking-widest"
                   style={{ color: "rgba(255,255,255,0.3)" }}
@@ -370,8 +375,8 @@ export default function DemoHome() {
                 </p>
               </div>
 
-              {/* CTA */}
-              <div className="mt-auto px-6 pb-6">
+              {/* CTA — row 4 */}
+              <div className="px-6 pb-6">
                 <Link
                   href={role.href}
                   onClick={() => setRole(role.key)}
