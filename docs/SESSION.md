@@ -9,12 +9,13 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-07 (Session 8)
+2026-03-07 (Session 9)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (all pushed)
+- `feat: overhaul demo role-chooser page content and UI` (e192f8c) ← Session 9
 - `fix: add mode popup to social auth config` (0287b6b) ← Session 8 ✅ BUILD PASSING
 - `fix: add required authProviderId to social auth type in Account Kit config` (007c4a1) ← Session 7
 - `fix: use "social" auth type instead of "google" in Account Kit config` (5a552cb) ← Session 7
@@ -69,7 +70,7 @@ Full interactive demo built with React, Tailwind, mocked data (no live contract 
 - `_components/WalletModal.tsx` — Bottom sheet showing CITY/VOTE/MCE balances, wallet address, role badge.
 - `_components/VerifyingOverlay.tsx` — 12-second oracle verification animation. Circular progress ring, step-by-step status messages ("Submitting proof to oracle…", "Minting CITY credits…"), animated progress dots.
 - `layout.tsx` — Wraps all /demo routes in `<DemoProvider>`.
-- `page.tsx` — Role chooser. Dark CitySync branding, 3 role cards with accent colors (Participant #4169E1, Issuer #DD9E33, Redeemer #34eeb6), tab previews, about-the-demo footer note.
+- `page.tsx` — Role chooser. Full-screen fixed overlay (z-50, suppresses Scaffold-ETH header/footer). CITY//SYNC SVG logo (matches website), 3 role cards (Civic Participant, Issuer Organization, Redeemer Organization) with full content rewrites, 6-card Key Concepts section (Issuance Caps, Balance, Rate Guidance, MCEs, Task Catalog, Role Governance).
 - `participant/page.tsx` — Profile (balances, stats, recent completions), Explore (category filter, task cards, claim→verify flow), MyCity (impact + tx history), Vote (MCE list, VOTE-weighted voting, status badges), Redemptions (offer cards, confirm modal, burn CITY).
 - `issuer/page.tsx` — Profile (org name, stats), Tasks (catalog picker sheet + pending verification queue), MyCity (city overview), Dashboard (metrics, category breakdown, how-it-works), MCEs (all MCEs with vote bars).
 - `redeemer/page.tsx` — Profile (MCECredit opt-in toggle), Redemptions (offers + QR modal + incoming queue), MyCity, Dashboard, MCEs. QR codes are deterministic SVG pixel art grids (no external lib needed).
