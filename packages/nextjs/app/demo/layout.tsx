@@ -1,10 +1,15 @@
-import { DemoProvider } from "./_context/DemoContext";
+import { headers } from "next/headers";
+import { cookieToInitialState } from "@account-kit/react";
+import { accountKitConfig } from "./_config/accountKit";
+import { DemoProviders } from "./_components/DemoProviders";
 
 export const metadata = {
   title: "City/Sync Demo",
   description: "Explore the City/Sync civic participation protocol — choose a role and try it live.",
 };
 
-export default function DemoLayout({ children }: { children: React.ReactNode }) {
-  return <DemoProvider>{children}</DemoProvider>;
+export default async function DemoLayout({ children }: { children: React.ReactNode }) {
+  const initialState = cookieToInitialState(accountKitConfig, (await headers()).get("cookie") ?? undefined);
+
+  return <DemoProviders initialState={initialState}>{children}</DemoProviders>;
 }

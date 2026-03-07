@@ -2,6 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
+import { useSignerStatus } from "@account-kit/react";
+import { LoginScreen } from "./_components/LoginScreen";
 import { useDemo } from "./_context/DemoContext";
 
 const ROLES = [
@@ -42,6 +44,10 @@ const ROLES = [
 
 export default function DemoHome() {
   const { setRole } = useDemo();
+  const { isConnected } = useSignerStatus();
+
+  // Show login screen until the user authenticates
+  if (!isConnected) return <LoginScreen />;
 
   return (
     <div
