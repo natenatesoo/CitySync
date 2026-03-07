@@ -9,12 +9,13 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-07 (Session 7)
+2026-03-07 (Session 8)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (all pushed)
+- `fix: add mode popup to social auth config` (0287b6b) ← Session 8 ✅ BUILD PASSING
 - `fix: add required authProviderId to social auth type in Account Kit config` (007c4a1) ← Session 7
 - `fix: use "social" auth type instead of "google" in Account Kit config` (5a552cb) ← Session 7
 - `fix: update Account Kit v4.84.1 API usage` (813574a) ← Session 7
@@ -103,7 +104,28 @@ Multiple rounds of Vercel build failures diagnosed and resolved across two sessi
 - Root cause 2: `{ type: "social" }` alone fails TypeScript — requires `authProviderId: "google"`
 - Fix: `{ type: "social" as const, authProviderId: "google" as const }`
 
-**Status:** Build `✓ Compiled successfully` confirmed in Round 5 log. Type-check is the remaining gate — latest fix (`007c4a1`) should clear it. Push pending from Mac.
+**Round 6 — Social auth `mode` required (Session 8, `0287b6b`):**
+- Root cause: Account Kit v4.84.1 made `mode` a required field on social auth entries — `{ type: "social", authProviderId: "google" }` fails TypeScript without it
+- Fix: added `mode: "popup" as const` to the social auth object (consistent with `enablePopupOauth: true` already in config)
+
+**Status:** ✅ Build confirmed passing after Session 8 fix. Vercel deployment live.
+
+### Google OAuth Setup — Session 8
+
+Google sign-in required setting up a Google Cloud Console OAuth app and wiring credentials into Alchemy. Steps for future reference:
+
+1. Google Cloud Console → new project → APIs & Services → OAuth consent screen → External → fill in app name + emails → Publish App (not Testing)
+2. APIs & Services → Credentials → Create OAuth 2.0 Client ID → Web application
+3. Authorized JavaScript origins: `https://city-sync.org`, `http://localhost:3000`
+4. Authorized redirect URIs: `https://signer.alchemy.com/callback`, `https://auth.alchemy.com/callback`
+5. Copy Client ID and Client Secret → paste into Alchemy → Smart Wallets → config → Social Login → Google
+6. Alchemy whitelisted origins: `https://city-sync.org`, `https://www.city-sync.org`, `https://demo.city-sync.org`, `http://localhost:3000`
+
+**Key gotcha:** The correct Alchemy redirect URI is `https://signer.alchemy.com/callback`, not `https://auth.alchemy.com/callback`. Using the wrong one causes `redirect_uri_mismatch` from Google.
+
+**Status:** ✅ Google sign-in working. Email OTP working. Passkey available.
+
+---
 
 ### Account Kit Integration — Session 6–7
 
@@ -190,7 +212,7 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 ## Pending / Next Steps
 
 ### High Priority
-- **Verify Vercel build passes** — latest fix `007c4a1` should clear the final TypeScript error. After pushing, confirm the Vercel project shows a green build and the demo at `city-sync.org` shows the CitySync login screen (not Scaffold-ETH).
+- **~~Verify Vercel build passes~~** — ✅ Done. Build passing as of Session 8 (`0287b6b`).
 - **Rotate Alchemy API key** — the key was shared in chat during setup. Go to Alchemy dashboard → Apps → CitySync → Edit → Regenerate key. Update `NEXT_PUBLIC_ALCHEMY_API_KEY` in Vercel env vars and local `.env.local`.
 - **Set up `demo.city-sync.org` subdomain** — add CNAME record in GoDaddy: `demo` → `cname.vercel-dns.com`, add domain in Vercel project settings.
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
@@ -268,6 +290,7 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 | `cookieToInitialState` imported from `@account-kit/core`, not `@account-kit/react` | Moved packages in Account Kit v4.84.1 — core utilities live in the core package |
 | Social auth type requires `authProviderId: "google"` | Account Kit v4.84.1 requires explicit provider ID with `type: "social"`; bare `{ type: "social" }` fails TypeScript |
 | viem pinned at `^2.45.0` via both package.json and root resolutions | Account Kit v4.84.1 peer dep requires `^2.45.0`; root `resolutions` field forces all transitive deps to use a compatible version |
+| Social auth requires `mode: "popup"` | Account Kit v4.84.1 made `mode` a required field on social auth entries; `"popup"` matches `enablePopupOauth: true` in the same config |
 
 ---
 
