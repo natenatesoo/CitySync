@@ -170,7 +170,7 @@ function getParticipantPanels(
     case "mycity":
       return {
         left: (
-          <PanelCard label="City Feed" title="Your City's Bulletin Board" accent={ACCENT}>
+          <PanelCard label="MyCity Feed" title="Your City's Bulletin Board" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
               Certified Issuer Organizations and Redeemer Venues post here directly — announcements, events, volunteer
               opportunities, and deals.
@@ -197,16 +197,28 @@ function getParticipantPanels(
     case "vote":
       return {
         left: (
-          <PanelCard label="MCE Governance" title="Governance by Participation" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              VOTE tokens are non-transferable — you can&apos;t buy them, only earn them through civic work. Your vote
-              weight is proportional to your earned balance.
-            </p>
-            <p style={{ margin: 0 }}>
-              In Epoch 1, allocate tokens across active proposals. In Epoch 2, signal support for upcoming ideas — the
-              top-liked proposals advance to the next voting cycle.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="Voting Process" title="Using your $VOTE" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                $VOTE tokens are non-transferable and are earned 1:1 with your $CITYx tokens. At City/Sync we utilize
+                Approval Voting to make decisions on a finite set of proposals. During the open period of voting, users
+                have an opportunity to change their votes however they see fit. Once the open period ends, a much shorter
+                closed period of voting begins, where $VOTE tokens can no longer be changed. At the end of the voting
+                period, the proposal with the most votes is enacted.
+              </p>
+            </PanelCard>
+            <PanelCard label="MCE Governance" title="MCE Epochs" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                MCEs can be thought of as mission-oriented tasks that cover a 3-month sprint. Once an MCE has
+                successfully passed, Issuer Organizations spend a week planning tasks that execute on the winning
+                proposal. All MCE tasks issue a unique credit usable by Civic Participants. During the voting period,
+                Issuer &amp; Redeemer Organizations can create new MCE Proposals. The Representative Issuer Committee
+                selects 5 proposals from the pool to enter the next Epoch — Civic Participants influence the Committee
+                by signaling support through &ldquo;likes&rdquo;. By the time Epoch 1 ends, Epoch 2 Voting will
+                conclude, repeating quarterly.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
@@ -225,14 +237,14 @@ function getParticipantPanels(
     case "redeem":
       return {
         left: (
-          <PanelCard label="Redemption" title="Close the Loop" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              CITYx credits were minted because you did real civic work. Spend them at partner venues — the credit burns
-              on-chain, and the venue receives confirmation instantly.
-            </p>
+          <PanelCard label="Redemptions" title="Using your CITYx" accent={ACCENT}>
             <p style={{ margin: 0 }}>
-              MCECredits unlock additional offers from venues that opted into Mass Coordination Events. No cash, no
-              extra apps — just a QR code scan at the counter.
+              On this page you can view all of the offerings within the Redemption Universe. Redeemer Organizations
+              will have printed QR codes for each of their offerings that interact with the token contract and call the
+              &ldquo;Burn&rdquo; function. When visiting a Redeemer Organization&apos;s location, scan the QR code at
+              the Point of Sale — this instantly calls the function and burns your CITYx at the rate for that
+              offering. A visible and audible cue will appear on screen to prove to the Redeemer Organization that the
+              transaction was processed and the CITYx was deducted from your account.
             </p>
           </PanelCard>
         ),
@@ -742,6 +754,131 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
   );
 }
 
+// ─── Burn Confirm Overlay ─────────────────────────────────────────────────────
+
+function BurnConfirmOverlay({
+  offerTitle,
+  redeemerName,
+  onDone,
+}: {
+  offerTitle: string;
+  redeemerName: string;
+  onDone: () => void;
+}) {
+  const [count, setCount] = React.useState(5);
+
+  React.useEffect(() => {
+    // Play a two-tone success chime via Web Audio API
+    try {
+      const ctx = new AudioContext();
+      const play = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, ctx.currentTime + start);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+      play(660, 0, 0.3);
+      play(880, 0.2, 0.4);
+    } catch (_) {
+      // Audio not available — silent fallback
+    }
+
+    // Countdown
+    const interval = setInterval(() => setCount(c => c - 1), 1000);
+    const timeout = setTimeout(onDone, 5000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [onDone]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 300,
+        background: "rgba(10, 30, 24, 0.97)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 28px",
+        textAlign: "center",
+      }}
+    >
+      {/* Animated checkmark circle */}
+      <div
+        style={{
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          background: "rgba(52,238,182,0.12)",
+          border: "3px solid #34eeb6",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 28,
+          animation: "burnPulse 0.6s ease-out",
+        }}
+      >
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#34eeb6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          color: "#34eeb6",
+          marginBottom: 8,
+        }}
+      >
+        Burn Confirmed
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 6, lineHeight: 1.3 }}>
+        {offerTitle}
+      </div>
+      <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginBottom: 32 }}>{redeemerName}</div>
+
+      <div
+        style={{
+          background: "rgba(52,238,182,0.08)",
+          border: "1px solid rgba(52,238,182,0.2)",
+          borderRadius: 14,
+          padding: "14px 24px",
+          marginBottom: 28,
+        }}
+      >
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>CITYx token burned on-chain</div>
+        <div style={{ fontSize: 12, color: "rgba(52,238,182,0.7)", fontFamily: "monospace" }}>
+          txn: 0x{Math.random().toString(16).slice(2, 18)}…
+        </div>
+      </div>
+
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Closing in {count}s</div>
+
+      <style>{`
+        @keyframes burnPulse {
+          0% { transform: scale(0.6); opacity: 0; }
+          60% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ─── Redeem Confirm Modal ─────────────────────────────────────────────────────
 
 function QRIcon() {
@@ -823,7 +960,7 @@ function RedeemModal({
               padding: "6px 14px",
             }}
           >
-            <span style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{offer.costCity} CITY</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{offer.costCity} CITYx</span>
             <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>will be spent</span>
           </div>
         </div>
@@ -845,11 +982,12 @@ function RedeemModal({
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
-              QR Code at Point of Redemption
+              QR Code at Point of Sale
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
-              In production, a redemption QR code is generated on-chain and scanned by the Redeemer to confirm. In this
-              demo, the transaction is simulated instantly.
+              In production, a redemption QR code is generated for each offering that calls the &ldquo;Burn
+              Function&rdquo; on the token contract for the credit rate of that offering. In this demo, the function is
+              called instantly.
             </div>
           </div>
         </div>
@@ -1728,7 +1866,7 @@ function VoteTab() {
   const totalAllocated = Object.values(p.mceVoteAllocations).reduce((a, b) => a + b, 0);
   const remaining = p.voteBalance - totalAllocated;
   const epoch1Mces = state.mces.filter(m => m.status === "Voting");
-  const STEP = 5;
+  const STEP = 1;
 
   const adjust = (mceId: string, delta: number) => {
     const current = p.mceVoteAllocations[mceId] ?? 0;
@@ -1805,7 +1943,7 @@ function VoteTab() {
                 No VOTE tokens yet
               </div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
-                Complete civic tasks to earn VOTE tokens. Each CITY credit earned also mints 1 VOTE — both are issued
+                Complete civic tasks to earn VOTE tokens. Each CITYx credit earned also mints 1 VOTE — both are issued
                 1:1 for every completed task.
               </div>
             </div>
@@ -1829,10 +1967,12 @@ function VoteTab() {
             </div>
           )}
 
-          {epoch1Mces.map((mce, i) => {
-            const allocated = p.mceVoteAllocations[mce.id] ?? 0;
-            const totalVotes = mce.votesFor + mce.votesAgainst + allocated;
-            const pct = totalVotes > 0 ? Math.round(((mce.votesFor + allocated) / totalVotes) * 100) : 0;
+          {(() => {
+            const maxVotesFor = Math.max(...epoch1Mces.map(m => m.votesFor + (p.mceVoteAllocations[m.id] ?? 0)), 1);
+            return epoch1Mces.map((mce, i) => {
+              const allocated = p.mceVoteAllocations[mce.id] ?? 0;
+              const totalVotes = mce.votesFor + allocated;
+              const pct = Math.round((totalVotes / maxVotesFor) * 100);
 
             return (
               <div key={mce.id} style={{ ...card, marginBottom: 12 }}>
@@ -1883,18 +2023,15 @@ function VoteTab() {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                      {(mce.votesFor + allocated).toLocaleString()} for
+                      {totalVotes.toLocaleString()} votes for
                     </span>
                     <span style={{ fontSize: 11, color: TEAL }}>{pct}%</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                      {mce.votesAgainst.toLocaleString()} against
-                    </span>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", flex: 1 }}>
-                    Allocate ({STEP} VOTE per step):
+                    Allocate VOTE:
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button
@@ -1950,7 +2087,8 @@ function VoteTab() {
                 </div>
               </div>
             );
-          })}
+            });
+          })()}
 
           <div
             style={{
@@ -2062,6 +2200,7 @@ function RedeemTab() {
   const [filter, setFilter] = useState<CreditFilter>("All");
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string } | null>(null);
 
   const filtered = state.offers.filter(o => {
     if (filter === "MCE") return o.mceOnly;
@@ -2073,8 +2212,8 @@ function RedeemTab() {
     if (!confirmOffer) return;
     const offer = confirmOffer;
     redeemOffer(offer.id);
-    setToast(`Redeemed: ${offer.offerTitle}`);
     setConfirmOffer(null);
+    setBurnConfirm({ offerTitle: offer.offerTitle, redeemerName: offer.redeemerName });
   };
 
   return (
@@ -2091,8 +2230,8 @@ function RedeemTab() {
         </div>
       </div>
 
-      {/* Credit filter pills */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      {/* Credit filter pills + Scan QR */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
         {(["All", "CITYx", "MCE"] as CreditFilter[]).map(f => (
           <button
             key={f}
@@ -2112,6 +2251,26 @@ function RedeemTab() {
             {f === "All" ? "All Offers" : f === "CITYx" ? "CITYx Only" : "MCE Only"}
           </button>
         ))}
+        <button
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 20,
+            padding: "7px 14px",
+            cursor: "default",
+            color: "rgba(255,255,255,0.5)",
+            fontSize: 12,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
+          Scan QR
+          <QRIcon />
+        </button>
       </div>
 
       {/* Offers */}
@@ -2243,7 +2402,7 @@ function RedeemTab() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,100,100,0.85)" }}>−{r.costCity}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>CITY</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>CITYx</div>
                 </div>
               </div>
             </div>
@@ -2253,6 +2412,13 @@ function RedeemTab() {
 
       {confirmOffer && (
         <RedeemModal offer={confirmOffer} onConfirm={handleConfirm} onClose={() => setConfirmOffer(null)} />
+      )}
+      {burnConfirm && (
+        <BurnConfirmOverlay
+          offerTitle={burnConfirm.offerTitle}
+          redeemerName={burnConfirm.redeemerName}
+          onDone={() => setBurnConfirm(null)}
+        />
       )}
       {toast && <SuccessToast message={toast} onDismiss={() => setToast(null)} />}
     </div>
