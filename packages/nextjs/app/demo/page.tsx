@@ -323,8 +323,9 @@ export default function DemoHome() {
                 </p>
               </div>
 
-              {/* Tabs */}
-              <div className="p-6 pb-4">
+              {/* Tabs — flex-1 so this section grows to fill card height,
+                  aligning the eligibility block at the same Y across all cards */}
+              <div className="flex-1 p-6 pb-4">
                 <div
                   className="mb-3 text-xs font-semibold uppercase tracking-widest"
                   style={{ color: "rgba(255,255,255,0.3)" }}
