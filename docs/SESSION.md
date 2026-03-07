@@ -9,13 +9,13 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-07 (Session 10)
+2026-03-07 (Session 12)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (all pushed)
-- **UNCOMMITTED** → Civic Participant demo rebuild (Session 10) — needs commit + push
+- **UNCOMMITTED** → All three demo role pages rebuilt (Sessions 10–12) — needs commit + push
 - `feat: overhaul demo role-chooser page content and UI` (e192f8c) ← Session 9
 - `fix: add mode popup to social auth config` (0287b6b) ← Session 8 ✅ BUILD PASSING
 - `fix: add required authProviderId to social auth type in Account Kit config` (007c4a1) ← Session 7
@@ -73,8 +73,8 @@ Full interactive demo built with React, Tailwind, mocked data (no live contract 
 - `layout.tsx` — Wraps all /demo routes in `<DemoProvider>`.
 - `page.tsx` — Role chooser. Full-screen fixed overlay (z-50, suppresses Scaffold-ETH header/footer). CITY//SYNC SVG logo (matches website), 3 role cards (Civic Participant, Issuer Organization, Redeemer Organization) with full content rewrites, 6-card Key Concepts section (Issuance Caps, Balance, Rate Guidance, MCEs, Task Catalog, Role Governance).
 - `participant/page.tsx` — **REBUILT Session 10.** Profile (editable citizen name, CITY/VOTE/MCE balance cards, tasks completed/credits earned stats, active vote allocations with link to Vote tab), Explore (Open Tasks / My Tasks toggle; category filter including Onboarding; onboarding tasks locked for non-new members; Unclaim + Execute buttons in My Tasks; Execute triggers 12s countdown overlay), MyCity (simulated org post feed, Recent/Top toggle, like/boost per post), Vote (Epoch 1: 5 MCE proposals with allocatable VOTE tokens via +/− steppers, progress bar; Epoch 2: browse upcoming proposals, like to signal interest), Redeem (CITY/MCE filter pills, confirm modal with QR note, past redemptions history).
-- `issuer/page.tsx` — Profile (org name, stats), Tasks (catalog picker sheet + pending verification queue), MyCity (city overview), Dashboard (metrics, category breakdown, how-it-works), MCEs (all MCEs with vote bars).
-- `redeemer/page.tsx` — Profile (MCECredit opt-in toggle), Redemptions (offers + QR modal + incoming queue), MyCity, Dashboard, MCEs. QR codes are deterministic SVG pixel art grids (no external lib needed).
+- `issuer/page.tsx` — **REBUILT Session 11.** All inline styles (no Tailwind className), matching participant page design system. Profile (editable org name via dispatch ISSUER_REGISTER, banner + stats + active tasks), Tasks (My Tasks / Pending toggle; Add Task from Catalog button; pending verification queue with Verify & Mint Credits button; success toast), MyCity (city-wide post feed from state.posts + locally created posts; New Post button; Compose Post bottom sheet with category picker + textarea; Recent/Top sort; "You" badge on own posts; timeAgo display), Dashboard (2×2 metric grid, tasks-by-category breakdown, How It Works steps), MCEs (5 Epoch 1 proposals with gradient vote bars). Gold `#DD9E33` accent throughout.
+- `redeemer/page.tsx` — **REBUILT Session 12.** All inline styles (no Tailwind className), matching participant/issuer design system. Profile (editable org name via dispatch REDEEMER_REGISTER, teal banner, MCE toggle switch with animated thumb, activity stats), Redemptions (My Offers / Queue segment; Add New Offer dashed button; offer cards with emoji, MCE badge, Show QR + Remove buttons; Queue with Process Redemption button; processed history; success toasts), MyCity (post feed from state.posts + locally composed posts; New Post button; Compose Post bottom sheet with category + textarea; Recent/Top sort; "You" badge on own posts), Dashboard (2×2 metric grid, offers-by-category breakdown, Redemption Flow how-it-works), MCEs (opt-in prompt when not accepting MCE, all 5 proposals with gradient vote bars, Active MCE acceptance notice). Teal `#34eeb6` accent throughout. QRGrid component preserved (deterministic SVG, no external library).
 
 **Design system:** All inline Tailwind + hardcoded brand hex values. Full-screen fixed overlay at z-50. Charcoal `#15151E` background, `#1E1E2C` card surfaces. Role accent colors consistent throughout each app. Safe-area-inset support for iPhone notch.
 
@@ -215,6 +215,8 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 
 ### High Priority
 - **~~Civic Participant demo rebuild~~** — ✅ Done (Session 10). Commit + push pending.
+- **~~Issuer Organization demo rebuild~~** — ✅ Done (Session 11). Commit + push pending.
+- **~~Redeemer Organization demo rebuild~~** — ✅ Done (Session 12). Commit + push pending.
 - **~~Verify Vercel build passes~~** — ✅ Done. Build passing as of Session 8 (`0287b6b`).
 - **Rotate Alchemy API key** — the key was shared in chat during setup. Go to Alchemy dashboard → Apps → CitySync → Edit → Regenerate key. Update `NEXT_PUBLIC_ALCHEMY_API_KEY` in Vercel env vars and local `.env.local`.
 - **Set up `demo.city-sync.org` subdomain** — add CNAME record in GoDaddy: `demo` → `cname.vercel-dns.com`, add domain in Vercel project settings.
