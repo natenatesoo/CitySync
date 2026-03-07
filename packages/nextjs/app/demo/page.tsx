@@ -268,22 +268,24 @@ export default function DemoHome() {
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section
-        className="px-6 py-20 text-center"
+        className="w-full px-6 py-20"
         style={{ background: "linear-gradient(180deg, #0D0D14 0%, #111128 50%, #0D0D14 100%)" }}
       >
-        <div className="mx-auto mb-6 flex items-center justify-center">
-          <HeroLogo />
+        <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+          <div className="mb-6">
+            <HeroLogo />
+          </div>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
+            Programmable Civic Coordination Infrastructure
+          </p>
+          <p className="mb-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+            In this DEMO you can move between the 3 different roles that serve as the fundamental incentive engine for a
+            Public-Sector Economy.
+          </p>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Live demo on Base Sepolia Testnet · No real funds required
+          </p>
         </div>
-        <p className="mb-2 text-sm font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
-          Programmable Civic Coordination Infrastructure
-        </p>
-        <p className="mx-auto mb-3 max-w-2xl text-center text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-          In this DEMO you can move between the 3 different roles that serve as the fundamental incentive engine for a
-          Public-Sector Economy.
-        </p>
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-          Live demo on Base Sepolia Testnet · No real funds required
-        </p>
       </section>
 
       {/* ── Role cards ─────────────────────────────────────────────────────── */}
