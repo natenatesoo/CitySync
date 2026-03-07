@@ -103,6 +103,8 @@ const TABS = [
 
 const CATALOG_TASKS = MOCK_TASKS.filter(t => !t.isMCE && !t.isOnboarding);
 
+const EPOCH1_CAP = 312;
+
 const ACCENT = "#DD9E33";
 const SURFACE = "#1E1E2C";
 const BG = "#15151E";
@@ -188,16 +190,28 @@ function getIssuerPanels(
     case "profile":
       return {
         left: (
-          <PanelCard label="Issuer Organization" title="Your Issuing Authority" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              As a certified Issuer, you design and deploy community tasks. Your wallet signature is the trust anchor —
-              when you verify a completion, CITYx credits and VOTE tokens are minted on-chain with no intermediary.
-            </p>
-            <p style={{ margin: 0 }}>
-              Tasks you post appear to all participants in the Explore tab. You control slot counts and choose from the
-              admin-curated catalog to ensure quality.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="Issuer Organization" title="Issuing Authority" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                Your organization has been certified to issue CITYx credits in exchange for verified civic
+                contributions. This role sits at the heart of the CitySync protocol.
+              </p>
+              <p style={{ margin: 0 }}>
+                As a trusted node in the network, your verification signature is what triggers token issuance on-chain —
+                there is no central authority minting these credits, only verified issuers like you.
+              </p>
+            </PanelCard>
+            <PanelCard label="Issuance Cap" title="CITYx Budget" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                Each organization is allocated a CITYx issuance cap per epoch. This cap determines the maximum CITYx you
+                can distribute across all tasks you post within the epoch window.
+              </p>
+              <p style={{ margin: 0 }}>
+                Managing your budget means balancing task frequency and credit amounts to maximize civic engagement
+                within your allocation.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
@@ -215,16 +229,28 @@ function getIssuerPanels(
     case "tasks":
       return {
         left: (
-          <PanelCard label="Task Catalog" title="Admin-Curated Quality" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              All tasks pass a moderation queue before appearing here. This prevents spam and ensures every task
-              represents genuine civic value. You pick which to post and how many participant slots to open.
-            </p>
-            <p style={{ margin: 0 }}>
-              When a participant submits a completion, it lands in your Pending queue. Verify it from your wallet to
-              release their credits instantly.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="Task Management" title="Task Catalog" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                All tasks in this catalog have passed a preliminary moderation review to ensure they represent genuine
+                civic value.
+              </p>
+              <p style={{ margin: 0 }}>
+                You can add any approved task directly to your task list, set your available slots, and begin receiving
+                completions from participants immediately.
+              </p>
+            </PanelCard>
+            <PanelCard label="Task Approvals" title="Proposing a New Task" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                Don&apos;t see a task that fits your organization&apos;s civic goals? You can propose a new task for
+                admin review.
+              </p>
+              <p style={{ margin: 0 }}>
+                Submitted proposals enter a moderation queue where city administrators evaluate civic impact, credit
+                alignment, and task feasibility before approving it for the catalog.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
@@ -384,12 +410,26 @@ function SuccessToast({ message, onDone }: { message: string; onDone: () => void
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+interface ProposedTask {
+  id: string;
+  title: string;
+  estimatedTime: string;
+  location: string;
+  date: string;
+  successCriteria: string;
+  creditRate: number;
+  credentials: string;
+  credits: number;
+}
+
 export default function IssuerApp() {
   const { state, setRole, issuerCreateTask, issuerVerifyCompletion } = useDemo();
   const [activeTab, setActiveTab] = useState("profile");
   const [createSheet, setCreateSheet] = useState(false);
+  const [proposeSheet, setProposeSheet] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [localPosts, setLocalPosts] = useState<Post[]>([]);
+  const [proposedTasks, setProposedTasks] = useState<ProposedTask[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
   const { issuer, mces } = state;
@@ -401,6 +441,7 @@ export default function IssuerApp() {
 
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
+  const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
 
   const handleVerify = (taskId: string, citizen: string) => {
     issuerVerifyCompletion(taskId, citizen);
@@ -411,6 +452,39 @@ export default function IssuerApp() {
     issuerCreateTask(task);
     setCreateSheet(false);
     setToast("Task posted to the network!");
+  };
+
+  const handleProposeTask = (proposed: ProposedTask) => {
+    setProposedTasks(prev => [proposed, ...prev]);
+    setProposeSheet(false);
+    setToast("Task proposal submitted for review!");
+  };
+
+  const handleApproveProposed = (proposed: ProposedTask) => {
+    const task: Task = {
+      id: `task-proposed-${Date.now()}`,
+      title: proposed.title,
+      description: proposed.successCriteria || "Community civic task proposed by organization.",
+      category: "Community",
+      estimatedTime: proposed.estimatedTime,
+      location: proposed.location || "TBD",
+      credits: proposed.credits,
+      voteTokens: Math.max(1, Math.round(proposed.credits * 0.5)),
+      slots: 5,
+      slotsRemaining: 5,
+      issuerName: issuer.orgName,
+      issuerId: FAKE_WALLETS.issuer,
+      tags: [],
+      taskDate: proposed.date || "TBD",
+      successCriteria: proposed.successCriteria || "",
+      creditRatePerHr: proposed.creditRate,
+      credentials: proposed.credentials || "None",
+      isMCE: false,
+      isOnboarding: false,
+    };
+    issuerCreateTask(task);
+    setProposedTasks(prev => prev.filter(p => p.id !== proposed.id));
+    setToast("Task approved and added to the catalog!");
   };
 
   const handleCreatePost = (post: Post) => {
@@ -436,13 +510,19 @@ export default function IssuerApp() {
         leftPanel={leftPanel}
         rightPanel={rightPanel}
       >
-        {activeTab === "profile" && <ProfileTab issuer={issuer} totalPending={totalPending} />}
+        {activeTab === "profile" && (
+          <ProfileTab issuer={issuer} totalPending={totalPending} creditsCommitted={creditsCommitted} />
+        )}
         {activeTab === "tasks" && (
           <TasksTab
             issuerTasks={issuer.tasks}
             totalPending={totalPending}
+            creditsCommitted={creditsCommitted}
             onCreateOpen={() => setCreateSheet(true)}
+            onProposeOpen={() => setProposeSheet(true)}
             onVerify={handleVerify}
+            proposedTasks={proposedTasks}
+            onApproveProposed={handleApproveProposed}
           />
         )}
         {activeTab === "mycity" && (
@@ -452,7 +532,21 @@ export default function IssuerApp() {
         {activeTab === "mces" && <MCEsTab mces={mces} />}
       </AppShell>
 
-      {createSheet && <CreateTaskSheet onClose={() => setCreateSheet(false)} onCreate={handleCreateTask} />}
+      {createSheet && (
+        <CreateTaskSheet
+          onClose={() => setCreateSheet(false)}
+          onCreate={handleCreateTask}
+          creditsCommitted={creditsCommitted}
+        />
+      )}
+
+      {proposeSheet && (
+        <ProposeTaskSheet
+          onClose={() => setProposeSheet(false)}
+          onPropose={handleProposeTask}
+          creditsCommitted={creditsCommitted}
+        />
+      )}
 
       {composeOpen && (
         <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
@@ -468,14 +562,26 @@ export default function IssuerApp() {
 function ProfileTab({
   issuer,
   totalPending,
+  creditsCommitted,
 }: {
   issuer: ReturnType<typeof useDemo>["state"]["issuer"];
   totalPending: number;
+  creditsCommitted: number;
 }) {
   const { dispatch } = useDemo();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(issuer.orgName);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setLogoUrl(url);
+    }
+  };
 
   const startEdit = () => {
     setDraft(issuer.orgName);
@@ -554,8 +660,45 @@ function ProfileTab({
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{issuer.orgName || "Your Organization"}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            {/* Logo upload */}
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              style={{ display: "none" }}
+            />
+            <button
+              onClick={() => logoInputRef.current?.click()}
+              title="Upload organization logo"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: logoUrl ? "transparent" : "rgba(221,158,51,0.12)",
+                border: `1px dashed ${logoUrl ? "transparent" : "rgba(221,158,51,0.4)"}`,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <span style={{ fontSize: 18 }}>🏛</span>
+              )}
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>
+                {issuer.orgName || "Your Organization"}
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(221,158,51,0.5)", marginTop: 1 }}>Tap icon to upload logo</div>
+            </div>
             <button
               onClick={startEdit}
               style={{
@@ -608,6 +751,54 @@ function ProfileTab({
         <StatRow label="Pending Verifications" value={totalPending} border accent={totalPending > 0} />
       </div>
 
+      {/* Epoch 1 Issuance Allocation */}
+      <SectionLabel text="Epoch 1 Issuance Allocation" />
+      <div
+        style={{
+          ...surfaceCard,
+          marginBottom: 20,
+          background: "linear-gradient(135deg, #1a1a00 0%, #1E1E2C 100%)",
+          border: "1px solid rgba(221,158,51,0.2)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Jan 1, 2026 – Mar 31, 2026</div>
+            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>104 CITYx / month</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: ACCENT }}>{creditsCommitted}</div>
+            <div style={{ fontSize: 11, color: MUTED }}>of {EPOCH1_CAP} CITYx used</div>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div
+          style={{
+            height: 6,
+            borderRadius: 3,
+            background: "rgba(255,255,255,0.08)",
+            overflow: "hidden",
+            marginBottom: 8,
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${Math.min(100, Math.round((creditsCommitted / EPOCH1_CAP) * 100))}%`,
+              background:
+                creditsCommitted >= EPOCH1_CAP ? "#ff6b9d" : creditsCommitted / EPOCH1_CAP > 0.8 ? "#f59e0b" : ACCENT,
+              borderRadius: 3,
+              transition: "width 0.4s ease",
+            }}
+          />
+        </div>
+        <div style={{ fontSize: 11, color: MUTED }}>
+          {EPOCH1_CAP - creditsCommitted > 0
+            ? `${EPOCH1_CAP - creditsCommitted} CITYx remaining this epoch`
+            : "Epoch allocation fully committed"}
+        </div>
+      </div>
+
       {/* Active tasks quick view */}
       {issuer.tasks.length > 0 && (
         <>
@@ -653,16 +844,26 @@ function ProfileTab({
 function TasksTab({
   issuerTasks,
   totalPending,
+  creditsCommitted,
   onCreateOpen,
+  onProposeOpen,
   onVerify,
+  proposedTasks,
+  onApproveProposed,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
   totalPending: number;
+  creditsCommitted: number;
   onCreateOpen: () => void;
+  onProposeOpen: () => void;
   onVerify: (taskId: string, citizen: string) => void;
+  proposedTasks: ProposedTask[];
+  onApproveProposed: (task: ProposedTask) => void;
 }) {
   const [view, setView] = useState<"my" | "pending">("my");
   const pendingAll = issuerTasks.flatMap(t => t.pendingCompletions.map(addr => ({ task: t, citizen: addr })));
+  const creditsRemaining = EPOCH1_CAP - creditsCommitted;
+  const atCap = creditsRemaining <= 0;
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
@@ -685,34 +886,77 @@ function TasksTab({
               color: view === v ? BG : MUTED,
             }}
           >
-            {v === "my" ? `My Tasks (${issuerTasks.length})` : `Pending (${totalPending})`}
+            {v === "my" ? `My Tasks (${issuerTasks.length})` : `Pending (${totalPending + proposedTasks.length})`}
           </button>
         ))}
       </div>
 
       {view === "my" && (
         <>
+          {/* Budget bar */}
+          {atCap && (
+            <div
+              style={{
+                background: "rgba(255,107,157,0.08)",
+                border: "1px solid rgba(255,107,157,0.3)",
+                borderRadius: 12,
+                padding: "10px 14px",
+                marginBottom: 12,
+                fontSize: 12,
+                color: "#ff6b9d",
+                fontWeight: 600,
+              }}
+            >
+              ⚠️ Epoch allocation cap reached ({EPOCH1_CAP} CITYx). New tasks cannot be posted until next epoch.
+            </div>
+          )}
+
           {/* Create CTA */}
           <button
-            onClick={onCreateOpen}
+            onClick={atCap ? undefined : onCreateOpen}
+            disabled={atCap}
             style={{
               width: "100%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
-              background: "rgba(221,158,51,0.1)",
-              border: "1px dashed rgba(221,158,51,0.4)",
+              background: atCap ? "rgba(255,255,255,0.04)" : "rgba(221,158,51,0.1)",
+              border: atCap ? "1px dashed rgba(255,255,255,0.12)" : "1px dashed rgba(221,158,51,0.4)",
               borderRadius: 14,
               padding: "14px 0",
               fontSize: 13,
               fontWeight: 600,
-              color: ACCENT,
-              cursor: "pointer",
-              marginBottom: 16,
+              color: atCap ? DIMMED : ACCENT,
+              cursor: atCap ? "not-allowed" : "pointer",
+              marginBottom: 10,
             }}
           >
             <IconPlus /> Add Task from Catalog
+          </button>
+
+          {/* Propose CTA */}
+          <button
+            onClick={atCap ? undefined : onProposeOpen}
+            disabled={atCap}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: atCap ? "rgba(255,255,255,0.04)" : "rgba(221,158,51,0.06)",
+              border: atCap ? "1px dashed rgba(255,255,255,0.12)" : "1px solid rgba(221,158,51,0.25)",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              color: atCap ? DIMMED : "rgba(221,158,51,0.8)",
+              cursor: atCap ? "not-allowed" : "pointer",
+              marginBottom: 16,
+            }}
+          >
+            <IconPlus /> Propose New Task for Approval
           </button>
 
           {issuerTasks.length === 0 ? (
@@ -761,13 +1005,104 @@ function TasksTab({
 
       {view === "pending" && (
         <>
-          {pendingAll.length === 0 ? (
+          {/* Proposed tasks awaiting approval */}
+          {proposedTasks.length > 0 && (
+            <>
+              <SectionLabel text={`Proposed Tasks (${proposedTasks.length})`} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+                {proposedTasks.map(pt => (
+                  <div
+                    key={pt.id}
+                    style={{
+                      background: "rgba(221,158,51,0.05)",
+                      border: "1px solid rgba(221,158,51,0.25)",
+                      borderRadius: 16,
+                      padding: 16,
+                    }}
+                  >
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{pt.title}</div>
+                      <div style={{ fontSize: 11, color: MUTED, marginBottom: 2 }}>
+                        {pt.estimatedTime} · {pt.location}
+                      </div>
+                      {pt.date && <div style={{ fontSize: 11, color: MUTED }}>📅 {pt.date}</div>}
+                    </div>
+
+                    {pt.successCriteria && (
+                      <div
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          borderRadius: 10,
+                          padding: "8px 12px",
+                          marginBottom: 10,
+                          fontSize: 12,
+                          color: MUTED,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Success criteria: </span>
+                        {pt.successCriteria}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 10,
+                        fontSize: 12,
+                        color: MUTED,
+                      }}
+                    >
+                      <span>Proposed reward</span>
+                      <span style={{ color: ACCENT, fontWeight: 700 }}>{pt.credits} CITYx</span>
+                    </div>
+
+                    <button
+                      onClick={() => onApproveProposed(pt)}
+                      style={{
+                        width: "100%",
+                        background: ACCENT,
+                        border: "none",
+                        borderRadius: 12,
+                        padding: "11px 0",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: BG,
+                        cursor: "pointer",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Approve Task in Catalog
+                    </button>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: DIMMED,
+                        textAlign: "center",
+                        lineHeight: 1.5,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      As a demo, you are auto-approving your own task proposal. In production, this would go through an
+                      admin moderation queue.
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Citizen completion verifications */}
+          {pendingAll.length > 0 && <SectionLabel text={`Completion Verifications (${pendingAll.length})`} />}
+          {pendingAll.length === 0 && proposedTasks.length === 0 ? (
             <EmptyState
               emoji="🎉"
               title="All clear!"
               desc="No pending verifications. Create tasks and participants will start claiming them."
             />
-          ) : (
+          ) : pendingAll.length === 0 ? null : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {pendingAll.map(({ task, citizen }) => (
                 <div
@@ -833,7 +1168,15 @@ function TasksTab({
 
 // ─── Create Task Sheet ────────────────────────────────────────────────────────
 
-function CreateTaskSheet({ onClose, onCreate }: { onClose: () => void; onCreate: (task: Task) => void }) {
+function CreateTaskSheet({
+  onClose,
+  onCreate,
+  creditsCommitted,
+}: {
+  onClose: () => void;
+  onCreate: (task: Task) => void;
+  creditsCommitted: number;
+}) {
   const [selected, setSelected] = useState<Task | null>(null);
   const [step, setStep] = useState<"pick" | "review">("pick");
 
@@ -967,24 +1310,287 @@ function CreateTaskSheet({ onClose, onCreate }: { onClose: () => void; onCreate:
               <DetailItem icon="👥" label="Slots" value={`${selected.slots} available`} />
             </div>
 
+            {creditsCommitted + selected.credits > EPOCH1_CAP && (
+              <div
+                style={{
+                  background: "rgba(255,107,157,0.08)",
+                  border: "1px solid rgba(255,107,157,0.3)",
+                  borderRadius: 10,
+                  padding: "10px 14px",
+                  marginBottom: 12,
+                  fontSize: 12,
+                  color: "#ff6b9d",
+                }}
+              >
+                ⚠️ Posting this task ({selected.credits} CITYx) would exceed your epoch allocation. You have{" "}
+                {Math.max(0, EPOCH1_CAP - creditsCommitted)} CITYx remaining.
+              </div>
+            )}
             <button
-              onClick={() => onCreate({ ...selected, id: `task-issued-${Date.now()}` })}
+              onClick={() =>
+                creditsCommitted + selected.credits <= EPOCH1_CAP
+                  ? onCreate({ ...selected, id: `task-issued-${Date.now()}` })
+                  : undefined
+              }
+              disabled={creditsCommitted + selected.credits > EPOCH1_CAP}
               style={{
                 width: "100%",
-                background: ACCENT,
+                background: creditsCommitted + selected.credits > EPOCH1_CAP ? "rgba(255,255,255,0.08)" : ACCENT,
                 border: "none",
                 borderRadius: 14,
                 padding: "14px 0",
                 fontSize: 14,
                 fontWeight: 700,
-                color: BG,
-                cursor: "pointer",
+                color: creditsCommitted + selected.credits > EPOCH1_CAP ? DIMMED : BG,
+                cursor: creditsCommitted + selected.credits > EPOCH1_CAP ? "not-allowed" : "pointer",
               }}
             >
               Post This Task
             </button>
           </>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ─── Propose Task Sheet ───────────────────────────────────────────────────────
+
+function ProposeTaskSheet({
+  onClose,
+  onPropose,
+  creditsCommitted,
+}: {
+  onClose: () => void;
+  onPropose: (task: ProposedTask) => void;
+  creditsCommitted: number;
+}) {
+  const [title, setTitle] = useState("");
+  const [estimatedTime, setEstimatedTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [date, setDate] = useState("");
+  const [successCriteria, setSuccessCriteria] = useState("");
+  const [creditRate, setCreditRate] = useState("");
+  const [credentials, setCredentials] = useState("");
+
+  const computedCredits = (() => {
+    const rate = parseFloat(creditRate);
+    if (isNaN(rate) || rate <= 0) return 0;
+    const hoursMatch = estimatedTime.match(/(\d+(?:\.\d+)?)\s*h/i);
+    const hours = hoursMatch ? parseFloat(hoursMatch[1]) : 1;
+    return Math.round(rate * hours);
+  })();
+
+  const canSubmit = title.trim() && estimatedTime.trim() && computedCredits > 0;
+  const wouldExceedCap = creditsCommitted + computedCredits > EPOCH1_CAP;
+
+  const handleSubmit = () => {
+    if (!canSubmit || wouldExceedCap) return;
+    onPropose({
+      id: `proposed-${Date.now()}`,
+      title: title.trim(),
+      estimatedTime: estimatedTime.trim(),
+      location: location.trim() || "TBD",
+      date: date.trim(),
+      successCriteria: successCriteria.trim(),
+      creditRate: parseFloat(creditRate),
+      credentials: credentials.trim(),
+      credits: computedCredits,
+    });
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    color: "#fff",
+    fontSize: 13,
+    padding: "10px 12px",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: MUTED,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.07em",
+    marginBottom: 6,
+    display: "block",
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(4px)",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          background: SURFACE,
+          borderRadius: "24px 24px 0 0",
+          padding: "24px 20px 40px",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 4,
+            background: "rgba(255,255,255,0.15)",
+            borderRadius: 2,
+            margin: "0 auto 20px",
+          }}
+        />
+
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Propose New Task</div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+          Submit a task for admin review. Once approved, it will enter the catalog for participants to claim.
+        </div>
+
+        {/* Budget indicator */}
+        <div
+          style={{
+            background: "rgba(221,158,51,0.07)",
+            border: "1px solid rgba(221,158,51,0.2)",
+            borderRadius: 10,
+            padding: "10px 14px",
+            marginBottom: 20,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: 12,
+          }}
+        >
+          <span style={{ color: MUTED }}>Epoch budget remaining</span>
+          <span style={{ color: ACCENT, fontWeight: 700 }}>{Math.max(0, EPOCH1_CAP - creditsCommitted)} CITYx</span>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Title of Task *</label>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. Community Garden Cleanup"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <label style={labelStyle}>Estimated Time *</label>
+              <input
+                value={estimatedTime}
+                onChange={e => setEstimatedTime(e.target.value)}
+                placeholder="e.g. 2 hours"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Credit Rate / hr *</label>
+              <input
+                type="number"
+                value={creditRate}
+                onChange={e => setCreditRate(e.target.value)}
+                placeholder="e.g. 20"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {computedCredits > 0 && (
+            <div
+              style={{
+                background: wouldExceedCap ? "rgba(255,107,157,0.08)" : "rgba(221,158,51,0.08)",
+                border: `1px solid ${wouldExceedCap ? "rgba(255,107,157,0.3)" : "rgba(221,158,51,0.2)"}`,
+                borderRadius: 10,
+                padding: "8px 14px",
+                fontSize: 12,
+                color: wouldExceedCap ? "#ff6b9d" : ACCENT,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span>{wouldExceedCap ? "⚠️ Exceeds epoch budget" : "Estimated total credits"}</span>
+              <span style={{ fontWeight: 700 }}>{computedCredits} CITYx</span>
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>Location</label>
+            <input
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              placeholder="e.g. Riverside Park, District 4"
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Date / Time of Activity</label>
+            <input
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              placeholder="e.g. Saturday, March 21, 2026 · 10am"
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Success Criteria</label>
+            <textarea
+              value={successCriteria}
+              onChange={e => setSuccessCriteria(e.target.value)}
+              placeholder="How will completion be verified? What should participants submit as evidence?"
+              rows={3}
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Required Credentials or Skills</label>
+            <input
+              value={credentials}
+              onChange={e => setCredentials(e.target.value)}
+              placeholder="e.g. No prior experience needed"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit || wouldExceedCap}
+          style={{
+            width: "100%",
+            background: canSubmit && !wouldExceedCap ? ACCENT : "rgba(255,255,255,0.08)",
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 0",
+            fontSize: 14,
+            fontWeight: 700,
+            color: canSubmit && !wouldExceedCap ? BG : MUTED,
+            cursor: canSubmit && !wouldExceedCap ? "pointer" : "not-allowed",
+            marginTop: 20,
+          }}
+        >
+          Submit for Review
+        </button>
       </div>
     </div>
   );
