@@ -482,7 +482,7 @@ function VerifyOverlay() {
   const v = state.verifying;
   if (!v) return null;
 
-  const pct = Math.round(((12 - v.secondsRemaining) / 12) * 100);
+  const pct = Math.round(((7 - v.secondsRemaining) / 7) * 100);
 
   return (
     <div
@@ -734,7 +734,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
           }}
         >
           In production, the issuer reviews your submission before minting credits. In this DEMO, verification is
-          automatically approved — a 12-second countdown simulates on-chain activity.
+          automatically approved — a 7-second countdown simulates on-chain activity.
         </div>
 
         <button
@@ -807,7 +807,12 @@ function BurnConfirmOverlay({
     <div
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        bottom: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: 480,
         zIndex: 300,
         background: "rgba(10, 30, 24, 0.97)",
         display: "flex",
@@ -1607,6 +1612,10 @@ function ExploreTab() {
 
   const handleClaim = (task: Task) => {
     if (task.isOnboarding && !isNewMember) return;
+    if (p.claimedTaskIds.length >= 2) {
+      setToast("Max 2 tasks can be claimed at a time");
+      return;
+    }
     claimTask(task.id);
     setToast(`Claimed: ${task.title}`);
   };
@@ -1768,7 +1777,7 @@ function MyCityTab() {
   return (
     <div style={{ padding: "20px 16px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>City Feed</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>MyCity Feed</div>
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3 }}>
           {(["recent", "top"] as const).map(s => (
             <button
@@ -1887,7 +1896,9 @@ function VoteTab() {
 
   const totalAllocated = Object.values(p.mceVoteAllocations).reduce((a, b) => a + b, 0);
   const remaining = p.voteBalance - totalAllocated;
-  const epoch1Mces = state.mces.filter(m => m.status === "Voting");
+  const epoch1Mces = [...state.mces.filter(m => m.status === "Voting")].sort(
+    (a, b) => b.votesFor + (p.mceVoteAllocations[b.id] ?? 0) - (a.votesFor + (p.mceVoteAllocations[a.id] ?? 0)),
+  );
   const STEP = 1;
 
   const adjust = (mceId: string, delta: number) => {
@@ -1990,11 +2001,14 @@ function VoteTab() {
           )}
 
           {(() => {
-            const maxVotesFor = Math.max(...epoch1Mces.map(m => m.votesFor + (p.mceVoteAllocations[m.id] ?? 0)), 1);
+            const totalVotesCast = Math.max(
+              epoch1Mces.reduce((sum, m) => sum + m.votesFor + (p.mceVoteAllocations[m.id] ?? 0), 0),
+              1,
+            );
             return epoch1Mces.map((mce, i) => {
               const allocated = p.mceVoteAllocations[mce.id] ?? 0;
               const totalVotes = mce.votesFor + allocated;
-              const pct = Math.round((totalVotes / maxVotesFor) * 100);
+              const pct = Math.round((totalVotes / totalVotesCast) * 100);
 
               return (
                 <div key={mce.id} style={{ ...card, marginBottom: 12 }}>
@@ -2279,19 +2293,15 @@ function RedeemTab() {
             marginLeft: "auto",
             display: "flex",
             alignItems: "center",
-            gap: 6,
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 20,
-            padding: "7px 14px",
+            padding: "7px 10px",
             cursor: "default",
             color: "rgba(255,255,255,0.5)",
-            fontSize: 12,
-            fontWeight: 600,
             flexShrink: 0,
           }}
         >
-          Scan QR
           <QRIcon />
         </button>
       </div>

@@ -139,7 +139,7 @@ const randomAddress = () =>
       .padStart(4, "0"),
   ).join("");
 
-const VERIFY_DURATION = 12; // seconds
+const VERIFY_DURATION = 7; // seconds
 
 // ─── Issuer org name generator ────────────────────────────────────────────────
 
