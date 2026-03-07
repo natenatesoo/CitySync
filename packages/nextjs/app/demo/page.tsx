@@ -342,7 +342,7 @@ export default function DemoHome() {
                 </div>
                 <div className="flex flex-col gap-3">
                   {role.tabs.map(tab => (
-                    <div key={tab.key} className="flex gap-3">
+                    <div key={tab.key} className="flex gap-3" style={{ minHeight: 80 }}>
                       <span
                         className="mt-0.5 shrink-0 rounded-lg px-2 py-0.5 text-xs font-semibold"
                         style={{
@@ -350,6 +350,7 @@ export default function DemoHome() {
                           color: role.accent,
                           minWidth: 90,
                           textAlign: "center",
+                          alignSelf: "start",
                         }}
                       >
                         {tab.key}
