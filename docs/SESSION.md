@@ -9,25 +9,20 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-08 (Session 14)
+2026-03-08 (Session 15)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (needs push)
+- `Round-3: VerifyTab per-slot instances, venue cleanup, logo centering` (075f599) ← Session 15 — **needs push**
+- `fix: remove unused randomAddress variable causing build failure` (3e5a1ba) ← Session 15 — **needs push**
+- `Round-2 edits: issuer task bug fix + redeemer offering updates` (6e34ca7) ← Session 15 — **needs push**
+- `Redesign landing page with new institutional narrative` (df36cce) ← Session 15 — **needs push**
+- `Redeemer role Round-1 overhaul` (be89de1) ← Session 15 — **needs push**
+- `fix: remove unused mces var, MCECard, MetricCard to clear Vercel ESLint errors` (28d9cfb) ← Session 14 — **needs push**
 - `Round-6 issuer role: Verify tab, MCE tab revamp, approved catalog flow` (3ac0f4c) ← Session 14 — **needs push**
-- `feat(issuer): logo upload, Epoch 1 allocation, ProposeTaskSheet, budget cap` (9dfcb96) ← Session 13 — **needs push**
-- `feat: demo round-4 — task limits, timing, sort, phone overlay, 5 new tasks` (fa76efb) ← Session 13 — **needs push**
-- `fix: prettier formatting + unused catch var in participant page` (6d3b434) ← Session 13 — **needs push**
-- `feat: demo round-3 — MyCity/Vote/Redeem tab overhaul (Participant)` (1be51e0) ← Session 13 — **needs push**
-- `feat: overhaul demo role-chooser page content and UI` (e192f8c) ← Session 9
 - `fix: add mode popup to social auth config` (0287b6b) ← Session 8 ✅ BUILD PASSING
-- `fix: add required authProviderId to social auth type in Account Kit config` (007c4a1) ← Session 7
-- `fix: use "social" auth type instead of "google" in Account Kit config` (5a552cb) ← Session 7
-- `fix: update Account Kit v4.84.1 API usage` (813574a) ← Session 7
-- `fix: upgrade viem to ^2.45.0 to satisfy Account Kit peer dep` (9e4a513) ← Session 7
-- `feat: add Alchemy Account Kit for embedded wallets + gasless UX` (6879d93) ← Session 6
-- `fix: resolve Vercel lint failures — prettier config and unused vars` (26c93bc) ← Session 6
 
 ---
 
@@ -77,8 +72,8 @@ Full interactive demo built with React, Tailwind, mocked data (no live contract 
 - `layout.tsx` — Wraps all /demo routes in `<DemoProvider>`.
 - `page.tsx` — Role chooser. Full-screen fixed overlay (z-50, suppresses Scaffold-ETH header/footer). CITY//SYNC SVG logo (matches website), 3 role cards (Civic Participant, Issuer Organization, Redeemer Organization) with full content rewrites, 6-card Key Concepts section (Issuance Caps, Balance, Rate Guidance, MCEs, Task Catalog, Role Governance).
 - `participant/page.tsx` — **REBUILT Session 10.** Profile (editable citizen name, CITY/VOTE/MCE balance cards, tasks completed/credits earned stats, active vote allocations with link to Vote tab), Explore (Open Tasks / My Tasks toggle; category filter including Onboarding; onboarding tasks locked for non-new members; Unclaim + Execute buttons in My Tasks; Execute triggers 12s countdown overlay), MyCity (simulated org post feed, Recent/Top toggle, like/boost per post), Vote (Epoch 1: 5 MCE proposals with allocatable VOTE tokens via +/− steppers, progress bar; Epoch 2: browse upcoming proposals, like to signal interest), Redeem (CITY/MCE filter pills, confirm modal with QR note, past redemptions history).
-- `issuer/page.tsx` — **UPDATED Session 13** (rebuilt Session 11). Profile tab: org logo/photo upload circle button next to name (tap to upload, shows preview); "Epoch 1 Issuance Allocation" section (Jan 1–Mar 31 2026, 312 CITYx cap, 104/month) with live progress bar (amber >80%, red at cap). Tasks tab: two CTA buttons — "Add Task from Catalog" (existing) and "Propose New Task for Approval" (new); ProposeTaskSheet 7-field form (title, est. time, location, date, success criteria, credit rate/hr, credentials) with auto-computed credits (rate × parsed hours); proposed tasks appear in Pending view under "Proposed Tasks" with "Approve Task in Catalog" button + auto-approve demo disclaimer; budget cap 312 CITYx enforced across both CTAs and CreateTaskSheet. Left panels for profile tab: two PanelCards — "Issuer Organization / Issuing Authority" + "Issuance Cap / CITYx Budget". Left panels for tasks tab: two PanelCards — "Task Management / Task Catalog" + "Task Approvals / Proposing a New Task". `EPOCH1_CAP = 312` constant added. `ProposedTask` interface added. Gold `#DD9E33` accent throughout.
-- `redeemer/page.tsx` — **REBUILT Session 12.** All inline styles (no Tailwind className), matching participant/issuer design system. Profile (editable org name via dispatch REDEEMER_REGISTER, teal banner, MCE toggle switch with animated thumb, activity stats), Redemptions (My Offers / Queue segment; Add New Offer dashed button; offer cards with emoji, MCE badge, Show QR + Remove buttons; Queue with Process Redemption button; processed history; success toasts), MyCity (post feed from state.posts + locally composed posts; New Post button; Compose Post bottom sheet with category + textarea; Recent/Top sort; "You" badge on own posts), Dashboard (2×2 metric grid, offers-by-category breakdown, Redemption Flow how-it-works), MCEs (opt-in prompt when not accepting MCE, all 5 proposals with gradient vote bars, Active MCE acceptance notice). Teal `#34eeb6` accent throughout. QRGrid component preserved (deterministic SVG, no external library).
+- `issuer/page.tsx` — **UPDATED Session 15** (previously Session 13). Profile tab: org logo/photo upload; Epoch 1 Allocation progress bar. Tasks tab: two CTA buttons (Add from Catalog / Propose New Task); My Tasks section now shows `X/N slots active` counter per task; "Issue Z unissued tasks" button appears when slots have been removed. Verify tab: **fully overhauled** — per-slot instance model (`SlotInstance` type). Issuing N slots creates N individual instance cards. Issued section: each card has "Remove Task" (removes slot) + "Move to Claimed" buttons. Claimed section: "No Show" (removes slot) + "Move to Completed" buttons. Completed section: "Verify & Mint Credits" (mints via context, removes instance). `slotInstances: SlotInstance[]` and handlers (`handleRemoveSlotInstance`, `handleMoveSlotToClaimed`, `handleMoveSlotToCompleted`, `handleReissueSlots`) live in `IssuerApp` state; old `removedTaskIds`/`handleRemoveIssuedTask` removed. Bug fix: `ISSUER_CREATE_TASK` reducer no longer injects random mock `pendingCompletions` — new tasks start clean. `DemoContext.tsx` updated accordingly. Gold `#DD9E33` accent throughout.
+- `redeemer/page.tsx` — **UPDATED Session 15** (rebuilt Session 12). Full inline-style rewrite. Profile: editable org name, logo upload, Venue Information card (Address, Phone Number, Website — all editable via pencil icon, inline save/cancel flow; Status + Network rows removed). Offerings tab (renamed from Redeem): two-toggle Committed / MCE; `AddOfferingSheet` form-based (name, CITYx cost, stipulations); Committed type: button "Lock Committed Offering" → epoch-lock confirmation popup ("This Offering will remain Valid until the end of the current Epoch. Are you sure?"); MCE type: multi-select checkboxes for up to 5 MCE proposals (single offering linked to multiple MCEs), duration options removed (locked until MCE ends); `MCECustomOffering` type uses `mceIds[]`/`mceNames[]` instead of `mceId`/`mceName`/`duration`. MyCity, Dashboard, MCE tabs unchanged. `CustomOffering` and `MCECustomOffering` types local (not in context). Teal `#34eeb6` accent throughout.
 
 **Design system:** All inline Tailwind + hardcoded brand hex values. Full-screen fixed overlay at z-50. Charcoal `#15151E` background, `#1E1E2C` card surfaces. Role accent colors consistent throughout each app. Safe-area-inset support for iPhone notch.
 
@@ -225,18 +220,21 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 - **~~Demo round-4: task limits, timing, sort, phone overlay, 5 tasks~~** — ✅ Done (Session 13, commit `fa76efb`).
 - **~~Issuer role edits: logo, Epoch 1 allocation, ProposeTaskSheet, budget cap~~** — ✅ Done (Session 13, commit `9dfcb96`).
 - **~~Issuer Round-6: Verify tab, MCE tab revamp, approved catalog, ProposeTaskSheet fixes~~** — ✅ Done (Session 14, commit `3ac0f4c`).
+- **~~Redeemer role Round-1 overhaul~~** — ✅ Done (Session 15, commit `be89de1`). Offerings tab, AddOfferingSheet, MCE multi-select, Profile Venue Info.
+- **~~Landing page redesign~~** — ✅ Done (Session 15, commit `df36cce`). New institutional narrative, hero centered logo (075f599).
+- **~~Issuer/Redeemer Round-2 edits~~** — ✅ Done (Session 15, commit `6e34ca7`). Task pending bug fixed, offering button/confirmation, MCE checkboxes, venue fields.
+- **~~Issuer Round-3: VerifyTab per-slot instances~~** — ✅ Done (Session 15, commit `075f599`). Full slot-lifecycle flow across Issued → Claimed → Completed.
 - **~~Verify Vercel build passes~~** — ✅ Done. Build passing as of Session 8 (`0287b6b`).
-- **git push** — 5 commits unpushed since Session 9. Run `git push` from Mac.
-- **Verify Vercel build passes** — push triggers a new build; watch for any prettier/ESLint errors.
+- **git push** — 8 commits unpushed. Run `git push` from Mac.
+- **Verify Vercel build passes** — push triggers new build; watch for prettier/ESLint errors.
 - **Rotate Alchemy API key** — the key was shared in chat during setup. Go to Alchemy dashboard → Apps → CitySync → Edit → Regenerate key. Update `NEXT_PUBLIC_ALCHEMY_API_KEY` in Vercel env vars and local `.env.local`.
-- **Redeemer role demo edits** — Redeemer page has not received a round-4/5 style pass yet. Pending any requests from Nate.
-- **Issuer end-to-end test** — Test flow: Propose task → Approve → Issue Task popup (set slots) → Participant Explore tab sees the task. Verify VOTE = CITYx matches.
+- **Issuer end-to-end test** — Test flow: Propose task → Approve → Issue Task popup (set slots) → Participant Explore tab sees the task → Verify VOTE = CITYx matches.
 - **Set up `demo.city-sync.org` subdomain** — add CNAME record in GoDaddy: `demo` → `cname.vercel-dns.com`, add domain in Vercel project settings.
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
 - **Broadcast deployment to Base Sepolia** — contracts already deployed (addresses in `packages/foundry/deployments/84532.json`). Commit those deployment files: `git add packages/foundry/deployments/ packages/foundry/broadcast/ && git commit -m "chore: add Base Sepolia deployment artifacts"`
 - **Wire demo frontend to live contracts** — replace `mockData.ts` constants with real contract reads/writes. Swap DemoContext's reducer actions for wagmi hooks + contract calls. EIP712 oracle backend (simple Node.js signer service) needed for task verification flow.
 - **Task Catalog backend** — simple form + moderation queue for task proposals; approved tasks appear as dropdown options for Issuers in demo.
-- **Landing page refinements** — `landing/index.html` is live at `city-sync.org`. Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link once whitepaper is hosted; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder and commit from Mac.
+- **Landing page refinements** — `landing/index.html` fully redesigned (Session 15, `df36cce`). Hero logo centered (`075f599`). Still needed: (1) replace "DOWNLOAD WHITEPAPER" `#` placeholder with real link; (2) update Paragraph.com CTA; (3) copy web assets (favicon.svg, og-image.svg) from `docs/brand/web/` into `landing/` folder.
 - **Copy brand web assets to landing/** — copy `docs/brand/web/favicon.svg`, `favicon.ico`, `apple-touch-icon.svg`, `og-image.svg` into `landing/` folder so they're served by Vercel.
 - **dPAN dApp deployment** — Next.js Vercel project already created; point to `app.city-sync.org` subdomain once build is confirmed green.
 - **Improve the Problem Definition & Impact Factors doc** — original at `docs/official/City_Sync Problem Definition & Impact Factors.docx`. Read with pandoc, create improved version using docx-js.
@@ -296,6 +294,11 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 | Demo oracle verification via EIP712 signature after frontend timer | 10–15s "Verifying…" spinner → backend oracle signs → verifyCompletionWithSig() mints credits. No Issuer action needed in demo. |
 | Mid-session SESSION.md commits after every major milestone | Guard against usage limit cutoffs losing session state |
 | Demo frontend uses mocked data first, not live contracts | Faster to build and preview; wire to real contracts after Base Sepolia deployment |
+| VerifyTab uses per-slot `SlotInstance` local state, not context IssuerTask | Each issued slot needs independent lifecycle (Issued → Claimed → Completed → Minted); context IssuerTask still tracks verifiedCount |
+| `ISSUER_CREATE_TASK` reducer no longer injects mock `pendingCompletions` | Newly issued tasks start clean; initial mock tasks in state still carry pre-set mock completions from `INITIAL_STATE` |
+| MCE offering uses multi-select checkboxes, not single-select radio | Redeemers can signal support for multiple MCE proposals with one offering, providing incentive visibility to voters |
+| Epoch lock confirmation popup on "Lock Committed Offering" | Extra friction prevents accidental irreversible epoch locks in the demo |
+| Venue Information (Redeemer) is editable local state, not dispatched to context | Address/phone/website are venue-specific presentation data, not cross-role shared state |
 | Full-screen fixed overlay for demo (z-50, covers Scaffold-ETH header) | Cleanest way to build a custom mobile UI without ejecting Scaffold-ETH's layout |
 | Demo state managed by a single shared DemoContext (useReducer) | Cross-role interactions (Participant spends credits at Redeemer offers, etc.) require shared global state |
 | QR codes rendered as deterministic SVG pixel grids (no external library) | Avoids bundle bloat; QR content is a `citysync://redeem?offer=...` URI suitable for real app scanning |
