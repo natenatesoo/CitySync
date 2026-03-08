@@ -125,7 +125,7 @@ type Action =
 const randomTxHash = () =>
   "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 
-const randomAddress = () =>
+const _randomAddress = () =>
   "0x" +
   Array.from({ length: 4 }, () =>
     Math.floor(Math.random() * 0xffff)
