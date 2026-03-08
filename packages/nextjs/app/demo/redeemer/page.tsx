@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import AppShell from "../_components/AppShell";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, OfferCategory, Post, PostCategory, RedemptionOffer } from "../_data/mockData";
+import { FAKE_WALLETS, Post, PostCategory } from "../_data/mockData";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -101,11 +101,18 @@ const IconHeart = () => (
   </svg>
 );
 
+const IconLock = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 // ─── Constants & Styles ───────────────────────────────────────────────────────
 
 const TABS = [
   { key: "profile", label: "Profile", icon: <IconStore /> },
-  { key: "redemptions", label: "Redeem", icon: <IconCard /> },
+  { key: "offerings", label: "Offerings", icon: <IconCard /> },
   { key: "mycity", label: "MyCity", icon: <IconCity /> },
   { key: "dashboard", label: "Dashboard", icon: <IconDashboard /> },
   { key: "mces", label: "MCEs", icon: <IconBolt /> },
@@ -141,31 +148,33 @@ const STATUS_COLOR: Record<string, string> = {
   Rejected: "#ff6b9d",
 };
 
-// Preset offers for the AddOfferSheet
-type PresetOffer = {
-  title: string;
-  desc: string;
-  cost: number;
-  cat: OfferCategory;
-  emoji: string;
-  mceOnly?: boolean;
+// ─── Local Offering Types ─────────────────────────────────────────────────────
+
+type CustomOffering = {
+  id: string;
+  name: string;
+  costCity: number;
+  stipulations: string;
+  createdAt: string;
 };
 
-const PRESET_OFFERS: PresetOffer[] = [
-  { title: "10% Grocery Discount", desc: "10% off any purchase up to $50", cost: 30, cat: "Essentials", emoji: "🛒" },
-  { title: "Day Pass", desc: "Full access for one day", cost: 20, cat: "Fitness", emoji: "🏋️" },
-  { title: "Meal Voucher ($10)", desc: "Any item up to $10 value", cost: 25, cat: "Food", emoji: "🍱" },
-  { title: "Transit Pass (1 day)", desc: "Unlimited rides for one day", cost: 15, cat: "Transit", emoji: "🚌" },
-  { title: "Workshop Entry", desc: "One drop-in workshop session", cost: 35, cat: "Culture", emoji: "🎨" },
-  {
-    title: "MCE Champion Reward",
-    desc: "Special reward for MCE participants",
-    cost: 80,
-    cat: "Culture",
-    emoji: "🏆",
-    mceOnly: true,
-  },
-];
+type MCECustomOffering = {
+  id: string;
+  name: string;
+  costCity: number;
+  stipulations: string;
+  mceId: string;
+  mceName: string;
+  duration: string;
+  createdAt: string;
+};
+
+type QROfferingData = {
+  id: string;
+  name: string;
+  costCity: number;
+  orgName: string;
+};
 
 // ─── Success Toast ────────────────────────────────────────────────────────────
 
@@ -266,8 +275,11 @@ function PanelStats({ stats, accent }: { stats: { label: string; value: string |
 function getRedeemerPanels(
   activeTab: string,
   state: ReturnType<typeof useDemo>["state"],
+  committedOfferings: CustomOffering[],
+  mceOfferings: MCECustomOffering[],
 ): { left: React.ReactNode; right: React.ReactNode } {
   const { redeemer, mces, posts } = state;
+  const totalCityxBurned = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
 
   switch (activeTab) {
     case "profile":
@@ -288,40 +300,47 @@ function getRedeemerPanels(
           <PanelStats
             accent={ACCENT}
             stats={[
-              { label: "Active Offers", value: redeemer.offers.length },
+              { label: "Committed Offerings", value: committedOfferings.length },
+              { label: "MCE Offerings", value: mceOfferings.length },
               { label: "Processed Redemptions", value: redeemer.processedRedemptions.length },
-              { label: "Queue Length", value: redeemer.redemptionQueue.length },
-              { label: "MCE Partner", value: redeemer.acceptsMCE ? "Yes ✓" : "No" },
+              { label: "CITYx Settled", value: totalCityxBurned.toLocaleString() },
             ]}
           />
         ),
       };
 
-    case "redemptions":
+    case "offerings":
       return {
         left: (
-          <PanelCard label="Redemption Network" title="Accept CITYx, Give Back Value" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Each offer you list becomes a redemption point on the network. Citizens scan a QR code at your venue, and
-              the system deducts CITYx from their wallet automatically.
-            </p>
-            <p style={{ margin: 0 }}>
-              The queue shows pending redemptions awaiting your confirmation. Processing a redemption triggers an
-              on-chain settlement, instantly verifiable by anyone.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="Committed Offerings" title="Epoch Commitments" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                When you create a Committed Offering, it is locked for the duration of the current Epoch. This
+                commitment signals reliability to participants — they know your offer will be honored throughout the
+                entire period.
+              </p>
+              <p style={{ margin: 0 }}>
+                Offerings cannot be removed or modified until the Epoch ends or the offer expires. Plan your pricing and
+                stipulations carefully before submitting.
+              </p>
+            </PanelCard>
+            <PanelCard label="MCE Offerings" title="Event-Linked Rewards" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                MCE Offerings are tied to a specific Mass Coordination Event and expire when that event ends or your
+                chosen duration lapses. Once created, MCE offerings are locked — no changes are permitted. Set your
+                offer duration thoughtfully to maximize participant engagement during the event window.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
             accent={ACCENT}
             stats={[
-              { label: "Active Offers", value: redeemer.offers.length },
-              { label: "Pending Queue", value: redeemer.redemptionQueue.length },
-              { label: "Total Processed", value: redeemer.processedRedemptions.length },
-              {
-                label: "CITYx Accepted",
-                value: redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0).toLocaleString(),
-              },
+              { label: "Committed Offerings", value: committedOfferings.length },
+              { label: "MCE Offerings", value: mceOfferings.length },
+              { label: "Queue Pending", value: redeemer.redemptionQueue.length },
+              { label: "CITYx Burned", value: totalCityxBurned.toLocaleString() },
             ]}
           />
         ),
@@ -330,7 +349,7 @@ function getRedeemerPanels(
     case "mycity":
       return {
         left: (
-          <PanelCard label="City Feed" title="Connect with Your Community" accent={ACCENT}>
+          <PanelCard label="MyCity Feed" title="Connect with Your Community" accent={ACCENT}>
             <p style={{ margin: "0 0 12px" }}>
               Post promotions, events, and announcements to the city-wide feed. Your posts reach every participant and
               organization in the network.
@@ -347,8 +366,8 @@ function getRedeemerPanels(
             stats={[
               { label: "Total Posts", value: posts.length },
               { label: "Active Orgs", value: 3 },
-              { label: "Your Offers Listed", value: redeemer.offers.length },
-              { label: "Categories", value: new Set(redeemer.offers.map(o => o.category)).size },
+              { label: "Committed Offerings", value: committedOfferings.length },
+              { label: "MCE Offerings", value: mceOfferings.length },
             ]}
           />
         ),
@@ -363,8 +382,8 @@ function getRedeemerPanels(
               real-time community impact — no invoices, no chargebacks.
             </p>
             <p style={{ margin: 0 }}>
-              Participants trust venues with strong redemption records. A growing history signals that your offers are
-              popular and your settlement is reliable.
+              Monitor how each offering performs, track CITYx burned per category, and see your contribution to total
+              network supply reduction.
             </p>
           </PanelCard>
         ),
@@ -372,12 +391,9 @@ function getRedeemerPanels(
           <PanelStats
             accent={ACCENT}
             stats={[
+              { label: "Total Offerings", value: committedOfferings.length + mceOfferings.length },
               { label: "Total Processed", value: redeemer.processedRedemptions.length },
-              {
-                label: "CITYx Settled",
-                value: redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0).toLocaleString(),
-              },
-              { label: "Offer Categories", value: new Set(redeemer.offers.map(o => o.category)).size },
+              { label: "CITYx Burned", value: totalCityxBurned.toLocaleString() },
               { label: "Queue Pending", value: redeemer.redemptionQueue.length },
             ]}
           />
@@ -387,25 +403,35 @@ function getRedeemerPanels(
     case "mces":
       return {
         left: (
-          <PanelCard label="MCE Program" title="Amplify with Mass Events" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Mass Coordination Events are city-wide mobilizations voted on by the community. Opting in makes your venue
-              a featured reward destination during the event.
-            </p>
-            <p style={{ margin: 0 }}>
-              MCE participation drives surges of motivated participants to your venue. Event rewards are funded from a
-              pooled treasury, so your CITYx acceptance stays profitable.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="MCE Proposals" title="Your Role in MCE Creation" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                As a Redeemer Organization, you are embedded in the community where civic work happens. Your perspective
+                on what participants value most is crucial — submit MCE proposals that reflect real redemption demand
+                and community reward priorities.
+              </p>
+              <p style={{ margin: 0 }}>
+                Epoch 2 is your window to propose. Draft your proposal with a clear title, description, goals, and
+                expected benefits. The most-liked proposals are reviewed for entry into the next voting epoch.
+              </p>
+            </PanelCard>
+            <PanelCard label="MCE Participation" title="Winning MCE Benefits" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                When an MCE wins the vote, a surge of motivated participants will seek reward venues that have opted in.
+                Create MCE Offerings in the Offerings tab to be featured as a reward destination during the event — MCE
+                Credits are funded from the pooled treasury, keeping your participation profitable.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
             accent={ACCENT}
             stats={[
               { label: "Total MCEs", value: mces.length },
-              { label: "Voting Now", value: mces.filter(m => m.status === "Voting").length },
-              { label: "Active Events", value: mces.filter(m => m.status === "Active").length },
-              { label: "MCE Partner", value: redeemer.acceptsMCE ? "Opted In ✓" : "Opted Out" },
+              { label: "Currently Voting", value: mces.filter(m => m.status === "Voting").length },
+              { label: "Active MCEs", value: mces.filter(m => m.status === "Active").length },
+              { label: "MCE Offerings", value: mceOfferings.length },
             ]}
           />
         ),
@@ -419,34 +445,59 @@ function getRedeemerPanels(
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RedeemerApp() {
-  const {
-    state,
-    setRole,
-    redeemerToggleMCE,
-    redeemerAddOffer,
-    redeemerRemoveOffer,
-    redeemerProcessRedemption,
-    dispatch,
-  } = useDemo();
+  const { state, setRole, redeemerProcessRedemption, dispatch } = useDemo();
   const [activeTab, setActiveTab] = useState("profile");
-  const [addOfferSheet, setAddOfferSheet] = useState(false);
-  const [qrTarget, setQrTarget] = useState<string | null>(null);
+  const [offeringSheet, setOfferingSheet] = useState<"committed" | "mce" | null>(null);
+  const [qrTarget, setQrTarget] = useState<QROfferingData | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [localPosts, setLocalPosts] = useState<Post[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [committedOfferings, setCommittedOfferings] = useState<CustomOffering[]>([]);
+  const [mceOfferings, setMceOfferings] = useState<MCECustomOffering[]>([]);
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
 
   const { redeemer, mces } = state;
   const allPosts = [...localPosts, ...state.posts];
-  const { left: leftPanel, right: rightPanel } = getRedeemerPanels(activeTab, state);
+  const { left: leftPanel, right: rightPanel } = getRedeemerPanels(activeTab, state, committedOfferings, mceOfferings);
 
   React.useEffect(() => {
     setRole("redeemer");
   }, [setRole]);
 
-  const handleAddOffer = (offer: RedemptionOffer) => {
-    redeemerAddOffer(offer);
-    setAddOfferSheet(false);
-    setToast("Offer added successfully!");
+  const handleCreateCommittedOffering = (data: { name: string; costCity: number; stipulations: string }) => {
+    const offering: CustomOffering = {
+      id: `committed-${Date.now()}`,
+      name: data.name,
+      costCity: data.costCity,
+      stipulations: data.stipulations,
+      createdAt: new Date().toISOString(),
+    };
+    setCommittedOfferings(prev => [offering, ...prev]);
+    setOfferingSheet(null);
+    setToast("Committed Offering created and locked for this Epoch!");
+  };
+
+  const handleCreateMCEOffering = (data: {
+    name: string;
+    costCity: number;
+    stipulations: string;
+    mceId: string;
+    mceName: string;
+    duration: string;
+  }) => {
+    const offering: MCECustomOffering = {
+      id: `mce-offering-${Date.now()}`,
+      name: data.name,
+      costCity: data.costCity,
+      stipulations: data.stipulations,
+      mceId: data.mceId,
+      mceName: data.mceName,
+      duration: data.duration,
+      createdAt: new Date().toISOString(),
+    };
+    setMceOfferings(prev => [offering, ...prev]);
+    setOfferingSheet(null);
+    setToast("MCE Offering created and locked!");
   };
 
   const handleProcess = (queueId: string) => {
@@ -458,11 +509,6 @@ export default function RedeemerApp() {
     setLocalPosts(prev => [post, ...prev]);
     setComposeOpen(false);
     setToast("Post published to MyCity!");
-  };
-
-  const handleRemoveOffer = (id: string) => {
-    redeemerRemoveOffer(id);
-    setToast("Offer removed.");
   };
 
   return (
@@ -482,30 +528,60 @@ export default function RedeemerApp() {
         leftPanel={leftPanel}
         rightPanel={rightPanel}
       >
-        {activeTab === "profile" && (
-          <ProfileTab redeemer={redeemer} onToggleMCE={redeemerToggleMCE} dispatch={dispatch} />
-        )}
-        {activeTab === "redemptions" && (
-          <RedemptionsTab
+        {activeTab === "profile" && <ProfileTab redeemer={redeemer} dispatch={dispatch} />}
+        {activeTab === "offerings" && (
+          <OfferingsTab
             redeemer={redeemer}
-            onAddOffer={() => setAddOfferSheet(true)}
-            onRemoveOffer={handleRemoveOffer}
+            committedOfferings={committedOfferings}
+            mceOfferings={mceOfferings}
+            onAddCommitted={() => setOfferingSheet("committed")}
+            onAddMCE={() => setOfferingSheet("mce")}
             onShowQR={setQrTarget}
+            onRemoveAttempt={id => setRemoveTarget(id)}
             onProcess={handleProcess}
+            orgName={redeemer.orgName}
           />
         )}
         {activeTab === "mycity" && (
           <MyCityTab posts={allPosts} orgName={redeemer.orgName} onCompose={() => setComposeOpen(true)} />
         )}
-        {activeTab === "dashboard" && <DashboardTab redeemer={redeemer} />}
-        {activeTab === "mces" && <MCEsTab mces={mces} acceptsMCE={redeemer.acceptsMCE} />}
+        {activeTab === "dashboard" && (
+          <DashboardTab redeemer={redeemer} committedOfferings={committedOfferings} mceOfferings={mceOfferings} />
+        )}
+        {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} />}
       </AppShell>
 
-      {addOfferSheet && (
-        <AddOfferSheet redeemer={redeemer} onClose={() => setAddOfferSheet(false)} onAdd={handleAddOffer} />
+      {offeringSheet === "committed" && (
+        <AddOfferingSheet
+          type="committed"
+          mces={mces}
+          onClose={() => setOfferingSheet(null)}
+          onSubmitCommitted={handleCreateCommittedOffering}
+          onSubmitMCE={handleCreateMCEOffering}
+        />
+      )}
+      {offeringSheet === "mce" && (
+        <AddOfferingSheet
+          type="mce"
+          mces={mces}
+          onClose={() => setOfferingSheet(null)}
+          onSubmitCommitted={handleCreateCommittedOffering}
+          onSubmitMCE={handleCreateMCEOffering}
+        />
       )}
 
-      {qrTarget && <QRModal offerId={qrTarget} offers={redeemer.offers} onClose={() => setQrTarget(null)} />}
+      {qrTarget && <QRModal offering={qrTarget} onClose={() => setQrTarget(null)} />}
+
+      {removeTarget && (
+        <ConfirmDialog
+          title="Committed Offering Locked"
+          message="This is a Committed Offering. It cannot be removed until the end of the current Epoch. All modifications to offerings and rates must occur after the Epoch ends or after the expiration of your offer."
+          confirmLabel="Got it"
+          onConfirm={() => setRemoveTarget(null)}
+          onCancel={() => setRemoveTarget(null)}
+          warningOnly
+        />
+      )}
 
       {composeOpen && (
         <ComposePostSheet orgName={redeemer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
@@ -520,16 +596,24 @@ export default function RedeemerApp() {
 
 function ProfileTab({
   redeemer,
-  onToggleMCE,
   dispatch,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
-  onToggleMCE: () => void;
   dispatch: ReturnType<typeof useDemo>["dispatch"];
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(redeemer.orgName);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setLogoUrl(url);
+    }
+  };
 
   const startEdit = () => {
     setDraft(redeemer.orgName);
@@ -543,8 +627,6 @@ function ProfileTab({
     }
     setEditing(false);
   };
-
-  const totalCityReceived = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
@@ -610,22 +692,59 @@ function ProfileTab({
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{redeemer.orgName || "Your Venue"}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            {/* Logo upload */}
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleLogoChange}
+            />
             <button
-              onClick={startEdit}
+              onClick={() => logoInputRef.current?.click()}
+              title="Upload organization logo"
               style={{
-                background: "transparent",
-                border: "none",
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: logoUrl ? "transparent" : "rgba(52,238,182,0.1)",
+                border: `1px dashed ${logoUrl ? "transparent" : "rgba(52,238,182,0.4)"}`,
                 cursor: "pointer",
-                color: MUTED,
-                padding: 4,
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                overflow: "hidden",
+                flexShrink: 0,
               }}
             >
-              <IconPencil />
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <span style={{ fontSize: 20 }}>🏪</span>
+              )}
             </button>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{redeemer.orgName || "Your Venue"}</div>
+                <button
+                  onClick={startEdit}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: MUTED,
+                    padding: 4,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <IconPencil />
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(52,238,182,0.5)", marginTop: 1 }}>Tap icon to upload logo</div>
+            </div>
           </div>
         )}
 
@@ -635,7 +754,6 @@ function ProfileTab({
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <StatusPill label="Registered Redeemer" color={ACCENT} />
-          {redeemer.acceptsMCE && <StatusPill label="MCE Accepted" color="#DD9E33" />}
         </div>
       </div>
 
@@ -651,102 +769,87 @@ function ProfileTab({
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Your Role as a Redeemer</div>
         <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          Accept CITYx credits from civic participants in exchange for goods and services. Generate QR codes for
-          in-person redemption, process incoming requests from your queue, and optionally accept MCECredits for expanded
-          offerings.
+          Accept CITYx credits from civic participants in exchange for goods and services. Create committed offerings
+          for the current Epoch and MCE-linked offerings for city events. Generate QR codes for in-person redemption and
+          process incoming requests from your queue.
         </p>
       </div>
 
-      {/* MCE toggle */}
-      <SectionLabel text="MCECredit Settings" />
+      {/* Venue Stats */}
+      <SectionLabel text="Venue Information" />
       <div
         style={{
           ...surfaceCard,
-          border: redeemer.acceptsMCE ? "1px solid rgba(221,158,51,0.25)" : "1px solid rgba(255,255,255,0.06)",
           marginBottom: 20,
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Accept MCECredits</div>
-            <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
-              Opt in to receive MCECredits from Mass Coordination Event participants. Unlocks MCE-exclusive offer types
-              and recognition in the city portal.
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: MUTED }}>Venue Address</span>
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: DIMMED }}>
+              {FAKE_WALLETS.redeemer.slice(0, 10)}…
+            </span>
           </div>
-          {/* Toggle switch */}
-          <button
-            onClick={onToggleMCE}
+          <div
             style={{
-              flexShrink: 0,
-              borderRadius: 12,
-              width: 44,
-              height: 24,
-              background: redeemer.acceptsMCE ? "#DD9E33" : "rgba(255,255,255,0.15)",
-              position: "relative",
-              border: "none",
-              cursor: "pointer",
-              transition: "background 0.2s",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              paddingTop: 10,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <div
-              style={{
-                position: "absolute",
-                borderRadius: "50%",
-                background: "#fff",
-                width: 18,
-                height: 18,
-                top: 3,
-                left: redeemer.acceptsMCE ? 23 : 3,
-                transition: "left 0.2s",
-              }}
-            />
-          </button>
+            <span style={{ fontSize: 13, color: MUTED }}>Status</span>
+            <StatusPill label="Active" color={ACCENT} />
+          </div>
+          <div
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              paddingTop: 10,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <span style={{ fontSize: 13, color: MUTED }}>Network</span>
+            <span style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>Base Mainnet</span>
+          </div>
         </div>
       </div>
-
-      {/* Stats */}
-      <SectionLabel text="Activity" />
-      <div style={{ ...surfaceCard, padding: 0, overflow: "hidden", marginBottom: 20 }}>
-        <StatRow label="Active Offers" value={redeemer.offers.length} />
-        <StatRow label="Pending Queue" value={redeemer.redemptionQueue.length} border />
-        <StatRow label="Processed" value={redeemer.processedRedemptions.length} border />
-        <StatRow label="CITYx Received" value={totalCityReceived} suffix="CITYx" border accent />
-      </div>
-
-      {redeemer.offers.length === 0 && (
-        <EmptyState
-          emoji="🏪"
-          title="No offers yet"
-          desc="Head to the Redeem tab to add your first offer and start accepting CITYxx credits."
-        />
-      )}
     </div>
   );
 }
 
-// ─── Redemptions Tab ──────────────────────────────────────────────────────────
+// ─── Offerings Tab ─────────────────────────────────────────────────────────────
 
-function RedemptionsTab({
+function OfferingsTab({
   redeemer,
-  onAddOffer,
-  onRemoveOffer,
+  committedOfferings,
+  mceOfferings,
+  onAddCommitted,
+  onAddMCE,
   onShowQR,
+  onRemoveAttempt,
   onProcess,
+  orgName,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
-  onAddOffer: () => void;
-  onRemoveOffer: (id: string) => void;
-  onShowQR: (id: string) => void;
+  committedOfferings: CustomOffering[];
+  mceOfferings: MCECustomOffering[];
+  onAddCommitted: () => void;
+  onAddMCE: () => void;
+  onShowQR: (data: QROfferingData) => void;
+  onRemoveAttempt: (id: string) => void;
   onProcess: (queueId: string) => void;
+  orgName: string;
 }) {
-  const [view, setView] = useState<"offers" | "queue">("offers");
+  const [view, setView] = useState<"committed" | "mce">("committed");
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
       {/* Segment control */}
       <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
-        {(["offers", "queue"] as const).map(v => (
+        {(["committed", "mce"] as const).map(v => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -763,15 +866,18 @@ function RedemptionsTab({
               color: view === v ? BG : MUTED,
             }}
           >
-            {v === "offers" ? `My Offers (${redeemer.offers.length})` : `Queue (${redeemer.redemptionQueue.length})`}
+            {v === "committed"
+              ? `Committed Offerings (${committedOfferings.length})`
+              : `MCE Offerings (${mceOfferings.length})`}
           </button>
         ))}
       </div>
 
-      {view === "offers" && (
+      {/* ── Committed Offerings ── */}
+      {view === "committed" && (
         <>
           <button
-            onClick={onAddOffer}
+            onClick={onAddCommitted}
             style={{
               width: "100%",
               display: "flex",
@@ -789,23 +895,23 @@ function RedemptionsTab({
               marginBottom: 16,
             }}
           >
-            <IconPlus /> Add New Offer
+            <IconPlus /> Add New Offering
           </button>
 
-          {redeemer.offers.length === 0 ? (
+          {committedOfferings.length === 0 ? (
             <EmptyState
               emoji="🏪"
-              title="No offers yet"
-              desc="Add an offer to start accepting CITYxx credits from participants."
+              title="No committed offerings yet"
+              desc="Add an offering to start accepting CITYx credits from participants this Epoch."
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {redeemer.offers.map(offer => (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+              {committedOfferings.map(offering => (
                 <div
-                  key={offer.id}
+                  key={offering.id}
                   style={{
                     ...surfaceCard,
-                    border: offer.mceOnly ? "1px solid rgba(221,158,51,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(52,238,182,0.15)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
@@ -814,7 +920,7 @@ function RedemptionsTab({
                         width: 44,
                         height: 44,
                         borderRadius: 12,
-                        background: "rgba(255,255,255,0.06)",
+                        background: "rgba(52,238,182,0.1)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -822,34 +928,46 @@ function RedemptionsTab({
                         flexShrink: 0,
                       }}
                     >
-                      {offer.emoji}
+                      🏪
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{offer.offerTitle}</div>
-                        {offer.mceOnly && (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 600,
-                              background: "rgba(221,158,51,0.2)",
-                              color: "#DD9E33",
-                              borderRadius: 20,
-                              padding: "1px 6px",
-                            }}
-                          >
-                            MCE
-                          </span>
-                        )}
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{offering.name}</div>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            background: "rgba(52,238,182,0.1)",
+                            color: ACCENT,
+                            borderRadius: 20,
+                            padding: "1px 7px",
+                          }}
+                        >
+                          <IconLock /> Epoch Locked
+                        </span>
                       </div>
-                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 4 }}>{offer.description}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{offer.costCity} CITYx</div>
+                      {offering.stipulations && (
+                        <div style={{ fontSize: 11, color: DIMMED, marginBottom: 4, lineHeight: 1.4 }}>
+                          {offering.stipulations}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{offering.costCity} CITYx</div>
                     </div>
                   </div>
 
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
-                      onClick={() => onShowQR(offer.id)}
+                      onClick={() =>
+                        onShowQR({
+                          id: offering.id,
+                          name: offering.name,
+                          costCity: offering.costCity,
+                          orgName,
+                        })
+                      }
                       style={{
                         flex: 1,
                         display: "flex",
@@ -869,89 +987,86 @@ function RedemptionsTab({
                       <IconQR /> Show QR
                     </button>
                     <button
-                      onClick={() => onRemoveOffer(offer.id)}
+                      onClick={() => onRemoveAttempt(offering.id)}
                       style={{
-                        background: "rgba(255,107,157,0.08)",
-                        border: "none",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: 10,
                         padding: "9px 14px",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: "#ff6b9d",
+                        color: MUTED,
                         cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
                       }}
                     >
-                      Remove
+                      <IconLock /> Remove
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </>
-      )}
 
-      {view === "queue" && (
-        <>
-          {redeemer.redemptionQueue.length === 0 ? (
-            <EmptyState
-              emoji="📭"
-              title="Queue is empty"
-              desc="When participants redeem your offers, they appear here for you to process and finalize."
-            />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {redeemer.redemptionQueue.map(r => (
-                <div
-                  key={r.id}
-                  style={{
-                    background: SURFACE,
-                    border: "1px solid rgba(52,238,182,0.15)",
-                    borderRadius: 16,
-                    padding: 16,
-                  }}
-                >
+          {/* Redemption queue */}
+          {redeemer.redemptionQueue.length > 0 && (
+            <>
+              <SectionLabel text={`Redemption Queue (${redeemer.redemptionQueue.length})`} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {redeemer.redemptionQueue.map(r => (
                   <div
+                    key={r.id}
                     style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      marginBottom: 12,
+                      background: SURFACE,
+                      border: "1px solid rgba(52,238,182,0.15)",
+                      borderRadius: 16,
+                      padding: 16,
                     }}
                   >
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>
-                        {r.offerTitle}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>
+                          {r.offerTitle}
+                        </div>
+                        <div style={{ fontFamily: "monospace", fontSize: 11, color: MUTED }}>{r.citizenAddress}</div>
+                        <div style={{ fontSize: 11, color: DIMMED, marginTop: 2 }}>
+                          {new Date(r.timestamp).toLocaleTimeString()}
+                        </div>
                       </div>
-                      <div style={{ fontFamily: "monospace", fontSize: 11, color: MUTED }}>{r.citizenAddress}</div>
-                      <div style={{ fontSize: 11, color: DIMMED, marginTop: 2 }}>
-                        {new Date(r.timestamp).toLocaleTimeString()}
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>{r.costCity}</div>
+                        <div style={{ fontSize: 11, color: DIMMED }}>CITYx</div>
                       </div>
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>{r.costCity}</div>
-                      <div style={{ fontSize: 11, color: DIMMED }}>CITYx</div>
-                    </div>
+                    <button
+                      onClick={() => onProcess(r.id)}
+                      style={{
+                        width: "100%",
+                        background: ACCENT,
+                        border: "none",
+                        borderRadius: 12,
+                        padding: "11px 0",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: BG,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Process Redemption
+                    </button>
                   </div>
-                  <button
-                    onClick={() => onProcess(r.id)}
-                    style={{
-                      width: "100%",
-                      background: ACCENT,
-                      border: "none",
-                      borderRadius: 12,
-                      padding: "11px 0",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: BG,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Process Redemption
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Processed history */}
@@ -975,12 +1090,153 @@ function RedemptionsTab({
                       <div style={{ fontFamily: "monospace", fontSize: 11, color: DIMMED }}>{r.citizenAddress}</div>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: ACCENT, flexShrink: 0 }}>
-                      +{r.costCity} CITYxx
+                      +{r.costCity} CITYx
                     </div>
                   </div>
                 ))}
               </div>
             </>
+          )}
+
+          {committedOfferings.length === 0 &&
+            redeemer.redemptionQueue.length === 0 &&
+            redeemer.processedRedemptions.length === 0 &&
+            null}
+        </>
+      )}
+
+      {/* ── MCE Offerings ── */}
+      {view === "mce" && (
+        <>
+          <button
+            onClick={onAddMCE}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: "rgba(221,158,51,0.08)",
+              border: "1px dashed rgba(221,158,51,0.35)",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#DD9E33",
+              cursor: "pointer",
+              marginBottom: 16,
+            }}
+          >
+            <IconPlus /> Add New Offering
+          </button>
+
+          {mceOfferings.length === 0 ? (
+            <EmptyState
+              emoji="⚡"
+              title="No MCE offerings yet"
+              desc="Create MCE-linked offerings to attract Mass Coordination Event participants to your venue."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {mceOfferings.map(offering => (
+                <div
+                  key={offering.id}
+                  style={{
+                    ...surfaceCard,
+                    border: "1px solid rgba(221,158,51,0.2)",
+                    background: "rgba(221,158,51,0.03)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: "rgba(221,158,51,0.12)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 22,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ⚡
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{offering.name}</div>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            background: "rgba(221,158,51,0.2)",
+                            color: "#DD9E33",
+                            borderRadius: 20,
+                            padding: "1px 6px",
+                          }}
+                        >
+                          MCE
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 2 }}>Event: {offering.mceName}</div>
+                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6 }}>Duration: {offering.duration}</div>
+                      {offering.stipulations && (
+                        <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6, lineHeight: 1.4 }}>
+                          {offering.stipulations}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#DD9E33" }}>{offering.costCity} CITYx</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() =>
+                        onShowQR({
+                          id: offering.id,
+                          name: offering.name,
+                          costCity: offering.costCity,
+                          orgName,
+                        })
+                      }
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        background: "rgba(221,158,51,0.1)",
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#DD9E33",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <IconQR /> Show QR
+                    </button>
+                    <div
+                      style={{
+                        background: "rgba(221,158,51,0.08)",
+                        borderRadius: 10,
+                        padding: "9px 14px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#DD9E33",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <IconLock /> Locked
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}
@@ -988,38 +1244,80 @@ function RedemptionsTab({
   );
 }
 
-// ─── Add Offer Sheet ──────────────────────────────────────────────────────────
+// ─── Add Offering Sheet ────────────────────────────────────────────────────────
 
-function AddOfferSheet({
-  redeemer,
+function AddOfferingSheet({
+  type,
+  mces,
   onClose,
-  onAdd,
+  onSubmitCommitted,
+  onSubmitMCE,
 }: {
-  redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
+  type: "committed" | "mce";
+  mces: ReturnType<typeof useDemo>["state"]["mces"];
   onClose: () => void;
-  onAdd: (offer: RedemptionOffer) => void;
+  onSubmitCommitted: (data: { name: string; costCity: number; stipulations: string }) => void;
+  onSubmitMCE: (data: {
+    name: string;
+    costCity: number;
+    stipulations: string;
+    mceId: string;
+    mceName: string;
+    duration: string;
+  }) => void;
 }) {
-  const [selected, setSelected] = useState<PresetOffer | null>(null);
-  const [customCost, setCustomCost] = useState("");
-  const [step, setStep] = useState<"pick" | "configure">("pick");
+  const [name, setName] = useState("");
+  const [costCity, setCostCity] = useState("");
+  const [stipulations, setStipulations] = useState("");
+  const [selectedMceId, setSelectedMceId] = useState("");
+  const [duration, setDuration] = useState("Until MCE ends");
 
-  const handleAdd = () => {
-    if (!selected) return;
-    const cost = parseInt(customCost) > 0 ? parseInt(customCost) : selected.cost;
-    const offer: RedemptionOffer = {
-      id: `offer-custom-${Date.now()}`,
-      redeemerName: redeemer.orgName,
-      redeemerId: FAKE_WALLETS.redeemer,
-      offerTitle: selected.title,
-      description: selected.desc,
-      costCity: cost,
-      acceptsMCE: redeemer.acceptsMCE,
-      mceOnly: selected.mceOnly ?? false,
-      category: selected.cat,
-      emoji: selected.emoji,
-    };
-    onAdd(offer);
+  const activeMces = mces.filter(m => m.status === "Active" || m.status === "Voting");
+  const selectedMce = mces.find(m => m.id === selectedMceId);
+
+  const canSubmitCommitted = name.trim() && parseInt(costCity) > 0;
+  const canSubmitMCE = name.trim() && parseInt(costCity) > 0 && selectedMceId;
+
+  const handleSubmit = () => {
+    if (type === "committed") {
+      if (!canSubmitCommitted) return;
+      onSubmitCommitted({ name: name.trim(), costCity: parseInt(costCity), stipulations: stipulations.trim() });
+    } else {
+      if (!canSubmitMCE) return;
+      onSubmitMCE({
+        name: name.trim(),
+        costCity: parseInt(costCity),
+        stipulations: stipulations.trim(),
+        mceId: selectedMceId,
+        mceName: selectedMce?.title ?? selectedMceId,
+        duration,
+      });
+    }
   };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 10,
+    color: "#fff",
+    fontSize: 13,
+    padding: "10px 12px",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: MUTED,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.07em",
+    marginBottom: 6,
+    display: "block",
+  };
+
+  const accentCol = type === "committed" ? ACCENT : "#DD9E33";
 
   return (
     <div
@@ -1039,7 +1337,7 @@ function AddOfferSheet({
         style={{
           width: "100%",
           maxWidth: 480,
-          maxHeight: "85vh",
+          maxHeight: "90vh",
           overflowY: "auto",
           background: SURFACE,
           borderRadius: "24px 24px 0 0",
@@ -1057,129 +1355,298 @@ function AddOfferSheet({
           }}
         />
 
-        {step === "pick" ? (
-          <>
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Add an Offer</div>
-            <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
-              Choose a preset to get started. You can adjust the CITYx cost.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {PRESET_OFFERS.map(preset => (
-                <button
-                  key={preset.title}
-                  onClick={() => {
-                    setSelected(preset);
-                    setCustomCost(String(preset.cost));
-                    setStep("configure");
-                  }}
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
+          {type === "committed" ? "New Committed Offering" : "New MCE Offering"}
+        </div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+          {type === "committed"
+            ? "This offering will be locked for the duration of the current Epoch. Set your terms carefully — changes are not permitted until the Epoch ends."
+            : "This offering is linked to a specific MCE event. Once created, it cannot be modified. Select the event and duration carefully."}
+        </div>
+
+        {/* Epoch lock notice */}
+        <div
+          style={{
+            background: type === "committed" ? "rgba(52,238,182,0.05)" : "rgba(221,158,51,0.06)",
+            border: `1px solid ${type === "committed" ? "rgba(52,238,182,0.2)" : "rgba(221,158,51,0.2)"}`,
+            borderRadius: 10,
+            padding: "10px 14px",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <IconLock />
+          <span style={{ fontSize: 12, color: type === "committed" ? ACCENT : "#DD9E33", lineHeight: 1.5 }}>
+            {type === "committed"
+              ? "Committed Offerings are locked until the Epoch ends or the offer expires."
+              : "MCE Offerings are locked immediately upon creation and cannot be changed."}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Offering Name */}
+          <div>
+            <label style={labelStyle}>Offering Name *</label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. 10% Grocery Discount"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Cost */}
+          <div>
+            <label style={labelStyle}>Cost in CITYx *</label>
+            <input
+              type="number"
+              value={costCity}
+              onChange={e => setCostCity(e.target.value)}
+              placeholder="e.g. 30"
+              style={{ ...inputStyle, fontSize: 20, fontWeight: 700 }}
+            />
+          </div>
+
+          {/* MCE Selector (MCE type only) */}
+          {type === "mce" && (
+            <div>
+              <label style={labelStyle}>Select MCE Event *</label>
+              {activeMces.length === 0 ? (
+                <div
                   style={{
+                    ...inputStyle,
+                    color: DIMMED,
                     display: "flex",
                     alignItems: "center",
-                    gap: 12,
-                    width: "100%",
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 14,
-                    padding: 14,
-                    textAlign: "left",
-                    cursor: "pointer",
                   }}
                 >
-                  <span style={{ fontSize: 24 }}>{preset.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{preset.title}</span>
-                      {preset.mceOnly && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 600,
-                            background: "rgba(221,158,51,0.2)",
-                            color: "#DD9E33",
-                            borderRadius: 20,
-                            padding: "1px 6px",
-                          }}
-                        >
-                          MCE
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 11, color: DIMMED }}>{preset.desc}</div>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0 }}>{preset.cost} CITYx</div>
-                </button>
-              ))}
+                  No active MCEs available
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {activeMces.map(mce => (
+                    <button
+                      key={mce.id}
+                      type="button"
+                      onClick={() => setSelectedMceId(mce.id)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "12px 14px",
+                        borderRadius: 10,
+                        border:
+                          selectedMceId === mce.id
+                            ? "1px solid rgba(221,158,51,0.5)"
+                            : "1px solid rgba(255,255,255,0.1)",
+                        background: selectedMceId === mce.id ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.04)",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>{mce.title}</span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
+                          color: STATUS_COLOR[mce.status] ?? ACCENT,
+                          borderRadius: 20,
+                          padding: "2px 8px",
+                        }}
+                      >
+                        {mce.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </>
-        ) : selected ? (
-          <>
-            <button
-              onClick={() => setStep("pick")}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: MUTED,
-                fontSize: 12,
-                marginBottom: 16,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                padding: 0,
-              }}
-            >
-              ← Back
-            </button>
+          )}
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <span style={{ fontSize: 32 }}>{selected.emoji}</span>
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{selected.title}</div>
-                <div style={{ fontSize: 12, color: MUTED }}>{selected.desc}</div>
+          {/* Duration (MCE type only) */}
+          {type === "mce" && (
+            <div>
+              <label style={labelStyle}>Offer Duration *</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {["Until MCE ends", "1 week", "2 weeks", "1 month"].map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setDuration(opt)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: duration === opt ? "1px solid rgba(221,158,51,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                      background: duration === opt ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.03)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: duration === opt ? "#DD9E33" : MUTED, fontWeight: 500 }}>
+                      {opt}
+                    </span>
+                    {duration === opt && <span style={{ fontSize: 14, color: "#DD9E33" }}>✓</span>}
+                  </button>
+                ))}
               </div>
             </div>
+          )}
 
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: MUTED, marginBottom: 8 }}>CITYx Cost</div>
-              <input
-                type="number"
-                value={customCost}
-                onChange={e => setCustomCost(e.target.value)}
-                style={{
-                  width: "100%",
-                  background: "rgba(255,255,255,0.07)",
-                  border: `1px solid rgba(52,238,182,0.3)`,
-                  borderRadius: 12,
-                  color: "#fff",
-                  fontSize: 22,
-                  fontWeight: 700,
-                  padding: "12px 16px",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-                placeholder={String(selected.cost)}
-              />
-              <div style={{ fontSize: 11, color: DIMMED, marginTop: 6 }}>Default: {selected.cost} CITYx</div>
-            </div>
+          {/* Stipulations / Notes */}
+          <div>
+            <label style={labelStyle}>Stipulations / Notes</label>
+            <textarea
+              value={stipulations}
+              onChange={e => setStipulations(e.target.value)}
+              placeholder="e.g. Valid Mon–Fri only, not during peak hours, one redemption per visit..."
+              rows={3}
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.55 }}
+            />
+          </div>
+        </div>
 
+        <button
+          onClick={handleSubmit}
+          disabled={type === "committed" ? !canSubmitCommitted : !canSubmitMCE}
+          style={{
+            width: "100%",
+            background: (type === "committed" ? canSubmitCommitted : canSubmitMCE)
+              ? accentCol
+              : "rgba(255,255,255,0.08)",
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 0",
+            fontSize: 14,
+            fontWeight: 700,
+            color: (type === "committed" ? canSubmitCommitted : canSubmitMCE) ? BG : MUTED,
+            cursor: (type === "committed" ? canSubmitCommitted : canSubmitMCE) ? "pointer" : "not-allowed",
+            marginTop: 20,
+          }}
+        >
+          {type === "committed" ? "Commit Offering" : "Lock MCE Offering"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Confirm Dialog ────────────────────────────────────────────────────────────
+
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  onConfirm,
+  onCancel,
+  warningOnly,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  warningOnly?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.85)",
+        backdropFilter: "blur(6px)",
+        padding: "0 20px",
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 380,
+          background: SURFACE,
+          borderRadius: 20,
+          padding: "28px 24px",
+          border: "1px solid rgba(255,107,157,0.2)",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div
+          style={{
+            fontSize: 24,
+            marginBottom: 12,
+            textAlign: "center",
+          }}
+        >
+          🔒
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#fff",
+            marginBottom: 12,
+            textAlign: "center",
+          }}
+        >
+          {title}
+        </div>
+        <p
+          style={{
+            fontSize: 13,
+            color: MUTED,
+            lineHeight: 1.6,
+            margin: "0 0 24px",
+            textAlign: "center",
+          }}
+        >
+          {message}
+        </p>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          {!warningOnly && (
             <button
-              onClick={handleAdd}
+              onClick={onCancel}
               style={{
-                width: "100%",
-                background: ACCENT,
+                flex: 1,
+                background: "rgba(255,255,255,0.07)",
                 border: "none",
-                borderRadius: 14,
-                padding: "14px 0",
+                borderRadius: 12,
+                padding: "12px 0",
                 fontSize: 14,
-                fontWeight: 700,
-                color: BG,
+                fontWeight: 600,
+                color: MUTED,
                 cursor: "pointer",
               }}
             >
-              Add Offer
+              Cancel
             </button>
-          </>
-        ) : null}
+          )}
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              background: warningOnly ? ACCENT : "rgba(255,107,157,0.15)",
+              border: warningOnly ? "none" : "1px solid rgba(255,107,157,0.3)",
+              borderRadius: 12,
+              padding: "12px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              color: warningOnly ? BG : "#ff6b9d",
+              cursor: "pointer",
+            }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1187,11 +1654,8 @@ function AddOfferSheet({
 
 // ─── QR Modal ─────────────────────────────────────────────────────────────────
 
-function QRModal({ offerId, offers, onClose }: { offerId: string; offers: RedemptionOffer[]; onClose: () => void }) {
-  const offer = offers.find(o => o.id === offerId);
-  if (!offer) return null;
-
-  const qrPayload = `citysync://redeem?offer=${offerId}&redeemer=${FAKE_WALLETS.redeemer}&cost=${offer.costCity}`;
+function QRModal({ offering, onClose }: { offering: QROfferingData; onClose: () => void }) {
+  const qrPayload = `citysync://redeem?offer=${offering.id}&redeemer=${FAKE_WALLETS.redeemer}&cost=${offering.costCity}`;
 
   return (
     <div
@@ -1219,8 +1683,8 @@ function QRModal({ offerId, offers, onClose }: { offerId: string; offers: Redemp
         onClick={e => e.stopPropagation()}
       >
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{offer.offerTitle}</div>
-          <div style={{ fontSize: 13, color: MUTED }}>{offer.redeemerName}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{offering.name}</div>
+          <div style={{ fontSize: 13, color: MUTED }}>{offering.orgName}</div>
         </div>
 
         {/* QR placeholder */}
@@ -1238,7 +1702,7 @@ function QRModal({ offerId, offers, onClose }: { offerId: string; offers: Redemp
             boxSizing: "border-box",
           }}
         >
-          <QRGrid seed={offerId} />
+          <QRGrid seed={offering.id} />
         </div>
 
         {/* Cost */}
@@ -1253,7 +1717,7 @@ function QRModal({ offerId, offers, onClose }: { offerId: string; offers: Redemp
           }}
         >
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 2 }}>Cost</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT }}>{offer.costCity} CITYx</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT }}>{offering.costCity} CITYx</div>
         </div>
 
         {/* URI */}
@@ -1344,7 +1808,7 @@ function MyCityTab({ posts, orgName, onCompose }: { posts: Post[]; orgName: stri
     <div style={{ padding: "24px 20px 100px" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>City Feed</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>MyCity Feed</div>
         <button
           onClick={onCompose}
           style={{
@@ -1611,61 +2075,137 @@ function ComposePostSheet({
 
 // ─── Dashboard Tab ────────────────────────────────────────────────────────────
 
-function DashboardTab({ redeemer }: { redeemer: ReturnType<typeof useDemo>["state"]["redeemer"] }) {
-  const totalCity = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
+function DashboardTab({
+  redeemer,
+  committedOfferings,
+  mceOfferings,
+}: {
+  redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
+  committedOfferings: CustomOffering[];
+  mceOfferings: MCECustomOffering[];
+}) {
+  const totalCityxBurned = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
+  // Simulated network-level values
+  const totalInCirculation = 125000;
+  const networkBurned = totalCityxBurned + 4820; // includes other redeemers
 
-  const categoryBreakdown = redeemer.offers.reduce<Record<string, number>>((acc, o) => {
-    acc[o.category] = (acc[o.category] ?? 0) + 1;
-    return acc;
-  }, {});
+  // Build per-offering breakdown — merge committed + mce, simulate redemptions
+  const offeringStats: { name: string; type: string; redemptions: number; cityxBurned: number }[] = [
+    ...committedOfferings.map((o, i) => ({
+      name: o.name,
+      type: "Committed",
+      redemptions: i === 0 ? redeemer.processedRedemptions.length : 0,
+      cityxBurned: i === 0 ? totalCityxBurned : 0,
+    })),
+    ...mceOfferings.map(o => ({
+      name: o.name,
+      type: "MCE",
+      redemptions: 0,
+      cityxBurned: 0,
+    })),
+  ];
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <SectionLabel text="Performance" />
+      {/* Network Totals */}
+      <SectionLabel text="Network Overview" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
-        <MetricCard label="Active Offers" value={redeemer.offers.length} color={ACCENT} />
-        <MetricCard label="Processed" value={redeemer.processedRedemptions.length} color="#4169E1" />
-        <MetricCard label="CITYx Received" value={totalCity} color="#DD9E33" />
-        <MetricCard label="Pending Queue" value={redeemer.redemptionQueue.length} color="#a78bfa" />
+        <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: ACCENT }}>
+            {(totalInCirculation - networkBurned).toLocaleString()}
+          </div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>CITYx in Circulation</div>
+        </div>
+        <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#ff6b9d" }}>{networkBurned.toLocaleString()}</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Total CITYx Burned</div>
+        </div>
+        <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#DD9E33" }}>{redeemer.processedRedemptions.length}</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Your Redemptions</div>
+        </div>
+        <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#a78bfa" }}>{totalCityxBurned.toLocaleString()}</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Your CITYx Burned</div>
+        </div>
       </div>
 
-      {Object.keys(categoryBreakdown).length > 0 && (
+      {/* Per-offering breakdown */}
+      {offeringStats.length > 0 ? (
         <>
-          <SectionLabel text="Offers by Category" />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-            {Object.entries(categoryBreakdown).map(([cat, count]) => (
+          <SectionLabel text="Offerings Breakdown" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+            {offeringStats.map((o, i) => (
               <div
-                key={cat}
+                key={i}
                 style={{
                   ...surfaceCard,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 16px",
+                  padding: "14px 16px",
+                  border: o.type === "MCE" ? "1px solid rgba(221,158,51,0.15)" : "1px solid rgba(52,238,182,0.1)",
                 }}
               >
-                <span style={{ fontSize: 13, color: "#fff" }}>{cat}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>
-                  {count} offer{count > 1 ? "s" : ""}
-                </span>
+                <div
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{o.name}</div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      background: o.type === "MCE" ? "rgba(221,158,51,0.15)" : "rgba(52,238,182,0.1)",
+                      color: o.type === "MCE" ? "#DD9E33" : ACCENT,
+                      borderRadius: 20,
+                      padding: "2px 8px",
+                    }}
+                  >
+                    {o.type}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>{o.redemptions}</div>
+                    <div style={{ fontSize: 10, color: DIMMED, marginTop: 2 }}>Redemptions</div>
+                  </div>
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "#ff6b9d" }}>{o.cityxBurned}</div>
+                    <div style={{ fontSize: 10, color: DIMMED, marginTop: 2 }}>CITYx Burned</div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </>
+      ) : (
+        <EmptyState
+          emoji="📊"
+          title="No offerings yet"
+          desc="Add committed or MCE offerings to start tracking redemptions and CITYx burned per offering."
+        />
       )}
 
-      {redeemer.offers.length === 0 && redeemer.processedRedemptions.length === 0 && (
-        <EmptyState emoji="📊" title="No data yet" desc="Add offers and process redemptions to see analytics here." />
-      )}
-
-      <SectionLabel text="Redemption Flow" />
+      {/* How it works */}
+      <SectionLabel text="How Redemption Works" />
       <div style={{ ...surfaceCard, display: "flex", flexDirection: "column", gap: 14 }}>
         {(
           [
-            ["1️⃣", "Create offers", "Add offers from the Redemptions tab with your CITYx pricing."],
+            ["1️⃣", "Create offerings", "Add committed or MCE offerings with your CITYx pricing."],
             ["2️⃣", "Show QR code", "Participants scan your QR in person to initiate a redemption."],
-            ["3️⃣", "Confirm in queue", "Redemption request appears in your queue — review and process."],
-            ["4️⃣", "Credits arrive", "CITYx is burned from the citizen's wallet and confirmed on-chain."],
+            ["3️⃣", "Confirm in queue", "Redemption appears in your queue — review and process it."],
+            ["4️⃣", "CITYx burned", "CITYx is burned from the citizen's wallet, reducing total supply."],
           ] as [string, string, string][]
         ).map(([num, title, desc]) => (
           <div key={title} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
@@ -1683,98 +2223,483 @@ function DashboardTab({ redeemer }: { redeemer: ReturnType<typeof useDemo>["stat
 
 // ─── MCEs Tab ─────────────────────────────────────────────────────────────────
 
-function MCEsTab({ mces, acceptsMCE }: { mces: ReturnType<typeof useDemo>["state"]["mces"]; acceptsMCE: boolean }) {
+function MCEsTab({ state, orgName }: { state: ReturnType<typeof useDemo>["state"]; orgName: string }) {
+  const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
+  const [proposeOpen, setProposeOpen] = useState(false);
+  const [localProposals, setLocalProposals] = useState<
+    Array<{ id: string; title: string; description: string; goals: string; benefits: string; tags: string[] }>
+  >([]);
+
+  const [mceTitle, setMceTitle] = useState("");
+  const [mceDesc, setMceDesc] = useState("");
+  const [mceGoals, setMceGoals] = useState("");
+  const [mceBenefits, setMceBenefits] = useState("");
+  const [mceTags, setMceTags] = useState<string[]>([]);
+
+  const MCE_TAGS = ["Environment", "Infrastructure", "Education", "Health", "Community", "Safety", "Economy"];
+
+  const toggleMceTag = (tag: string) => {
+    setMceTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
+  };
+
+  const submitProposal = () => {
+    if (!mceTitle.trim() || !mceDesc.trim()) return;
+    setLocalProposals(prev => [
+      {
+        id: `mce-local-${Date.now()}`,
+        title: mceTitle.trim(),
+        description: mceDesc.trim(),
+        goals: mceGoals.trim(),
+        benefits: mceBenefits.trim(),
+        tags: mceTags,
+      },
+      ...prev,
+    ]);
+    setMceTitle("");
+    setMceDesc("");
+    setMceGoals("");
+    setMceBenefits("");
+    setMceTags([]);
+    setProposeOpen(false);
+  };
+
+  const epoch1Mces = [...state.mces.filter(m => m.status === "Voting")].sort((a, b) => b.votesFor - a.votesFor);
+  const totalVotesCast = Math.max(
+    epoch1Mces.reduce((sum, m) => sum + m.votesFor, 0),
+    1,
+  );
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    color: "#fff",
+    fontSize: 13,
+    padding: "10px 12px",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: MUTED,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.07em",
+    marginBottom: 6,
+    display: "block",
+  };
+
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      {!acceptsMCE && (
-        <div
-          style={{
-            background: "rgba(221,158,51,0.06)",
-            border: "1px solid rgba(221,158,51,0.2)",
-            borderRadius: 14,
-            padding: "14px 16px",
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#DD9E33", marginBottom: 4 }}>
-            ⚡ Enable MCECredits to unlock MCE offers
+      {/* Epoch toggle */}
+      <div
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
+          marginBottom: 20,
+        }}
+      >
+        {(
+          [
+            { key: "epoch1", label: "Epoch 1 · Voting" },
+            { key: "epoch2", label: "Epoch 2 · Upcoming" },
+          ] as const
+        ).map(s => (
+          <button
+            key={s.key}
+            onClick={() => setSection(s.key)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              background: section === s.key ? ACCENT : "transparent",
+              color: section === s.key ? BG : MUTED,
+              transition: "all 0.15s",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Epoch 1 — View only */}
+      {section === "epoch1" && (
+        <>
+          <div
+            style={{
+              ...surfaceCard,
+              marginBottom: 16,
+              padding: "12px 16px",
+              background: "rgba(65,105,225,0.08)",
+              border: "1px solid rgba(65,105,225,0.25)",
+            }}
+          >
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+              <span style={{ fontWeight: 600, color: "#4169E1" }}>Redeemer Organizations observe Epoch 1 voting</span> —
+              you cannot allocate VOTE tokens to proposals. Epoch 1 voting is reserved for Civic Participants. Monitor
+              which proposals are gaining support and prepare MCE Offerings for the likely winner.
+            </div>
           </div>
-          <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-            Toggle MCE opt-in on your Profile tab to start accepting MCECredits from Mass Coordination Event
-            participants — and create MCE-exclusive offers.
-          </p>
-        </div>
+
+          {epoch1Mces.length === 0 ? (
+            <EmptyState emoji="🗳️" title="No active proposals" desc="Epoch 1 voting proposals will appear here." />
+          ) : (
+            <div style={{ marginBottom: 8 }}>
+              {epoch1Mces.map((mce, i) => {
+                const pct = Math.round((mce.votesFor / totalVotesCast) * 100);
+                return (
+                  <div key={mce.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div style={{ flex: 1, paddingRight: 10 }}>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>
+                          MCE-0{i + 1}
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35 }}>
+                          {mce.title}
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                          by {mce.proposerName}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: "3px 10px",
+                          borderRadius: 20,
+                          background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
+                          color: STATUS_COLOR[mce.status] ?? ACCENT,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {mce.status}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginBottom: 12 }}>
+                      {mce.description.slice(0, 120)}…
+                    </div>
+
+                    <div style={{ marginBottom: 4 }}>
+                      <div
+                        style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${pct}%`,
+                            background: "#34eeb6",
+                            borderRadius: 3,
+                            transition: "width 0.2s",
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                          {mce.votesFor.toLocaleString()} votes
+                        </span>
+                        <span style={{ fontSize: 11, color: "#34eeb6" }}>{pct}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
-      <SectionLabel text={`Mass Coordination Events (${mces.length})`} />
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {mces.map(mce => {
-          const statusColor = STATUS_COLOR[mce.status] ?? "#4169E1";
-          const total = mce.votesFor + mce.votesAgainst;
-          const forPct = total > 0 ? (mce.votesFor / total) * 100 : 50;
+      {/* Epoch 2 — View + Create proposal */}
+      {section === "epoch2" && (
+        <>
+          <div style={{ ...surfaceCard, marginBottom: 16, padding: "14px 16px" }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+              These proposals are gathering community support for the next voting epoch. As a Redeemer Organization, you
+              can submit new proposals here. The top-liked proposals may be selected for Epoch 2 voting.
+            </div>
+          </div>
 
-          return (
-            <div key={mce.id} style={{ ...surfaceCard }}>
-              <div style={{ marginBottom: 8 }}>
+          {/* Create proposal button */}
+          <button
+            onClick={() => setProposeOpen(true)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: "rgba(221,158,51,0.1)",
+              border: "1px dashed rgba(221,158,51,0.4)",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              color: ACCENT,
+              cursor: "pointer",
+              marginBottom: 16,
+            }}
+          >
+            <IconPlus /> Create New MCE Proposal
+          </button>
+
+          {/* Local proposals (just submitted) */}
+          {localProposals.map(p => (
+            <div
+              key={p.id}
+              style={{
+                ...surfaceCard,
+                marginBottom: 12,
+                border: "1px solid rgba(221,158,51,0.2)",
+                background: "rgba(221,158,51,0.04)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                 <span
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    background: `${statusColor}18`,
-                    color: statusColor,
+                    padding: "2px 8px",
                     borderRadius: 20,
-                    padding: "3px 10px",
-                  }}
-                >
-                  {mce.status}
-                </span>
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{mce.title}</div>
-              <div style={{ fontSize: 11, color: MUTED, marginBottom: 12 }}>
-                {mce.mceCreditsPerTask} MCE credits/task · {mce.taskCount} tasks
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 11,
-                  color: MUTED,
-                  marginBottom: 6,
-                }}
-              >
-                <span>{mce.votesFor.toLocaleString()} for</span>
-                <span>{mce.votesAgainst.toLocaleString()} against</span>
-              </div>
-              <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${forPct}%`,
-                    background: "linear-gradient(90deg, #4169E1, #34eeb6)",
-                    borderRadius: 3,
-                  }}
-                />
-              </div>
-
-              {acceptsMCE && mce.status === "Active" && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    background: "rgba(52,238,182,0.08)",
+                    background: "rgba(52,238,182,0.12)",
                     color: ACCENT,
-                    borderRadius: 10,
-                    padding: "8px 12px",
-                    fontSize: 12,
+                    border: "1px solid rgba(52,238,182,0.25)",
                   }}
                 >
-                  ✓ You can create MCE-exclusive offers for this event
+                  Redeemer
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>just now</span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35, marginBottom: 4 }}>
+                {p.title}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>by {orgName}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 10 }}>
+                {p.description}
+              </div>
+              {p.tags.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {p.tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(255,255,255,0.05)",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
-          );
-        })}
-      </div>
+          ))}
+
+          {/* Existing epoch2 proposals */}
+          {state.epoch2Proposals.map(prop => (
+            <div key={prop.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: 20,
+                    background: prop.proposerType === "org" ? "rgba(65,105,225,0.15)" : "rgba(52,238,182,0.12)",
+                    color: prop.proposerType === "org" ? "#4169E1" : "#34eeb6",
+                    border: `1px solid ${prop.proposerType === "org" ? "rgba(65,105,225,0.3)" : "rgba(52,238,182,0.25)"}`,
+                  }}
+                >
+                  {prop.proposerType === "org" ? "Org" : "Citizen"}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                  {(() => {
+                    const diff = Date.now() - new Date(prop.proposedAt).getTime();
+                    const h = Math.floor(diff / 3600000);
+                    if (h < 1) return "just now";
+                    if (h < 24) return `${h}h ago`;
+                    return `${Math.floor(h / 24)}d ago`;
+                  })()}
+                </span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35, marginBottom: 4 }}>
+                {prop.title}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+                by {prop.proposerName}
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 12 }}>
+                {prop.description.slice(0, 130)}…
+              </div>
+              {prop.tags.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {prop.tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(255,255,255,0.05)",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* MCE Proposal Create Sheet */}
+      {proposeOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setProposeOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: SURFACE,
+              borderRadius: "24px 24px 0 0",
+              padding: "24px 20px 40px",
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                background: "rgba(255,255,255,0.15)",
+                borderRadius: 2,
+                margin: "0 auto 20px",
+              }}
+            />
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
+            <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+              Submit a proposal for community consideration. Strong proposals include clear goals and measurable
+              benefits.
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Title *</label>
+                <input
+                  value={mceTitle}
+                  onChange={e => setMceTitle(e.target.value)}
+                  placeholder="e.g. Eastside Green Corridor Initiative"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Description *</label>
+                <textarea
+                  value={mceDesc}
+                  onChange={e => setMceDesc(e.target.value)}
+                  placeholder="What is this proposal about? Why does the city need it?"
+                  rows={3}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Goals</label>
+                <textarea
+                  value={mceGoals}
+                  onChange={e => setMceGoals(e.target.value)}
+                  placeholder="What specific outcomes will this achieve?"
+                  rows={2}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Community Benefits</label>
+                <textarea
+                  value={mceBenefits}
+                  onChange={e => setMceBenefits(e.target.value)}
+                  placeholder="Who benefits and how? Be specific about impact."
+                  rows={2}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Tags</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {MCE_TAGS.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleMceTag(tag)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: 20,
+                        border: mceTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
+                        background: mceTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
+                        color: mceTags.includes(tag) ? ACCENT : MUTED,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={submitProposal}
+              disabled={!mceTitle.trim() || !mceDesc.trim()}
+              style={{
+                width: "100%",
+                background: mceTitle.trim() && mceDesc.trim() ? ACCENT : "rgba(255,255,255,0.08)",
+                border: "none",
+                borderRadius: 14,
+                padding: "14px 0",
+                fontSize: 14,
+                fontWeight: 700,
+                color: mceTitle.trim() && mceDesc.trim() ? BG : MUTED,
+                cursor: mceTitle.trim() && mceDesc.trim() ? "pointer" : "not-allowed",
+                marginTop: 20,
+              }}
+            >
+              Submit Proposal
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1816,49 +2741,6 @@ function StatusPill({ label, color }: { label: string; color: string }) {
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
       {label}
     </span>
-  );
-}
-
-function StatRow({
-  label,
-  value,
-  suffix,
-  border,
-  accent,
-}: {
-  label: string;
-  value: number;
-  suffix?: string;
-  border?: boolean;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "12px 16px",
-        borderTop: border ? "1px solid rgba(255,255,255,0.06)" : undefined,
-      }}
-    >
-      <span style={{ fontSize: 13, color: MUTED }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: accent ? ACCENT : "#fff" }}>
-        {value.toLocaleString()}
-        {suffix && <span style={{ fontSize: 11, color: DIMMED, marginLeft: 4 }}>{suffix}</span>}
-      </span>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, color }: { label: string; value: number | string; color: string }) {
-  return (
-    <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
-      <div style={{ fontSize: 26, fontWeight: 700, color }}>
-        {typeof value === "number" ? value.toLocaleString() : value}
-      </div>
-      <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{label}</div>
-    </div>
   );
 }
 
