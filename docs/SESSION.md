@@ -9,12 +9,13 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-07 (Session 13)
+2026-03-08 (Session 14)
 
 ## Current Branch
 `main`
 
 ## Recent Commits (needs push)
+- `Round-6 issuer role: Verify tab, MCE tab revamp, approved catalog flow` (3ac0f4c) ← Session 14 — **needs push**
 - `feat(issuer): logo upload, Epoch 1 allocation, ProposeTaskSheet, budget cap` (9dfcb96) ← Session 13 — **needs push**
 - `feat: demo round-4 — task limits, timing, sort, phone overlay, 5 new tasks` (fa76efb) ← Session 13 — **needs push**
 - `fix: prettier formatting + unused catch var in participant page` (6d3b434) ← Session 13 — **needs push**
@@ -223,12 +224,13 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 - **~~Demo round-3: Participant MyCity/Vote/Redeem overhaul~~** — ✅ Done (Session 13, commit `1be51e0`).
 - **~~Demo round-4: task limits, timing, sort, phone overlay, 5 tasks~~** — ✅ Done (Session 13, commit `fa76efb`).
 - **~~Issuer role edits: logo, Epoch 1 allocation, ProposeTaskSheet, budget cap~~** — ✅ Done (Session 13, commit `9dfcb96`).
+- **~~Issuer Round-6: Verify tab, MCE tab revamp, approved catalog, ProposeTaskSheet fixes~~** — ✅ Done (Session 14, commit `3ac0f4c`).
 - **~~Verify Vercel build passes~~** — ✅ Done. Build passing as of Session 8 (`0287b6b`).
-- **git push** — 4 commits uncommitted on this branch since Session 9. Run `git push` from Mac.
-- **Verify Vercel build passes** — push triggers a new build; watch for any prettier/ESLint errors on the new issuer page changes.
+- **git push** — 5 commits unpushed since Session 9. Run `git push` from Mac.
+- **Verify Vercel build passes** — push triggers a new build; watch for any prettier/ESLint errors.
 - **Rotate Alchemy API key** — the key was shared in chat during setup. Go to Alchemy dashboard → Apps → CitySync → Edit → Regenerate key. Update `NEXT_PUBLIC_ALCHEMY_API_KEY` in Vercel env vars and local `.env.local`.
 - **Redeemer role demo edits** — Redeemer page has not received a round-4/5 style pass yet. Pending any requests from Nate.
-- **Issuer role demo edits: additional rounds** — ProposeTaskSheet is wired but the participant-facing `availableTasks` catalog will now include approved proposed tasks. Test end-to-end flow: Issuer proposes → approves → Participant sees task in Explore tab.
+- **Issuer end-to-end test** — Test flow: Propose task → Approve → Issue Task popup (set slots) → Participant Explore tab sees the task. Verify VOTE = CITYx matches.
 - **Set up `demo.city-sync.org` subdomain** — add CNAME record in GoDaddy: `demo` → `cname.vercel-dns.com`, add domain in Vercel project settings.
 - **Run `forge test` on Mac** — verify demo contracts compile and all tests pass (`cd packages/foundry && forge test`)
 - **Broadcast deployment to Base Sepolia** — contracts already deployed (addresses in `packages/foundry/deployments/84532.json`). Commit those deployment files: `git add packages/foundry/deployments/ packages/foundry/broadcast/ && git commit -m "chore: add Base Sepolia deployment artifacts"`
