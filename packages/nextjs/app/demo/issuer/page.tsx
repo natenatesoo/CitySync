@@ -33,12 +33,15 @@ const IconCity = () => (
   </svg>
 );
 
-const IconDashboard = () => (
+const IconVerify = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
+    <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -97,7 +100,7 @@ const TABS = [
   { key: "profile", label: "Profile", icon: <IconBuilding /> },
   { key: "tasks", label: "Tasks", icon: <IconClipboard /> },
   { key: "mycity", label: "MyCity", icon: <IconCity /> },
-  { key: "dashboard", label: "Dashboard", icon: <IconDashboard /> },
+  { key: "verify", label: "Verify", icon: <IconVerify /> },
   { key: "mces", label: "MCEs", icon: <IconBolt /> },
 ];
 
@@ -292,25 +295,38 @@ function getIssuerPanels(
         ),
       };
 
-    case "dashboard":
+    case "verify":
       return {
         left: (
-          <PanelCard label="Impact Dashboard" title="Your On-Chain Ledger" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Every credit you&apos;ve issued is permanently recorded on Base. This dashboard reflects your real impact:
-              tasks deployed, completions verified, and civic value created in the city.
-            </p>
-            <p style={{ margin: 0 }}>
-              Your completion rate reflects how quickly you process pending verifications. Participants see your
-              organization&apos;s track record when choosing tasks.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="Issued Tasks" title="Open Task Pool" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                Issued tasks are live in the participant catalog — citizens can see and claim them. You can remove a
+                task at any time to close off new claims. Tasks already claimed will still be completable by those
+                participants.
+              </p>
+            </PanelCard>
+            <PanelCard label="Claimed Tasks" title="In Progress" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                Once a participant claims a task, it moves to Claimed. They&apos;ve committed to showing up and
+                executing. Use the notification reminder to nudge participants who may need a heads-up before the
+                scheduled time.
+              </p>
+            </PanelCard>
+            <PanelCard label="Completed Tasks" title="Awaiting Verification" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                When a participant marks a task complete, it enters your verification queue. Review the submission and
+                click Verify to trigger on-chain minting — CITYx and VOTE tokens are issued to the participant
+                immediately upon your approval.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
             accent={ACCENT}
             stats={[
-              { label: "Tasks Posted", value: issuer.totalTasksIssued },
+              { label: "Tasks Issued", value: issuer.totalTasksIssued },
               { label: "CITYx Issued", value: issuer.totalCreditsIssued },
               { label: "Total Verified", value: totalVerified },
               { label: "Pending Now", value: totalPending },
@@ -322,16 +338,28 @@ function getIssuerPanels(
     case "mces":
       return {
         left: (
-          <PanelCard label="MCE System" title="Mass Coordination Events" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              MCEs are city-wide initiatives voted on by VOTE token holders. As a certified Issuer, you can propose
-              MCEs. If a proposal passes, the city mobilizes around a shared goal.
-            </p>
-            <p style={{ margin: 0 }}>
-              MCE participants earn a separate MCECredit stream — redeemable at an expanded set of venues that opted
-              into the MCE program.
-            </p>
-          </PanelCard>
+          <>
+            <PanelCard label="MCE Proposals" title="Your Role in MCE Creation" accent={ACCENT}>
+              <p style={{ margin: "0 0 12px" }}>
+                As a certified Issuer Organization, you are one of the most informed entities in the city about what
+                civic work is actually needed on the ground. Use that knowledge to submit MCE proposals that reflect
+                real community priorities — not just what sounds good, but what can actually be executed.
+              </p>
+              <p style={{ margin: 0 }}>
+                Epoch 2 is your window to propose. Draft your proposal with a clear title, description, goals, and
+                expected benefits. The most-liked proposals are reviewed by the Representative Issuer Committee for
+                entry into the next voting epoch.
+              </p>
+            </PanelCard>
+            <PanelCard label="Planning & Issuance" title="Winning MCE Responsibility" accent={ACCENT}>
+              <p style={{ margin: 0 }}>
+                When an MCE proposal wins the Epoch 1 vote, the city enters a Planning Phase. Issuer Organizations are
+                responsible for designing and submitting the tasks that will execute on that proposal. You then issue
+                those tasks during the Active Phase — participants earn MCE Credits for completing them, redeemable at
+                an expanded set of Redeemer venues that opt into the MCE program.
+              </p>
+            </PanelCard>
+          </>
         ),
         right: (
           <PanelStats
@@ -420,6 +448,7 @@ interface ProposedTask {
   creditRate: number;
   credentials: string;
   credits: number;
+  tags: string[];
 }
 
 export default function IssuerApp() {
@@ -430,6 +459,10 @@ export default function IssuerApp() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [localPosts, setLocalPosts] = useState<Post[]>([]);
   const [proposedTasks, setProposedTasks] = useState<ProposedTask[]>([]);
+  const [approvedCatalogTasks, setApprovedCatalogTasks] = useState<Task[]>([]);
+  const [issueTaskId, setIssueTaskId] = useState<string | null>(null);
+  const [modifyTaskId, setModifyTaskId] = useState<string | null>(null);
+  const [removedTaskIds, setRemovedTaskIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
 
   const { issuer, mces } = state;
@@ -461,20 +494,27 @@ export default function IssuerApp() {
   };
 
   const handleApproveProposed = (proposed: ProposedTask) => {
+    // Dedup check: same title already in approved catalog or issued tasks
+    const dupInCatalog = approvedCatalogTasks.some(t => t.title.toLowerCase() === proposed.title.toLowerCase());
+    const dupInIssued = issuer.tasks.some(t => t.title.toLowerCase() === proposed.title.toLowerCase());
+    if (dupInCatalog || dupInIssued) {
+      setToast("A task with this title already exists in the catalog.");
+      return;
+    }
     const task: Task = {
-      id: `task-proposed-${Date.now()}`,
+      id: `task-approved-${Date.now()}`,
       title: proposed.title,
       description: proposed.successCriteria || "Community civic task proposed by organization.",
       category: "Community",
       estimatedTime: proposed.estimatedTime,
       location: proposed.location || "TBD",
       credits: proposed.credits,
-      voteTokens: Math.max(1, Math.round(proposed.credits * 0.5)),
+      voteTokens: proposed.credits,
       slots: 5,
       slotsRemaining: 5,
       issuerName: issuer.orgName,
       issuerId: FAKE_WALLETS.issuer,
-      tags: [],
+      tags: proposed.tags,
       taskDate: proposed.date || "TBD",
       successCriteria: proposed.successCriteria || "",
       creditRatePerHr: proposed.creditRate,
@@ -482,9 +522,27 @@ export default function IssuerApp() {
       isMCE: false,
       isOnboarding: false,
     };
-    issuerCreateTask(task);
+    setApprovedCatalogTasks(prev => [task, ...prev]);
     setProposedTasks(prev => prev.filter(p => p.id !== proposed.id));
-    setToast("Task approved and added to the catalog!");
+    setToast("Task approved and added to your catalog!");
+  };
+
+  const handleIssueTask = (task: Task, slots: number) => {
+    issuerCreateTask({ ...task, id: `task-issued-${Date.now()}`, slots, slotsRemaining: slots });
+    setApprovedCatalogTasks(prev => prev.filter(t => t.id !== task.id));
+    setIssueTaskId(null);
+    setToast("Task issued — now visible to participants!");
+  };
+
+  const handleModifyApproved = (taskId: string, updates: { location: string; taskDate: string }) => {
+    setApprovedCatalogTasks(prev => prev.map(t => (t.id === taskId ? { ...t, ...updates } : t)));
+    setModifyTaskId(null);
+    setToast("Task updated.");
+  };
+
+  const handleRemoveIssuedTask = (taskId: string) => {
+    setRemovedTaskIds(prev => new Set([...prev, taskId]));
+    setToast("Task removed from open task pool.");
   };
 
   const handleCreatePost = (post: Post) => {
@@ -523,13 +581,24 @@ export default function IssuerApp() {
             onVerify={handleVerify}
             proposedTasks={proposedTasks}
             onApproveProposed={handleApproveProposed}
+            approvedCatalogTasks={approvedCatalogTasks}
+            onIssueTask={id => setIssueTaskId(id)}
+            onModifyTask={id => setModifyTaskId(id)}
           />
         )}
         {activeTab === "mycity" && (
           <MyCityTab posts={allPosts} orgName={issuer.orgName} onCompose={() => setComposeOpen(true)} />
         )}
-        {activeTab === "dashboard" && <DashboardTab issuer={issuer} />}
-        {activeTab === "mces" && <MCEsTab mces={mces} />}
+        {activeTab === "verify" && (
+          <VerifyTab
+            issuerTasks={issuer.tasks}
+            claimedTaskIds={state.participant.claimedTaskIds}
+            removedTaskIds={removedTaskIds}
+            onRemoveTask={handleRemoveIssuedTask}
+            onVerify={handleVerify}
+          />
+        )}
+        {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} />}
       </AppShell>
 
       {createSheet && (
@@ -537,6 +606,7 @@ export default function IssuerApp() {
           onClose={() => setCreateSheet(false)}
           onCreate={handleCreateTask}
           creditsCommitted={creditsCommitted}
+          approvedCatalogTasks={approvedCatalogTasks}
         />
       )}
 
@@ -551,6 +621,30 @@ export default function IssuerApp() {
       {composeOpen && (
         <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
       )}
+
+      {issueTaskId &&
+        (() => {
+          const task = approvedCatalogTasks.find(t => t.id === issueTaskId);
+          return task ? (
+            <IssueTaskPopup
+              task={task}
+              onClose={() => setIssueTaskId(null)}
+              onIssue={slots => handleIssueTask(task, slots)}
+            />
+          ) : null;
+        })()}
+
+      {modifyTaskId &&
+        (() => {
+          const task = approvedCatalogTasks.find(t => t.id === modifyTaskId);
+          return task ? (
+            <ModifyTaskSheet
+              task={task}
+              onClose={() => setModifyTaskId(null)}
+              onSave={updates => handleModifyApproved(task.id, updates)}
+            />
+          ) : null;
+        })()}
 
       {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
     </>
@@ -850,6 +944,9 @@ function TasksTab({
   onVerify,
   proposedTasks,
   onApproveProposed,
+  approvedCatalogTasks,
+  onIssueTask,
+  onModifyTask,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
   totalPending: number;
@@ -859,6 +956,9 @@ function TasksTab({
   onVerify: (taskId: string, citizen: string) => void;
   proposedTasks: ProposedTask[];
   onApproveProposed: (task: ProposedTask) => void;
+  approvedCatalogTasks: Task[];
+  onIssueTask: (id: string) => void;
+  onModifyTask: (id: string) => void;
 }) {
   const [view, setView] = useState<"my" | "pending">("my");
   const pendingAll = issuerTasks.flatMap(t => t.pendingCompletions.map(addr => ({ task: t, citizen: addr })));
@@ -886,7 +986,9 @@ function TasksTab({
               color: view === v ? BG : MUTED,
             }}
           >
-            {v === "my" ? `My Tasks (${issuerTasks.length})` : `Pending (${totalPending + proposedTasks.length})`}
+            {v === "my"
+              ? `My Tasks (${issuerTasks.length + approvedCatalogTasks.length})`
+              : `Pending (${totalPending + proposedTasks.length})`}
           </button>
         ))}
       </div>
@@ -959,47 +1061,138 @@ function TasksTab({
             <IconPlus /> Propose New Task for Approval
           </button>
 
-          {issuerTasks.length === 0 ? (
+          {/* Approved catalog tasks (ready to issue) */}
+          {approvedCatalogTasks.length > 0 && (
+            <>
+              <SectionLabel text={`Approved Catalog (${approvedCatalogTasks.length})`} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+                {approvedCatalogTasks.map(t => (
+                  <div
+                    key={t.id}
+                    style={{
+                      background: "rgba(52,238,182,0.04)",
+                      border: "1px solid rgba(52,238,182,0.2)",
+                      borderRadius: 16,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
+                        <div style={{ fontSize: 11, color: MUTED }}>
+                          {t.category} · {t.estimatedTime}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
+                        <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        background: "rgba(52,238,182,0.12)",
+                        color: "#34eeb6",
+                        borderRadius: 6,
+                        padding: "2px 8px",
+                        marginBottom: 12,
+                      }}
+                    >
+                      ✓ Approved · Ready to Issue
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => onIssueTask(t.id)}
+                        style={{
+                          flex: 1,
+                          background: ACCENT,
+                          border: "none",
+                          borderRadius: 10,
+                          padding: "9px 0",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: BG,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Issue Task
+                      </button>
+                      <button
+                        onClick={() => onModifyTask(t.id)}
+                        style={{
+                          flex: 1,
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 10,
+                          padding: "9px 0",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: MUTED,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Modify Task
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {issuerTasks.length === 0 && approvedCatalogTasks.length === 0 ? (
             <EmptyState
               emoji="📭"
               title="No tasks yet"
               desc="Post a task from the catalog to start receiving completions from participants."
             />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {issuerTasks.map(t => (
-                <div key={t.id} style={{ ...surfaceCard }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-                      <div style={{ fontSize: 11, color: MUTED }}>
-                        {t.category} · {t.estimatedTime}
+          ) : issuerTasks.length > 0 ? (
+            <>
+              <SectionLabel text={`Active Tasks (${issuerTasks.length})`} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {issuerTasks.map(t => (
+                  <div key={t.id} style={{ ...surfaceCard }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        marginBottom: 10,
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
+                        <div style={{ fontSize: 11, color: MUTED }}>
+                          {t.category} · {t.estimatedTime}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
+                        <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
                       </div>
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
-                      <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
+
+                    <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED }}>
+                      <span>✓ {t.verifiedCount} verified</span>
+                      <span>⏳ {t.pendingCompletions.length} pending</span>
+                      <span>
+                        👥 {t.slotsRemaining}/{t.slots}
+                      </span>
                     </div>
                   </div>
-
-                  <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED }}>
-                    <span>✓ {t.verifiedCount} verified</span>
-                    <span>⏳ {t.pendingCompletions.length} pending</span>
-                    <span>
-                      👥 {t.slotsRemaining}/{t.slots}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            </>
+          ) : null}
         </>
       )}
 
@@ -1172,13 +1365,16 @@ function CreateTaskSheet({
   onClose,
   onCreate,
   creditsCommitted,
+  approvedCatalogTasks = [],
 }: {
   onClose: () => void;
   onCreate: (task: Task) => void;
   creditsCommitted: number;
+  approvedCatalogTasks?: Task[];
 }) {
   const [selected, setSelected] = useState<Task | null>(null);
   const [step, setStep] = useState<"pick" | "review">("pick");
+  const allCatalogTasks = [...approvedCatalogTasks, ...CATALOG_TASKS];
 
   return (
     <div
@@ -1223,7 +1419,7 @@ function CreateTaskSheet({
               Admin-approved tasks ready to post. Choose one to review.
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {CATALOG_TASKS.map(task => (
+              {allCatalogTasks.map(task => (
                 <button
                   key={task.id}
                   onClick={() => {
@@ -1372,12 +1568,36 @@ function ProposeTaskSheet({
   const [successCriteria, setSuccessCriteria] = useState("");
   const [creditRate, setCreditRate] = useState("");
   const [credentials, setCredentials] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const TASK_TAGS = [
+    "Environment",
+    "Education",
+    "Community",
+    "Health",
+    "Infrastructure",
+    "Arts",
+    "Youth",
+    "Seniors",
+    "Safety",
+    "Food",
+  ];
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
+  };
 
   const computedCredits = (() => {
     const rate = parseFloat(creditRate);
     if (isNaN(rate) || rate <= 0) return 0;
+    // Try explicit "h" notation first (e.g. "2h", "1.5 hours")
     const hoursMatch = estimatedTime.match(/(\d+(?:\.\d+)?)\s*h/i);
-    const hours = hoursMatch ? parseFloat(hoursMatch[1]) : 1;
+    if (hoursMatch) {
+      return Math.round(rate * parseFloat(hoursMatch[1]));
+    }
+    // Fallback: try parsing the first number in the string as hours
+    const numMatch = estimatedTime.match(/(\d+(?:\.\d+)?)/);
+    const hours = numMatch ? parseFloat(numMatch[1]) : 1;
     return Math.round(rate * hours);
   })();
 
@@ -1396,6 +1616,7 @@ function ProposeTaskSheet({
       creditRate: parseFloat(creditRate),
       credentials: credentials.trim(),
       credits: computedCredits,
+      tags: selectedTags,
     });
   };
 
@@ -1571,6 +1792,31 @@ function ProposeTaskSheet({
               style={inputStyle}
             />
           </div>
+
+          <div>
+            <label style={labelStyle}>Tags</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {TASK_TAGS.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 20,
+                    border: selectedTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
+                    background: selectedTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
+                    color: selectedTags.includes(tag) ? ACCENT : MUTED,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <button
@@ -1618,7 +1864,7 @@ function MyCityTab({ posts, orgName, onCompose }: { posts: Post[]; orgName: stri
     <div style={{ padding: "24px 20px 100px" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>City Feed</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>MyCity Feed</div>
         <button
           onClick={onCompose}
           style={{
@@ -1883,112 +2129,1017 @@ function ComposePostSheet({
   );
 }
 
-// ─── Dashboard Tab ────────────────────────────────────────────────────────────
+// ─── Verify Tab ───────────────────────────────────────────────────────────────
 
-function DashboardTab({ issuer }: { issuer: ReturnType<typeof useDemo>["state"]["issuer"] }) {
-  const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
-  const totalVerified = issuer.tasks.reduce((n, t) => n + t.verifiedCount, 0);
-  const completionRate =
-    totalPending + totalVerified > 0 ? Math.round((totalVerified / (totalPending + totalVerified)) * 100) : 0;
+function VerifyTab({
+  issuerTasks,
+  claimedTaskIds,
+  removedTaskIds,
+  onRemoveTask,
+  onVerify,
+}: {
+  issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
+  claimedTaskIds: string[];
+  removedTaskIds: Set<string>;
+  onRemoveTask: (taskId: string) => void;
+  onVerify: (taskId: string, citizen: string) => void;
+}) {
+  const [view, setView] = useState<"issued" | "claimed" | "completed">("issued");
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
+  const [reminderSent, setReminderSent] = useState<Set<string>>(new Set());
 
-  const categoryBreakdown = issuer.tasks.reduce<Record<string, number>>((acc, t) => {
-    acc[t.category] = (acc[t.category] ?? 0) + 1;
-    return acc;
-  }, {});
+  const issuedTasks = issuerTasks.filter(t => !removedTaskIds.has(t.id));
+  const claimedTasks = issuerTasks.filter(t => claimedTaskIds.includes(t.id) && !removedTaskIds.has(t.id));
+  const completedTasks = issuerTasks.filter(t => t.pendingCompletions.length > 0);
+
+  const TOGGLE_OPTIONS = [
+    { key: "issued", label: `Issued (${issuedTasks.length})` },
+    { key: "claimed", label: `Claimed (${claimedTasks.length})` },
+    { key: "completed", label: `Completed (${completedTasks.length})` },
+  ] as const;
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <SectionLabel text="Performance" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
-        <MetricCard label="Tasks Posted" value={issuer.totalTasksIssued} color={ACCENT} />
-        <MetricCard label="CITYx Issued" value={issuer.totalCreditsIssued} color="#4169E1" />
-        <MetricCard label="Verifications" value={totalVerified} color="#34eeb6" />
-        <MetricCard label="Completion Rate" value={`${completionRate}%`} color="#a78bfa" />
+      {/* Three-way toggle */}
+      <div
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
+          marginBottom: 20,
+        }}
+      >
+        {TOGGLE_OPTIONS.map(opt => (
+          <button
+            key={opt.key}
+            onClick={() => setView(opt.key)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 11,
+              fontWeight: 600,
+              background: view === opt.key ? ACCENT : "transparent",
+              color: view === opt.key ? BG : MUTED,
+              transition: "all 0.15s",
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
-      {Object.keys(categoryBreakdown).length > 0 && (
+      {/* Issued Tasks */}
+      {view === "issued" && (
         <>
-          <SectionLabel text="Tasks by Category" />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-            {Object.entries(categoryBreakdown).map(([cat, count]) => (
-              <div
-                key={cat}
-                style={{
-                  ...surfaceCard,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 16px",
-                }}
-              >
-                <span style={{ fontSize: 13, color: "#fff" }}>{cat}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>
-                  {count} task{count > 1 ? "s" : ""}
-                </span>
-              </div>
-            ))}
-          </div>
+          {issuedTasks.length === 0 ? (
+            <EmptyState
+              emoji="📋"
+              title="No issued tasks"
+              desc="Post tasks from the Tasks tab to make them available for participants to claim."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {issuedTasks.map(t => (
+                <div key={t.id} style={{ ...surfaceCard }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
+                      <div style={{ fontSize: 11, color: MUTED }}>
+                        {t.estimatedTime} · {t.slotsRemaining}/{t.slots} slots open
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
+                      {t.credits} CITYx
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onRemoveTask(t.id)}
+                    style={{
+                      width: "100%",
+                      background: "rgba(255,107,157,0.08)",
+                      border: "1px solid rgba(255,107,157,0.25)",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#ff6b9d",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove from Open Task Pool
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 
-      {issuer.totalTasksIssued === 0 && (
-        <EmptyState
-          emoji="📊"
-          title="No data yet"
-          desc="Create tasks in the Tasks tab to see performance analytics here."
-        />
+      {/* Claimed Tasks */}
+      {view === "claimed" && (
+        <>
+          {claimedTasks.length === 0 ? (
+            <EmptyState
+              emoji="👤"
+              title="No claimed tasks"
+              desc="When participants claim your tasks, they'll appear here so you can track progress."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {claimedTasks.map(t => {
+                const key = t.id;
+                const sent = reminderSent.has(key);
+                return (
+                  <div key={t.id} style={{ ...surfaceCard }}>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{t.title}</div>
+                      <div style={{ fontSize: 11, color: MUTED }}>
+                        {t.estimatedTime}
+                        {t.taskDate && t.taskDate !== "TBD" ? ` · 📅 ${t.taskDate}` : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!sent) setReminderSent(prev => new Set([...prev, key]));
+                      }}
+                      style={{
+                        width: "100%",
+                        background: sent ? "rgba(52,238,182,0.08)" : "rgba(65,105,225,0.1)",
+                        border: sent ? "1px solid rgba(52,238,182,0.25)" : "1px solid rgba(65,105,225,0.3)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: sent ? "#34eeb6" : "#4169E1",
+                        cursor: sent ? "default" : "pointer",
+                      }}
+                    >
+                      {sent ? "✓ Reminder Sent" : "Send Notification Reminder"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
-      <SectionLabel text="How It Works" />
-      <div style={{ ...surfaceCard, display: "flex", flexDirection: "column", gap: 14 }}>
-        {(
-          [
-            ["1️⃣", "Post a task", "Choose from the admin-curated catalog and publish it to participants."],
-            ["2️⃣", "Citizens claim", "Participants claim a slot and complete the task in the real world."],
-            ["3️⃣", "You verify", "Review completion evidence and click Verify — this triggers on-chain minting."],
-            ["4️⃣", "Credits minted", "CITYx and VOTE tokens land in the citizen's wallet automatically."],
-          ] as [string, string, string][]
-        ).map(([num, title, desc]) => (
-          <div key={title} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 18 }}>{num}</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: MUTED }}>{desc}</div>
+      {/* Completed Tasks */}
+      {view === "completed" && (
+        <>
+          {completedTasks.length === 0 ? (
+            <EmptyState
+              emoji="🎉"
+              title="All clear!"
+              desc="No pending verifications. Participants will appear here once they submit completed tasks."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {completedTasks.flatMap(t =>
+                t.pendingCompletions.map(citizen => {
+                  const fbKey = `${t.id}-${citizen}`;
+                  return (
+                    <div
+                      key={fbKey}
+                      style={{
+                        background: SURFACE,
+                        border: "1px solid rgba(221,158,51,0.2)",
+                        borderRadius: 16,
+                        padding: 16,
+                      }}
+                    >
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{t.title}</div>
+                        <div style={{ fontFamily: "monospace", fontSize: 11, color: MUTED }}>Citizen: {citizen}</div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: "rgba(255,255,255,0.05)",
+                          borderRadius: 10,
+                          padding: "8px 12px",
+                          marginBottom: 10,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          fontSize: 12,
+                          color: MUTED,
+                        }}
+                      >
+                        <span>Reward on verification</span>
+                        <span>
+                          <span style={{ color: ACCENT }}>{t.credits} CITYx</span>
+                          {" + "}
+                          <span style={{ color: "#4169E1" }}>{t.voteTokens} VOTE</span>
+                        </span>
+                      </div>
+
+                      <textarea
+                        placeholder="Optional feedback on task execution…"
+                        value={feedbackMap[fbKey] ?? ""}
+                        onChange={e => setFeedbackMap(prev => ({ ...prev, [fbKey]: e.target.value }))}
+                        rows={2}
+                        style={{
+                          width: "100%",
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 10,
+                          color: "#fff",
+                          fontSize: 12,
+                          padding: "8px 12px",
+                          outline: "none",
+                          resize: "none",
+                          boxSizing: "border-box",
+                          marginBottom: 10,
+                          lineHeight: 1.5,
+                        }}
+                      />
+
+                      <button
+                        onClick={() => onVerify(t.id, citizen)}
+                        style={{
+                          width: "100%",
+                          background: ACCENT,
+                          border: "none",
+                          borderRadius: 12,
+                          padding: "11px 0",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: BG,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Verify & Mint Credits
+                      </button>
+                    </div>
+                  );
+                }),
+              )}
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
 // ─── MCEs Tab ─────────────────────────────────────────────────────────────────
 
-function MCEsTab({ mces }: { mces: ReturnType<typeof useDemo>["state"]["mces"] }) {
+function MCEsTab({ state, orgName }: { state: ReturnType<typeof useDemo>["state"]; orgName: string }) {
+  const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
+  const [proposeOpen, setProposeOpen] = useState(false);
+  const [localProposals, setLocalProposals] = useState<
+    Array<{ id: string; title: string; description: string; goals: string; benefits: string; tags: string[] }>
+  >([]);
+
+  // MCE proposal form state
+  const [mceTitle, setMceTitle] = useState("");
+  const [mceDesc, setMceDesc] = useState("");
+  const [mceGoals, setMceGoals] = useState("");
+  const [mceBenefits, setMceBenefits] = useState("");
+  const [mceTags, setMceTags] = useState<string[]>([]);
+
+  const MCE_TAGS = ["Environment", "Infrastructure", "Education", "Health", "Community", "Safety", "Economy"];
+
+  const toggleMceTag = (tag: string) => {
+    setMceTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
+  };
+
+  const submitProposal = () => {
+    if (!mceTitle.trim() || !mceDesc.trim()) return;
+    setLocalProposals(prev => [
+      {
+        id: `mce-local-${Date.now()}`,
+        title: mceTitle.trim(),
+        description: mceDesc.trim(),
+        goals: mceGoals.trim(),
+        benefits: mceBenefits.trim(),
+        tags: mceTags,
+      },
+      ...prev,
+    ]);
+    setMceTitle("");
+    setMceDesc("");
+    setMceGoals("");
+    setMceBenefits("");
+    setMceTags([]);
+    setProposeOpen(false);
+  };
+
+  const epoch1Mces = [...state.mces.filter(m => m.status === "Voting")].sort((a, b) => b.votesFor - a.votesFor);
+  const totalVotesCast = Math.max(
+    epoch1Mces.reduce((sum, m) => sum + m.votesFor, 0),
+    1,
+  );
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    color: "#fff",
+    fontSize: 13,
+    padding: "10px 12px",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: MUTED,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.07em",
+    marginBottom: 6,
+    display: "block",
+  };
+
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      {/* Epoch toggle */}
       <div
         style={{
-          background: "rgba(221,158,51,0.06)",
-          border: "1px solid rgba(221,158,51,0.15)",
-          borderRadius: 14,
-          padding: "14px 16px",
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
           marginBottom: 20,
         }}
       >
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>What is an MCE?</div>
-        <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          Mass Coordination Events are city-wide initiatives proposed by certified issuers and voted on by VOTE token
-          holders. If approved, the city enters a planning phase before activation. MCE tasks earn MCE Credits —
-          redeemable at a wider set of venues.
-        </p>
+        {(
+          [
+            { key: "epoch1", label: "Epoch 1 · Voting" },
+            { key: "epoch2", label: "Epoch 2 · Upcoming" },
+          ] as const
+        ).map(s => (
+          <button
+            key={s.key}
+            onClick={() => setSection(s.key)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              background: section === s.key ? ACCENT : "transparent",
+              color: section === s.key ? BG : MUTED,
+              transition: "all 0.15s",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      <SectionLabel text={`All MCEs (${mces.length})`} />
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {mces.map(mce => (
-          <MCECard key={mce.id} mce={mce} />
-        ))}
+      {/* Epoch 1 — View only, no voting */}
+      {section === "epoch1" && (
+        <>
+          <div
+            style={{
+              ...surfaceCard,
+              marginBottom: 16,
+              padding: "12px 16px",
+              background: "rgba(65,105,225,0.08)",
+              border: "1px solid rgba(65,105,225,0.25)",
+            }}
+          >
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+              <span style={{ fontWeight: 600, color: "#4169E1" }}>Issuer Organizations observe Epoch 1 voting</span> —
+              you cannot allocate VOTE tokens to proposals. Epoch 1 voting is reserved for Civic Participants. Your role
+              is to monitor which proposals are gaining support and prepare to plan tasks for the winner.
+            </div>
+          </div>
+
+          {epoch1Mces.length === 0 ? (
+            <EmptyState emoji="🗳️" title="No active proposals" desc="Epoch 1 voting proposals will appear here." />
+          ) : (
+            <div style={{ marginBottom: 8 }}>
+              {epoch1Mces.map((mce, i) => {
+                const pct = Math.round((mce.votesFor / totalVotesCast) * 100);
+                return (
+                  <div key={mce.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div style={{ flex: 1, paddingRight: 10 }}>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>
+                          MCE-0{i + 1}
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35 }}>
+                          {mce.title}
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                          by {mce.proposerName}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: "3px 10px",
+                          borderRadius: 20,
+                          background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
+                          color: STATUS_COLOR[mce.status] ?? ACCENT,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {mce.status}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginBottom: 12 }}>
+                      {mce.description.slice(0, 120)}…
+                    </div>
+
+                    <div style={{ marginBottom: 4 }}>
+                      <div
+                        style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${pct}%`,
+                            background: "#34eeb6",
+                            borderRadius: 3,
+                            transition: "width 0.2s",
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                          {mce.votesFor.toLocaleString()} votes
+                        </span>
+                        <span style={{ fontSize: 11, color: "#34eeb6" }}>{pct}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Epoch 2 — View + Create proposal */}
+      {section === "epoch2" && (
+        <>
+          <div style={{ ...surfaceCard, marginBottom: 16, padding: "14px 16px" }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+              These proposals are gathering community support for the next voting epoch. As an Issuer Organization, you
+              can submit new proposals here. The top-liked proposals may be selected for Epoch 2 voting.
+            </div>
+          </div>
+
+          {/* Create proposal button */}
+          <button
+            onClick={() => setProposeOpen(true)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              background: "rgba(221,158,51,0.1)",
+              border: "1px dashed rgba(221,158,51,0.4)",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              color: ACCENT,
+              cursor: "pointer",
+              marginBottom: 16,
+            }}
+          >
+            <IconPlus /> Create New MCE Proposal
+          </button>
+
+          {/* Local proposals (just submitted) */}
+          {localProposals.map(p => (
+            <div
+              key={p.id}
+              style={{
+                ...surfaceCard,
+                marginBottom: 12,
+                border: "1px solid rgba(221,158,51,0.2)",
+                background: "rgba(221,158,51,0.04)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: 20,
+                    background: "rgba(65,105,225,0.15)",
+                    color: "#4169E1",
+                    border: "1px solid rgba(65,105,225,0.3)",
+                  }}
+                >
+                  Org
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>just now</span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35, marginBottom: 4 }}>
+                {p.title}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>by {orgName}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 10 }}>
+                {p.description}
+              </div>
+              {p.tags.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {p.tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(255,255,255,0.05)",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Existing epoch2 proposals */}
+          {state.epoch2Proposals.map(prop => (
+            <div key={prop.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: 20,
+                    background: prop.proposerType === "org" ? "rgba(65,105,225,0.15)" : "rgba(52,238,182,0.12)",
+                    color: prop.proposerType === "org" ? "#4169E1" : "#34eeb6",
+                    border: `1px solid ${prop.proposerType === "org" ? "rgba(65,105,225,0.3)" : "rgba(52,238,182,0.25)"}`,
+                  }}
+                >
+                  {prop.proposerType === "org" ? "Org" : "Citizen"}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                  {(() => {
+                    const diff = Date.now() - new Date(prop.proposedAt).getTime();
+                    const h = Math.floor(diff / 3600000);
+                    if (h < 1) return "just now";
+                    if (h < 24) return `${h}h ago`;
+                    return `${Math.floor(h / 24)}d ago`;
+                  })()}
+                </span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "white", lineHeight: 1.35, marginBottom: 4 }}>
+                {prop.title}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+                by {prop.proposerName}
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 12 }}>
+                {prop.description.slice(0, 130)}…
+              </div>
+              {prop.tags.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {prop.tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        background: "rgba(255,255,255,0.05)",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* MCE Proposal Create Sheet */}
+      {proposeOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setProposeOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: SURFACE,
+              borderRadius: "24px 24px 0 0",
+              padding: "24px 20px 40px",
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                background: "rgba(255,255,255,0.15)",
+                borderRadius: 2,
+                margin: "0 auto 20px",
+              }}
+            />
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
+            <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+              Submit a proposal for community consideration. Strong proposals include clear goals and measurable
+              benefits.
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Title *</label>
+                <input
+                  value={mceTitle}
+                  onChange={e => setMceTitle(e.target.value)}
+                  placeholder="e.g. Eastside Green Corridor Initiative"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Description *</label>
+                <textarea
+                  value={mceDesc}
+                  onChange={e => setMceDesc(e.target.value)}
+                  placeholder="What is this proposal about? Why does the city need it?"
+                  rows={3}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Goals</label>
+                <textarea
+                  value={mceGoals}
+                  onChange={e => setMceGoals(e.target.value)}
+                  placeholder="What specific outcomes will this achieve?"
+                  rows={2}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Community Benefits</label>
+                <textarea
+                  value={mceBenefits}
+                  onChange={e => setMceBenefits(e.target.value)}
+                  placeholder="Who benefits and how? Be specific about impact."
+                  rows={2}
+                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Tags</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {MCE_TAGS.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleMceTag(tag)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: 20,
+                        border: mceTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
+                        background: mceTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
+                        color: mceTags.includes(tag) ? ACCENT : MUTED,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={submitProposal}
+              disabled={!mceTitle.trim() || !mceDesc.trim()}
+              style={{
+                width: "100%",
+                background: mceTitle.trim() && mceDesc.trim() ? ACCENT : "rgba(255,255,255,0.08)",
+                border: "none",
+                borderRadius: 14,
+                padding: "14px 0",
+                fontSize: 14,
+                fontWeight: 700,
+                color: mceTitle.trim() && mceDesc.trim() ? BG : MUTED,
+                cursor: mceTitle.trim() && mceDesc.trim() ? "pointer" : "not-allowed",
+                marginTop: 20,
+              }}
+            >
+              Submit Proposal
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Issue Task Popup ─────────────────────────────────────────────────────────
+
+function IssueTaskPopup({
+  task,
+  onClose,
+  onIssue,
+}: {
+  task: Task;
+  onClose: () => void;
+  onIssue: (slots: number) => void;
+}) {
+  const [slots, setSlots] = useState(5);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.8)",
+        backdropFilter: "blur(4px)",
+        padding: "0 16px",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          background: SURFACE,
+          borderRadius: 20,
+          padding: "28px 24px",
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Issue Task</div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
+        <div style={{ fontSize: 12, color: DIMMED, marginBottom: 20 }}>
+          {task.credits} CITYx + {task.voteTokens} VOTE per completion
+        </div>
+
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 12 }}>
+          How many instances of this task do you want to offer?
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            marginBottom: 24,
+          }}
+        >
+          <button
+            onClick={() => setSlots(s => Math.max(1, s - 1))}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(255,255,255,0.06)",
+              color: "white",
+              fontSize: 22,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            −
+          </button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 36, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>{slots}</div>
+            <div style={{ fontSize: 11, color: DIMMED, marginTop: 4 }}>slots</div>
+          </div>
+          <button
+            onClick={() => setSlots(s => s + 1)}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: `${ACCENT}33`,
+              color: ACCENT,
+              fontSize: 22,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            +
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 12,
+              padding: "12px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              color: MUTED,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onIssue(slots)}
+            style={{
+              flex: 2,
+              background: ACCENT,
+              border: "none",
+              borderRadius: 12,
+              padding: "12px 0",
+              fontSize: 13,
+              fontWeight: 700,
+              color: BG,
+              cursor: "pointer",
+            }}
+          >
+            Issue {slots} Slot{slots !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modify Task Sheet ────────────────────────────────────────────────────────
+
+function ModifyTaskSheet({
+  task,
+  onClose,
+  onSave,
+}: {
+  task: Task;
+  onClose: () => void;
+  onSave: (updates: { location: string; taskDate: string }) => void;
+}) {
+  const [location, setLocation] = useState(task.location);
+  const [taskDate, setTaskDate] = useState(task.taskDate ?? "");
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    color: "#fff",
+    fontSize: 13,
+    padding: "10px 12px",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: MUTED,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.07em",
+    marginBottom: 6,
+    display: "block",
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(4px)",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          background: SURFACE,
+          borderRadius: "24px 24px 0 0",
+          padding: "24px 20px 40px",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 4,
+            background: "rgba(255,255,255,0.15)",
+            borderRadius: 2,
+            margin: "0 auto 20px",
+          }}
+        />
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Modify Task</div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
+        <div
+          style={{
+            fontSize: 11,
+            color: DIMMED,
+            marginBottom: 20,
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            lineHeight: 1.5,
+          }}
+        >
+          Only Location and Date &amp; Time of Activity can be changed on an approved task.
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={labelStyle}>Location</label>
+            <input
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              placeholder="e.g. Riverside Park, District 4"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Date &amp; Time of Activity</label>
+            <input
+              value={taskDate}
+              onChange={e => setTaskDate(e.target.value)}
+              placeholder="e.g. Saturday, March 21, 2026 · 10am"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={() => onSave({ location: location.trim() || task.location, taskDate: taskDate.trim() })}
+          style={{
+            width: "100%",
+            background: ACCENT,
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 0",
+            fontSize: 14,
+            fontWeight: 700,
+            color: BG,
+            cursor: "pointer",
+            marginTop: 20,
+          }}
+        >
+          Save Changes
+        </button>
       </div>
     </div>
   );
