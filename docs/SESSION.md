@@ -46,6 +46,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - `redeemer/page.tsx` committed and MCE offering handlers now call `redeemerAddOffer(...)` with mapped `RedemptionOffer` payloads.
   - Added explicit `Last Offer Write` status block in Offerings tab with `pending | confirmed | failed` state and Base Sepolia explorer link when hash is present.
   - This closes the ambiguity where offerings appeared created in UI without an explicit onchain success/failure signal.
+- Follow-up reliability fixes after live verification:
+  - Fixed Redeemer right-side onchain panel `OfferCreated` log filter to match deployed event signature (added missing `description` field in the event shape).
+  - Prevented repeated role-setting loops on Issuer/Redeemer pages by making role mount-effect run once.
+  - Added safe error handling to auto-register writes in `setRole(...)` to avoid unhandled promise rejections.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

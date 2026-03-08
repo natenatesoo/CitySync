@@ -802,9 +802,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
           functionName: "register",
           args: [],
-        }).finally(() => {
-          roleRegisterInFlight.current.issuer = false;
-        });
+        })
+          .catch(() => undefined)
+          .finally(() => {
+            roleRegisterInFlight.current.issuer = false;
+          });
       }
 
       if (role === "redeemer" && !state.redeemer.registered && !roleRegisterInFlight.current.redeemer) {
@@ -814,9 +816,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
           functionName: "register",
           args: [],
-        }).finally(() => {
-          roleRegisterInFlight.current.redeemer = false;
-        });
+        })
+          .catch(() => undefined)
+          .finally(() => {
+            roleRegisterInFlight.current.redeemer = false;
+          });
       }
     },
     [address, state.issuer.registered, state.redeemer.registered, writeContractAsync],

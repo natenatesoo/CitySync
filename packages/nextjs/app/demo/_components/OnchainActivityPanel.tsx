@@ -228,6 +228,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: true, name: "redeemer", type: "address" },
                 { indexed: true, name: "offerId", type: "uint256" },
                 { indexed: false, name: "name", type: "string" },
+                { indexed: false, name: "description", type: "string" },
                 { indexed: false, name: "cost", type: "uint256" },
                 { indexed: false, name: "mceOnly", type: "bool" },
               ],

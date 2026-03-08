@@ -390,7 +390,9 @@ export default function RedeemerApp() {
 
   React.useEffect(() => {
     setRole("redeemer");
-  }, [setRole]);
+    // Intentional mount-only role selection; avoids reruns when callback identity updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreateCommittedOffering = async (data: { name: string; costCity: number; stipulations: string }) => {
     const offering: CustomOffering = {

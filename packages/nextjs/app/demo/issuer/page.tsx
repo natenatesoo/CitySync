@@ -402,7 +402,9 @@ export default function IssuerApp() {
 
   React.useEffect(() => {
     setRole("issuer");
-  }, [setRole]);
+    // Intentional mount-only role selection; avoids reruns when callback identity updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
