@@ -465,7 +465,7 @@ export default function IssuerApp() {
   const [removedTaskIds, setRemovedTaskIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
 
-  const { issuer, mces } = state;
+  const { issuer } = state;
   const { left: leftPanel, right: rightPanel } = getIssuerPanels(activeTab, state);
 
   React.useEffect(() => {
@@ -3145,66 +3145,6 @@ function ModifyTaskSheet({
   );
 }
 
-// ─── MCE Card ─────────────────────────────────────────────────────────────────
-
-function MCECard({ mce }: { mce: ReturnType<typeof useDemo>["state"]["mces"][number] }) {
-  const statusColor = STATUS_COLOR[mce.status] ?? "#4169E1";
-  const total = mce.votesFor + mce.votesAgainst;
-  const forPct = total > 0 ? (mce.votesFor / total) * 100 : 50;
-
-  return (
-    <div style={{ ...surfaceCard }}>
-      <div style={{ marginBottom: 8 }}>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            background: `${statusColor}18`,
-            color: statusColor,
-            borderRadius: 20,
-            padding: "3px 10px",
-          }}
-        >
-          {mce.status}
-        </span>
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{mce.title}</div>
-      <div style={{ fontSize: 11, color: MUTED, marginBottom: 12 }}>
-        {mce.proposerName} · {mce.taskCount} tasks · {mce.mceCreditsPerTask} MCE/task
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 11,
-          color: MUTED,
-          marginBottom: 6,
-        }}
-      >
-        <span>{mce.votesFor.toLocaleString()} for</span>
-        <span>{mce.votesAgainst.toLocaleString()} against</span>
-      </div>
-      <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-        <div
-          style={{
-            height: "100%",
-            width: `${forPct}%`,
-            background: "linear-gradient(90deg, #4169E1, #34eeb6)",
-            borderRadius: 3,
-          }}
-        />
-      </div>
-
-      {mce.participantCount > 0 && (
-        <div style={{ fontSize: 11, color: DIMMED, marginTop: 8 }}>
-          {mce.participantCount.toLocaleString()} participants enrolled
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
 function SectionLabel({ text }: { text: string }) {
@@ -3273,17 +3213,6 @@ function StatRow({
         {value.toLocaleString()}
         {suffix && <span style={{ fontSize: 11, color: DIMMED, marginLeft: 4 }}>{suffix}</span>}
       </span>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, color }: { label: string; value: number | string; color: string }) {
-  return (
-    <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
-      <div style={{ fontSize: 26, fontWeight: 700, color }}>
-        {typeof value === "number" ? value.toLocaleString() : value}
-      </div>
-      <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{label}</div>
     </div>
   );
 }
