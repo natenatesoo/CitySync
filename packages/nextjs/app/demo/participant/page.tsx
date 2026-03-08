@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useAccount } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { NavTab } from "../_components/BottomNav";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
-import { useAccount } from "wagmi";
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
@@ -2388,7 +2388,7 @@ function RedeemTab() {
 
 export default function ParticipantPage() {
   const { state, setRole } = useDemo();
-  const { address } = useAccount();
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
 
   useEffect(() => {

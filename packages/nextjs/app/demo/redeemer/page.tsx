@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { useAccount } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, Post, PostCategory } from "../_data/mockData";
-import { useAccount } from "wagmi";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -366,7 +366,7 @@ function getRedeemerPanels(
 
 export default function RedeemerApp() {
   const { state, setRole, redeemerProcessRedemption, dispatch } = useDemo();
-  const { address } = useAccount();
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
   const [offeringSheet, setOfferingSheet] = useState<"committed" | "mce" | null>(null);
   const [qrTarget, setQrTarget] = useState<QROfferingData | null>(null);

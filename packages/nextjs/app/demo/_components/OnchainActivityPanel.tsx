@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useAccount, useBlockNumber, usePublicClient } from "wagmi";
+import { useAccount } from "@account-kit/react";
+import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 
 type ActivityRole = "participant" | "issuer" | "redeemer";
@@ -45,26 +46,44 @@ function toItems(
 }
 
 export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; accent: string }) {
-  const { address } = useAccount();
-  const publicClient = usePublicClient();
-  const { data: blockNumber } = useBlockNumber({ watch: true });
+  const { address } = useAccount({ type: "ModularAccountV2" });
 
   const [items, setItems] = useState<ActivityItem[]>([]);
+  const [latestBlock, setLatestBlock] = useState<bigint | null>(null);
 
   const fromBlock = useMemo(() => {
-    if (!blockNumber) return 0n;
-    return blockNumber > 40_000n ? blockNumber - 40_000n : 0n;
-  }, [blockNumber]);
+    if (!latestBlock) return 0n;
+    return latestBlock > 40_000n ? latestBlock - 40_000n : 0n;
+  }, [latestBlock]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshBlock = async () => {
+      try {
+        const bn = await baseSepoliaPublicClient.getBlockNumber();
+        if (!cancelled) setLatestBlock(bn);
+      } catch {
+        // no-op: keep last known block
+      }
+    };
+
+    void refreshBlock();
+    const id = window.setInterval(() => void refreshBlock(), 7000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     const run = async () => {
-      if (!publicClient || !address || blockNumber === undefined) return;
+      if (!address || latestBlock === null) return;
 
       const queries: Promise<any>[] = [];
 
       if (role === "participant") {
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
             event: {
               type: "event",
@@ -76,12 +95,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { citizen: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
 
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
             event: {
               type: "event",
@@ -95,12 +114,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { citizen: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
 
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
             event: {
               type: "event",
@@ -115,12 +134,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { citizen: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
 
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
             event: {
               type: "event",
@@ -136,14 +155,14 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { citizen: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
       }
 
       if (role === "issuer") {
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
             event: {
               type: "event",
@@ -155,12 +174,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { issuer: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
 
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
             event: {
               type: "event",
@@ -176,14 +195,14 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { issuer: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
       }
 
       if (role === "redeemer") {
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
             event: {
               type: "event",
@@ -195,12 +214,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { redeemer: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
 
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
             event: {
               type: "event",
@@ -215,12 +234,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { redeemer: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
 
         queries.push(
-          publicClient.getLogs({
+          baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
             event: {
               type: "event",
@@ -235,7 +254,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             },
             args: { redeemer: address },
             fromBlock,
-            toBlock: blockNumber,
+            toBlock: latestBlock,
           } as any),
         );
       }
@@ -269,7 +288,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
       const blockPairs = await Promise.all(
         uniqueBlocks.map(async bn => {
           try {
-            const block = await publicClient.getBlock({ blockNumber: bn });
+            const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn });
             return [bn.toString(), block.timestamp] as const;
           } catch {
             return [bn.toString(), undefined] as const;
@@ -287,7 +306,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     };
 
     void run();
-  }, [address, blockNumber, fromBlock, publicClient, role]);
+  }, [address, fromBlock, latestBlock, role]);
 
   return (
     <div

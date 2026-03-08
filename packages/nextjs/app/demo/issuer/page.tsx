@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { useAccount } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, MOCK_TASKS, Post, PostCategory, Task } from "../_data/mockData";
-import { useAccount } from "wagmi";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -384,7 +384,7 @@ type SlotInstance = {
 
 export default function IssuerApp() {
   const { state, setRole, issuerCreateTask, issuerVerifyCompletion } = useDemo();
-  const { address } = useAccount();
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
   const [createSheet, setCreateSheet] = useState(false);
   const [proposeSheet, setProposeSheet] = useState(false);

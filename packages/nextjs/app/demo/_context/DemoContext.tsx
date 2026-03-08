@@ -1,17 +1,9 @@
 "use client";
 
-import React, {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-} from "react";
-import { formatUnits, keccak256, parseUnits, stringToHex } from "viem";
-import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import React, { ReactNode, createContext, useCallback, useContext, useEffect, useReducer, useRef } from "react";
+import { useAccount, useSendUserOperation, useSmartAccountClient } from "@account-kit/react";
+import { encodeFunctionData, formatUnits, keccak256, parseUnits, stringToHex } from "viem";
+import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS, DEMO_OFFER_ROUTES } from "../_config/baseSepoliaContracts";
 import {
   CompletedTask,
@@ -629,91 +621,107 @@ const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-  const { address } = useAccount();
-  const publicClient = usePublicClient();
-  const { writeContractAsync } = useWriteContract();
+  const { address } = useAccount({ type: "ModularAccountV2" });
+  const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
+  const { sendUserOperationAsync } = useSendUserOperation({
+    client,
+    waitForTxn: false,
+  });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
 
-  const onchainContracts = useMemo(() => {
-    if (!address) return [];
-
-    return [
-      {
-        address: BASE_SEPOLIA_CONTRACTS.CityToken.address,
-        abi: BASE_SEPOLIA_CONTRACTS.CityToken.abi,
-        functionName: "balanceOf" as const,
-        args: [address as `0x${string}`] as const,
-      },
-      {
-        address: BASE_SEPOLIA_CONTRACTS.VoteToken.address,
-        abi: BASE_SEPOLIA_CONTRACTS.VoteToken.abi,
-        functionName: "balanceOf" as const,
-        args: [address as `0x${string}`] as const,
-      },
-      {
-        address: BASE_SEPOLIA_CONTRACTS.MCECredit.address,
-        abi: BASE_SEPOLIA_CONTRACTS.MCECredit.abi,
-        functionName: "balanceOf" as const,
-        args: [address as `0x${string}`] as const,
-      },
-      {
-        address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
-        abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
-        functionName: "isActiveIssuer" as const,
-        args: [address as `0x${string}`] as const,
-      },
-      {
-        address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-        abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-        functionName: "isActiveRedeemer" as const,
-        args: [address as `0x${string}`] as const,
-      },
-    ];
-  }, [address]);
-
-  const { data: onchainReads } = useReadContracts({
-    contracts: onchainContracts,
-    query: {
-      enabled: !!address,
-      refetchInterval: 6000,
+  const writeContractAsync = useCallback(
+    async (params: {
+      address: `0x${string}`;
+      abi: readonly unknown[];
+      functionName: string;
+      args: readonly unknown[];
+    }) => {
+      if (!client) throw new Error("Smart account client unavailable");
+      const data = encodeFunctionData({
+        abi: params.abi as any,
+        functionName: params.functionName as any,
+        args: params.args as any,
+      });
+      return sendUserOperationAsync({
+        uo: {
+          target: params.address,
+          data,
+          value: 0n,
+        },
+      } as any);
     },
-  });
+    [client, sendUserOperationAsync],
+  );
 
   useEffect(() => {
-    if (!address || !onchainReads || onchainReads.length < 5) return;
+    if (!address) return;
+    let cancelled = false;
 
-    const cityRaw = onchainReads[0]?.result as bigint | undefined;
-    const voteRaw = onchainReads[1]?.result as bigint | undefined;
-    const mceRaw = onchainReads[2]?.result as bigint | undefined;
-    const issuerRegistered = onchainReads[3]?.result as boolean | undefined;
-    const redeemerRegistered = onchainReads[4]?.result as boolean | undefined;
+    const syncState = async () => {
+      try {
+        const [cityRaw, voteRaw, mceRaw, issuerRegistered, redeemerRegistered] = await Promise.all([
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.CityToken.address,
+            abi: BASE_SEPOLIA_CONTRACTS.CityToken.abi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.VoteToken.address,
+            abi: BASE_SEPOLIA_CONTRACTS.VoteToken.abi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.MCECredit.address,
+            abi: BASE_SEPOLIA_CONTRACTS.MCECredit.abi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+            abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+            functionName: "isActiveIssuer",
+            args: [address],
+          }),
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "isActiveRedeemer",
+            args: [address],
+          }),
+        ]);
 
-    if (
-      cityRaw === undefined ||
-      voteRaw === undefined ||
-      mceRaw === undefined ||
-      issuerRegistered === undefined ||
-      redeemerRegistered === undefined
-    ) {
-      return;
-    }
+        if (cancelled) return;
 
-    dispatch({
-      type: "SYNC_ONCHAIN_STATE",
-      cityBalance: Math.floor(Number(formatUnits(cityRaw, 18))),
-      voteBalance: Math.floor(Number(formatUnits(voteRaw, 18))),
-      mceBalance: Math.floor(Number(formatUnits(mceRaw, 18))),
-      issuerRegistered,
-      redeemerRegistered,
-    });
-  }, [address, onchainReads]);
+        dispatch({
+          type: "SYNC_ONCHAIN_STATE",
+          cityBalance: Math.floor(Number(formatUnits(cityRaw as bigint, 18))),
+          voteBalance: Math.floor(Number(formatUnits(voteRaw as bigint, 18))),
+          mceBalance: Math.floor(Number(formatUnits(mceRaw as bigint, 18))),
+          issuerRegistered: Boolean(issuerRegistered),
+          redeemerRegistered: Boolean(redeemerRegistered),
+        });
+      } catch {
+        // Keep local demo state if read sync fails.
+      }
+    };
+
+    void syncState();
+    const id = window.setInterval(() => {
+      void syncState();
+    }, 6000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [address]);
 
   useEffect(() => {
     const syncOffers = async () => {
-      if (!publicClient) return;
-
       try {
-        const redeemers = (await publicClient.readContract({
+        const redeemers = (await baseSepoliaPublicClient.readContract({
           address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
           abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
           functionName: "getAllRedeemers",
@@ -723,7 +731,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         const discovered: RedemptionOffer[] = [];
 
         for (const redeemer of redeemers) {
-          const profile = (await publicClient.readContract({
+          const profile = (await baseSepoliaPublicClient.readContract({
             address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
             abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
             functionName: "getProfile",
@@ -732,7 +740,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
           if (!profile.active || profile.registeredAt === 0n) continue;
 
-          const nextOfferId = (await publicClient.readContract({
+          const nextOfferId = (await baseSepoliaPublicClient.readContract({
             address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
             abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
             functionName: "nextOfferId",
@@ -740,7 +748,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           })) as bigint;
 
           for (let i = 1n; i <= nextOfferId; i++) {
-            const offer = (await publicClient.readContract({
+            const offer = (await baseSepoliaPublicClient.readContract({
               address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
               abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
               functionName: "getOffer",
@@ -771,7 +779,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     };
 
     void syncOffers();
-  }, [publicClient]);
+  }, []);
 
   const setRole = useCallback(
     (role: Role) => {

@@ -12,10 +12,44 @@ When major product, contract-integration, or deployment-impacting changes are ma
 ---
 
 ## Last Updated
-2026-03-08 (Session 16)
+2026-03-08 (Session 17)
 
 ## Current Branch
 `main`
+
+## Session 17 Summary (2026-03-08)
+
+### Completed This Session
+- Diagnosed why new `/demo` onchain wiring appeared disconnected after redeploy:
+  - root cause was provider mismatch (`/demo` authenticated via Account Kit, while demo reads/writes used app-level `wagmi` config targeting Foundry/local).
+- Added `packages/nextjs/app/demo/_config/baseSepoliaClient.ts`:
+  - explicit Base Sepolia viem public client using Alchemy RPC when `NEXT_PUBLIC_ALCHEMY_API_KEY` is present.
+- Updated `packages/nextjs/app/demo/_context/DemoContext.tsx`:
+  - migrated account source from `wagmi` to `@account-kit/react` (`useAccount({ type: "ModularAccountV2" })`).
+  - replaced `useReadContracts` with direct Base Sepolia reads via `baseSepoliaPublicClient.readContract` polling every 6s.
+  - replaced `wagmi` `writeContractAsync` with Account Kit user-op writes:
+    - `useSmartAccountClient`
+    - `useSendUserOperation`
+    - `encodeFunctionData` + `sendUserOperationAsync` helper
+  - kept existing reducer/UI flow so demo interactions remain immediate while writes are sent onchain.
+- Updated `packages/nextjs/app/demo/_components/OnchainActivityPanel.tsx`:
+  - migrated from `wagmi` account/public client hooks to Account Kit account + explicit Base Sepolia public client.
+  - now polls latest block and fetches role-filtered logs directly from Base Sepolia.
+- Updated role pages to source wallet address from Account Kit instead of `wagmi`:
+  - `packages/nextjs/app/demo/participant/page.tsx`
+  - `packages/nextjs/app/demo/issuer/page.tsx`
+  - `packages/nextjs/app/demo/redeemer/page.tsx`
+- Validation:
+  - `yarn next:lint --fix --file ...` passes (only existing non-blocking `<img>` warnings remain).
+  - `yarn next:check-types` passes.
+
+### Current State
+- `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
+- This removes the previous silent failure mode where authenticated demo users were not using the same client/network for contract actions.
+
+### Next Step
+1. Add explicit toast/error surfacing for user-op write failures currently swallowed with `.catch(() => undefined)` so failed writes are visible in UI.
+2. After next deploy, verify each role by executing one action and confirming corresponding tx appears in both wallet activity and right-side onchain panel.
 
 ## Session 16 Summary (2026-03-08)
 
