@@ -894,8 +894,6 @@ function ProfileTab({
               { label: "Address", value: venueAddress },
               { label: "Phone Number", value: venuePhone },
               { label: "Website", value: venueWebsite },
-              { label: "Status", node: <StatusPill label="Active" color={ACCENT} /> },
-              { label: "Network", value: "Base Mainnet" },
             ].map((row, i) => (
               <div
                 key={row.label}
@@ -908,21 +906,16 @@ function ProfileTab({
                 }}
               >
                 <span style={{ fontSize: 13, color: MUTED, flexShrink: 0 }}>{row.label}</span>
-                {"node" in row ? (
-                  row.node
-                ) : (
-                  <span
-                    style={{
-                      fontSize: 13,
-                      color: row.label === "Network" ? "#fff" : DIMMED,
-                      fontWeight: row.label === "Network" ? 600 : 400,
-                      textAlign: "right",
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {row.value}
-                  </span>
-                )}
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: DIMMED,
+                    textAlign: "right",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {row.value}
+                </span>
               </div>
             ))}
           </div>

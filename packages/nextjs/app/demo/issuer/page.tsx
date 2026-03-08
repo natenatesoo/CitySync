@@ -451,6 +451,13 @@ interface ProposedTask {
   tags: string[];
 }
 
+type SlotInstance = {
+  instanceId: string;
+  taskId: string;
+  slotIndex: number;
+  status: "issued" | "claimed" | "completed";
+};
+
 export default function IssuerApp() {
   const { state, setRole, issuerCreateTask, issuerVerifyCompletion } = useDemo();
   const [activeTab, setActiveTab] = useState("profile");
@@ -462,7 +469,7 @@ export default function IssuerApp() {
   const [approvedCatalogTasks, setApprovedCatalogTasks] = useState<Task[]>([]);
   const [issueTaskId, setIssueTaskId] = useState<string | null>(null);
   const [modifyTaskId, setModifyTaskId] = useState<string | null>(null);
-  const [removedTaskIds, setRemovedTaskIds] = useState<Set<string>>(new Set());
+  const [slotInstances, setSlotInstances] = useState<SlotInstance[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
   const { issuer } = state;
@@ -528,15 +535,18 @@ export default function IssuerApp() {
   };
 
   const handleIssueTask = (task: Task, slots: number) => {
-    issuerCreateTask({
-      ...task,
-      id: `task-issued-${Date.now()}`,
-      slots,
-      slotsRemaining: slots,
-    });
+    const newId = `task-issued-${Date.now()}`;
+    issuerCreateTask({ ...task, id: newId, slots, slotsRemaining: slots });
+    const instances: SlotInstance[] = Array.from({ length: slots }, (_, i) => ({
+      instanceId: `${newId}-slot-${i + 1}`,
+      taskId: newId,
+      slotIndex: i + 1,
+      status: "issued",
+    }));
+    setSlotInstances(prev => [...prev, ...instances]);
     setApprovedCatalogTasks(prev => prev.filter(t => t.id !== task.id));
     setIssueTaskId(null);
-    setToast("Task issued — now visible to participants!");
+    setToast(`Task issued with ${slots} slot${slots > 1 ? "s" : ""} — now visible to participants!`);
   };
 
   const handleModifyApproved = (taskId: string, updates: { location: string; taskDate: string }) => {
@@ -545,9 +555,29 @@ export default function IssuerApp() {
     setToast("Task updated.");
   };
 
-  const handleRemoveIssuedTask = (taskId: string) => {
-    setRemovedTaskIds(prev => new Set([...prev, taskId]));
-    setToast("Task removed from open task pool.");
+  const handleRemoveSlotInstance = (instanceId: string) => {
+    setSlotInstances(prev => prev.filter(s => s.instanceId !== instanceId));
+  };
+
+  const handleMoveSlotToClaimed = (instanceId: string) => {
+    setSlotInstances(prev => prev.map(s => (s.instanceId === instanceId ? { ...s, status: "claimed" } : s)));
+  };
+
+  const handleMoveSlotToCompleted = (instanceId: string) => {
+    setSlotInstances(prev => prev.map(s => (s.instanceId === instanceId ? { ...s, status: "completed" } : s)));
+  };
+
+  const handleReissueSlots = (taskId: string, count: number) => {
+    const existing = slotInstances.filter(s => s.taskId === taskId);
+    const maxIndex = existing.reduce((m, s) => Math.max(m, s.slotIndex), 0);
+    const newInstances: SlotInstance[] = Array.from({ length: count }, (_, i) => ({
+      instanceId: `${taskId}-reissue-${Date.now()}-${i}`,
+      taskId,
+      slotIndex: maxIndex + i + 1,
+      status: "issued",
+    }));
+    setSlotInstances(prev => [...prev, ...newInstances]);
+    setToast(`${count} unissued slot${count > 1 ? "s" : ""} returned to task pool!`);
   };
 
   const handleCreatePost = (post: Post) => {
@@ -589,6 +619,8 @@ export default function IssuerApp() {
             approvedCatalogTasks={approvedCatalogTasks}
             onIssueTask={id => setIssueTaskId(id)}
             onModifyTask={id => setModifyTaskId(id)}
+            slotInstances={slotInstances}
+            onReissueSlots={handleReissueSlots}
           />
         )}
         {activeTab === "mycity" && (
@@ -597,9 +629,10 @@ export default function IssuerApp() {
         {activeTab === "verify" && (
           <VerifyTab
             issuerTasks={issuer.tasks}
-            claimedTaskIds={state.participant.claimedTaskIds}
-            removedTaskIds={removedTaskIds}
-            onRemoveTask={handleRemoveIssuedTask}
+            slotInstances={slotInstances}
+            onRemoveInstance={handleRemoveSlotInstance}
+            onMoveToClaimed={handleMoveSlotToClaimed}
+            onMoveToCompleted={handleMoveSlotToCompleted}
             onVerify={handleVerify}
           />
         )}
@@ -952,6 +985,8 @@ function TasksTab({
   approvedCatalogTasks,
   onIssueTask,
   onModifyTask,
+  slotInstances,
+  onReissueSlots,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
   totalPending: number;
@@ -964,6 +999,8 @@ function TasksTab({
   approvedCatalogTasks: Task[];
   onIssueTask: (id: string) => void;
   onModifyTask: (id: string) => void;
+  slotInstances: SlotInstance[];
+  onReissueSlots: (taskId: string, count: number) => void;
 }) {
   const [view, setView] = useState<"my" | "pending">("my");
   const pendingAll = issuerTasks.flatMap(t => t.pendingCompletions.map(addr => ({ task: t, citizen: addr })));
@@ -1164,37 +1201,60 @@ function TasksTab({
             <>
               <SectionLabel text={`Active Tasks (${issuerTasks.length})`} />
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {issuerTasks.map(t => (
-                  <div key={t.id} style={{ ...surfaceCard }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-                        <div style={{ fontSize: 11, color: MUTED }}>
-                          {t.category} · {t.estimatedTime}
+                {issuerTasks.map(t => {
+                  const activeInstances = slotInstances.filter(s => s.taskId === t.id);
+                  const activeCount = activeInstances.length;
+                  const unissuedCount = t.slots - activeCount;
+                  return (
+                    <div key={t.id} style={{ ...surfaceCard }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          marginBottom: 10,
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>
+                            {t.category} · {t.estimatedTime}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
+                          <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
                         </div>
                       </div>
-                      <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
-                        <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
-                      </div>
-                    </div>
 
-                    <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED }}>
-                      <span>✓ {t.verifiedCount} verified</span>
-                      <span>⏳ {t.pendingCompletions.length} pending</span>
-                      <span>
-                        👥 {t.slotsRemaining}/{t.slots}
-                      </span>
+                      <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED, marginBottom: 10 }}>
+                        <span>✓ {t.verifiedCount} verified</span>
+                        <span>
+                          👥 {activeCount}/{t.slots} slots active
+                        </span>
+                      </div>
+
+                      {unissuedCount > 0 && (
+                        <button
+                          onClick={() => onReissueSlots(t.id, unissuedCount)}
+                          style={{
+                            width: "100%",
+                            background: "rgba(221,158,51,0.08)",
+                            border: "1px solid rgba(221,158,51,0.3)",
+                            borderRadius: 10,
+                            padding: "8px 0",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#DD9E33",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Issue {unissuedCount} unissued task{unissuedCount > 1 ? "s" : ""}
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : null}
@@ -2138,29 +2198,32 @@ function ComposePostSheet({
 
 function VerifyTab({
   issuerTasks,
-  claimedTaskIds,
-  removedTaskIds,
-  onRemoveTask,
+  slotInstances,
+  onRemoveInstance,
+  onMoveToClaimed,
+  onMoveToCompleted,
   onVerify,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
-  claimedTaskIds: string[];
-  removedTaskIds: Set<string>;
-  onRemoveTask: (taskId: string) => void;
+  slotInstances: SlotInstance[];
+  onRemoveInstance: (instanceId: string) => void;
+  onMoveToClaimed: (instanceId: string) => void;
+  onMoveToCompleted: (instanceId: string) => void;
   onVerify: (taskId: string, citizen: string) => void;
 }) {
   const [view, setView] = useState<"issued" | "claimed" | "completed">("issued");
   const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
-  const [reminderSent, setReminderSent] = useState<Set<string>>(new Set());
 
-  const issuedTasks = issuerTasks.filter(t => !removedTaskIds.has(t.id));
-  const claimedTasks = issuerTasks.filter(t => claimedTaskIds.includes(t.id) && !removedTaskIds.has(t.id));
-  const completedTasks = issuerTasks.filter(t => t.pendingCompletions.length > 0);
+  const getTask = (taskId: string) => issuerTasks.find(t => t.id === taskId);
+
+  const issuedInstances = slotInstances.filter(s => s.status === "issued");
+  const claimedInstances = slotInstances.filter(s => s.status === "claimed");
+  const completedInstances = slotInstances.filter(s => s.status === "completed");
 
   const TOGGLE_OPTIONS = [
-    { key: "issued", label: `Issued (${issuedTasks.length})` },
-    { key: "claimed", label: `Claimed (${claimedTasks.length})` },
-    { key: "completed", label: `Completed (${completedTasks.length})` },
+    { key: "issued", label: `Issued (${issuedInstances.length})` },
+    { key: "claimed", label: `Claimed (${claimedInstances.length})` },
+    { key: "completed", label: `Completed (${completedInstances.length})` },
   ] as const;
 
   return (
@@ -2197,101 +2260,93 @@ function VerifyTab({
         ))}
       </div>
 
-      {/* Issued Tasks */}
+      {/* ── Issued Instances ── */}
       {view === "issued" && (
         <>
-          {issuedTasks.length === 0 ? (
+          {issuedInstances.length === 0 ? (
             <EmptyState
               emoji="📋"
               title="No issued tasks"
-              desc="Post tasks from the Tasks tab to make them available for participants to claim."
+              desc="Issue tasks from the Tasks tab to make them available for participants to claim."
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {issuedTasks.map(t => (
-                <div key={t.id} style={{ ...surfaceCard }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-                      <div style={{ fontSize: 11, color: MUTED }}>
-                        {t.estimatedTime} · {t.slotsRemaining}/{t.slots} slots open
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
-                      {t.credits} CITYx
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => onRemoveTask(t.id)}
-                    style={{
-                      width: "100%",
-                      background: "rgba(255,107,157,0.08)",
-                      border: "1px solid rgba(255,107,157,0.25)",
-                      borderRadius: 10,
-                      padding: "9px 0",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "#ff6b9d",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Remove from Open Task Pool
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Claimed Tasks */}
-      {view === "claimed" && (
-        <>
-          {claimedTasks.length === 0 ? (
-            <EmptyState
-              emoji="👤"
-              title="No claimed tasks"
-              desc="When participants claim your tasks, they'll appear here so you can track progress."
-            />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {claimedTasks.map(t => {
-                const key = t.id;
-                const sent = reminderSent.has(key);
+              {issuedInstances.map(inst => {
+                const task = getTask(inst.taskId);
+                if (!task) return null;
                 return (
-                  <div key={t.id} style={{ ...surfaceCard }}>
-                    <div style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{t.title}</div>
-                      <div style={{ fontSize: 11, color: MUTED }}>
-                        {t.estimatedTime}
-                        {t.taskDate && t.taskDate !== "TBD" ? ` · 📅 ${t.taskDate}` : ""}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (!sent) setReminderSent(prev => new Set([...prev, key]));
-                      }}
+                  <div key={inst.instanceId} style={{ ...surfaceCard }}>
+                    <div
                       style={{
-                        width: "100%",
-                        background: sent ? "rgba(52,238,182,0.08)" : "rgba(65,105,225,0.1)",
-                        border: sent ? "1px solid rgba(52,238,182,0.25)" : "1px solid rgba(65,105,225,0.3)",
-                        borderRadius: 10,
-                        padding: "9px 0",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: sent ? "#34eeb6" : "#4169E1",
-                        cursor: sent ? "default" : "pointer",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
                       }}
                     >
-                      {sent ? "✓ Reminder Sent" : "Send Notification Reminder"}
-                    </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
+                          {task.title}
+                        </div>
+                        <div style={{ fontSize: 11, color: MUTED }}>
+                          {task.estimatedTime} · Slot #{inst.slotIndex}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
+                        {task.credits} CITYx
+                      </div>
+                    </div>
+
+                    {/* Issued status badge */}
+                    <div
+                      style={{
+                        display: "inline-block",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        background: "rgba(65,105,225,0.12)",
+                        color: "#4169E1",
+                        borderRadius: 6,
+                        padding: "2px 8px",
+                        marginBottom: 12,
+                      }}
+                    >
+                      Open · Awaiting Claim
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => onRemoveInstance(inst.instanceId)}
+                        style={{
+                          flex: 1,
+                          background: "rgba(255,107,157,0.08)",
+                          border: "1px solid rgba(255,107,157,0.25)",
+                          borderRadius: 10,
+                          padding: "9px 0",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#ff6b9d",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Remove Task
+                      </button>
+                      <button
+                        onClick={() => onMoveToClaimed(inst.instanceId)}
+                        style={{
+                          flex: 1,
+                          background: "rgba(65,105,225,0.1)",
+                          border: "1px solid rgba(65,105,225,0.3)",
+                          borderRadius: 10,
+                          padding: "9px 0",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#4169E1",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Move to Claimed
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -2300,97 +2355,195 @@ function VerifyTab({
         </>
       )}
 
-      {/* Completed Tasks */}
-      {view === "completed" && (
+      {/* ── Claimed Instances ── */}
+      {view === "claimed" && (
         <>
-          {completedTasks.length === 0 ? (
+          {claimedInstances.length === 0 ? (
             <EmptyState
-              emoji="🎉"
-              title="All clear!"
-              desc="No pending verifications. Participants will appear here once they submit completed tasks."
+              emoji="👤"
+              title="No claimed tasks"
+              desc="When participants claim your tasks they'll appear here. Move from Issued to simulate a claim."
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {completedTasks.flatMap(t =>
-                t.pendingCompletions.map(citizen => {
-                  const fbKey = `${t.id}-${citizen}`;
-                  return (
+              {claimedInstances.map(inst => {
+                const task = getTask(inst.taskId);
+                if (!task) return null;
+                return (
+                  <div key={inst.instanceId} style={{ ...surfaceCard }}>
                     <div
-                      key={fbKey}
                       style={{
-                        background: SURFACE,
-                        border: "1px solid rgba(221,158,51,0.2)",
-                        borderRadius: 16,
-                        padding: 16,
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
                       }}
                     >
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{t.title}</div>
-                        <div style={{ fontFamily: "monospace", fontSize: 11, color: MUTED }}>Citizen: {citizen}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
+                          {task.title}
+                        </div>
+                        <div style={{ fontSize: 11, color: MUTED }}>
+                          {task.estimatedTime} · Slot #{inst.slotIndex}
+                        </div>
                       </div>
-
-                      <div
-                        style={{
-                          background: "rgba(255,255,255,0.05)",
-                          borderRadius: 10,
-                          padding: "8px 12px",
-                          marginBottom: 10,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          fontSize: 12,
-                          color: MUTED,
-                        }}
-                      >
-                        <span>Reward on verification</span>
-                        <span>
-                          <span style={{ color: ACCENT }}>{t.credits} CITYx</span>
-                          {" + "}
-                          <span style={{ color: "#4169E1" }}>{t.voteTokens} VOTE</span>
-                        </span>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
+                        {task.credits} CITYx
                       </div>
+                    </div>
 
-                      <textarea
-                        placeholder="Optional feedback on task execution…"
-                        value={feedbackMap[fbKey] ?? ""}
-                        onChange={e => setFeedbackMap(prev => ({ ...prev, [fbKey]: e.target.value }))}
-                        rows={2}
-                        style={{
-                          width: "100%",
-                          background: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: 10,
-                          color: "#fff",
-                          fontSize: 12,
-                          padding: "8px 12px",
-                          outline: "none",
-                          resize: "none",
-                          boxSizing: "border-box",
-                          marginBottom: 10,
-                          lineHeight: 1.5,
-                        }}
-                      />
+                    {/* Claimed status badge */}
+                    <div
+                      style={{
+                        display: "inline-block",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        background: "rgba(221,158,51,0.12)",
+                        color: "#DD9E33",
+                        borderRadius: 6,
+                        padding: "2px 8px",
+                        marginBottom: 12,
+                      }}
+                    >
+                      Claimed · In Progress
+                    </div>
 
+                    <div style={{ display: "flex", gap: 8 }}>
                       <button
-                        onClick={() => onVerify(t.id, citizen)}
+                        onClick={() => onRemoveInstance(inst.instanceId)}
                         style={{
-                          width: "100%",
-                          background: ACCENT,
-                          border: "none",
-                          borderRadius: 12,
-                          padding: "11px 0",
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: BG,
+                          flex: 1,
+                          background: "rgba(255,107,157,0.08)",
+                          border: "1px solid rgba(255,107,157,0.25)",
+                          borderRadius: 10,
+                          padding: "9px 0",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#ff6b9d",
                           cursor: "pointer",
                         }}
                       >
-                        Verify & Mint Credits
+                        No Show
+                      </button>
+                      <button
+                        onClick={() => onMoveToCompleted(inst.instanceId)}
+                        style={{
+                          flex: 1,
+                          background: "rgba(52,238,182,0.1)",
+                          border: "1px solid rgba(52,238,182,0.3)",
+                          borderRadius: 10,
+                          padding: "9px 0",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: ACCENT,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Move to Completed
                       </button>
                     </div>
-                  );
-                }),
-              )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Completed Instances ── */}
+      {view === "completed" && (
+        <>
+          {completedInstances.length === 0 ? (
+            <EmptyState
+              emoji="🎉"
+              title="Nothing to verify yet"
+              desc="Move claimed tasks to Completed, then verify and mint credits here."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {completedInstances.map(inst => {
+                const task = getTask(inst.taskId);
+                if (!task) return null;
+                const fbKey = inst.instanceId;
+                return (
+                  <div
+                    key={inst.instanceId}
+                    style={{
+                      background: SURFACE,
+                      border: "1px solid rgba(221,158,51,0.2)",
+                      borderRadius: 16,
+                      padding: 16,
+                    }}
+                  >
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{task.title}</div>
+                      <div style={{ fontSize: 11, color: MUTED }}>Slot #{inst.slotIndex}</div>
+                    </div>
+
+                    <div
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        marginBottom: 10,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: 12,
+                        color: MUTED,
+                      }}
+                    >
+                      <span>Reward on verification</span>
+                      <span>
+                        <span style={{ color: ACCENT }}>{task.credits} CITYx</span>
+                        {" + "}
+                        <span style={{ color: "#4169E1" }}>{task.voteTokens} VOTE</span>
+                      </span>
+                    </div>
+
+                    <textarea
+                      placeholder="Optional feedback on task execution…"
+                      value={feedbackMap[fbKey] ?? ""}
+                      onChange={e => setFeedbackMap(prev => ({ ...prev, [fbKey]: e.target.value }))}
+                      rows={2}
+                      style={{
+                        width: "100%",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 10,
+                        color: "#fff",
+                        fontSize: 12,
+                        padding: "8px 12px",
+                        outline: "none",
+                        resize: "none",
+                        boxSizing: "border-box",
+                        marginBottom: 10,
+                        lineHeight: 1.5,
+                      }}
+                    />
+
+                    <button
+                      onClick={() => {
+                        onVerify(inst.taskId, inst.instanceId);
+                        onRemoveInstance(inst.instanceId);
+                      }}
+                      style={{
+                        width: "100%",
+                        background: ACCENT,
+                        border: "none",
+                        borderRadius: 12,
+                        padding: "11px 0",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: BG,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Verify & Mint Credits
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
