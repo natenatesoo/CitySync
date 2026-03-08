@@ -5,6 +5,7 @@ import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, MOCK_TASKS, Post, PostCategory, Task } from "../_data/mockData";
+import { useAccount } from "wagmi";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -383,6 +384,7 @@ type SlotInstance = {
 
 export default function IssuerApp() {
   const { state, setRole, issuerCreateTask, issuerVerifyCompletion } = useDemo();
+  const { address } = useAccount();
   const [activeTab, setActiveTab] = useState("profile");
   const [createSheet, setCreateSheet] = useState(false);
   const [proposeSheet, setProposeSheet] = useState(false);
@@ -443,7 +445,7 @@ export default function IssuerApp() {
       slots: 5,
       slotsRemaining: 5,
       issuerName: issuer.orgName,
-      issuerId: FAKE_WALLETS.issuer,
+      issuerId: address ?? FAKE_WALLETS.issuer,
       tags: proposed.tags,
       taskDate: proposed.date || "TBD",
       successCriteria: proposed.successCriteria || "",
@@ -514,7 +516,7 @@ export default function IssuerApp() {
       <AppShell
         role="issuer"
         orgName={issuer.orgName}
-        address={FAKE_WALLETS.issuer}
+        address={address ?? FAKE_WALLETS.issuer}
         cityBalance={0}
         voteBalance={0}
         mceBalance={0}

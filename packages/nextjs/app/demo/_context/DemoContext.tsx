@@ -11,7 +11,7 @@ import React, {
   useRef,
 } from "react";
 import { formatUnits, keccak256, parseUnits, stringToHex } from "viem";
-import { useAccount, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { BASE_SEPOLIA_CONTRACTS, DEMO_OFFER_ROUTES } from "../_config/baseSepoliaContracts";
 import {
   CompletedTask,
@@ -137,6 +137,7 @@ type Action =
       issuerRegistered: boolean;
       redeemerRegistered: boolean;
     }
+  | { type: "SYNC_ONCHAIN_OFFERS"; offers: RedemptionOffer[] }
   | { type: "ADD_QUEUE_REDEMPTION"; redemption: QueuedRedemption }
   | { type: "CLEAR_NOTIFICATION" };
 
@@ -169,6 +170,17 @@ const parseTaskOpportunityId = (taskId: string): bigint | null => {
 const parseNumericSuffix = (id: string): bigint | null => {
   const m = id.match(/(\d+)$/);
   return m ? BigInt(m[1]) : null;
+};
+
+const parseOnchainOfferId = (id: string): { redeemer: `0x${string}`; offerId: bigint } | null => {
+  if (!id.startsWith("onchain:")) return null;
+  const [, redeemer, offerId] = id.split(":");
+  if (!redeemer || !offerId) return null;
+  try {
+    return { redeemer: redeemer as `0x${string}`, offerId: BigInt(offerId) };
+  } catch {
+    return null;
+  }
 };
 
 // ─── Issuer org name generator ────────────────────────────────────────────────
@@ -561,6 +573,21 @@ function reducer(state: DemoState, action: Action): DemoState {
       };
     }
 
+    case "SYNC_ONCHAIN_OFFERS": {
+      const staticOffers = MOCK_OFFERS;
+      if (action.offers.length === 0) {
+        return {
+          ...state,
+          offers: staticOffers,
+        };
+      }
+
+      return {
+        ...state,
+        offers: [...action.offers, ...staticOffers],
+      };
+    }
+
     case "ADD_QUEUE_REDEMPTION": {
       return {
         ...state,
@@ -603,6 +630,7 @@ const DemoContext = createContext<DemoContextValue | null>(null);
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
 
@@ -679,6 +707,71 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       redeemerRegistered,
     });
   }, [address, onchainReads]);
+
+  useEffect(() => {
+    const syncOffers = async () => {
+      if (!publicClient) return;
+
+      try {
+        const redeemers = (await publicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "getAllRedeemers",
+          args: [],
+        })) as `0x${string}`[];
+
+        const discovered: RedemptionOffer[] = [];
+
+        for (const redeemer of redeemers) {
+          const profile = (await publicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "getProfile",
+            args: [redeemer],
+          })) as { orgName: string; registeredAt: bigint; active: boolean; acceptsMCECredits: boolean };
+
+          if (!profile.active || profile.registeredAt === 0n) continue;
+
+          const nextOfferId = (await publicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "nextOfferId",
+            args: [redeemer],
+          })) as bigint;
+
+          for (let i = 1n; i <= nextOfferId; i++) {
+            const offer = (await publicClient.readContract({
+              address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+              abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+              functionName: "getOffer",
+              args: [redeemer, i],
+            })) as { name: string; description: string; costCity: bigint; active: boolean; mceOnly: boolean };
+
+            if (!offer.active || !offer.name) continue;
+
+            discovered.push({
+              id: `onchain:${redeemer}:${i.toString()}`,
+              redeemerName: profile.orgName || `${redeemer.slice(0, 6)}...${redeemer.slice(-4)}`,
+              redeemerId: redeemer,
+              offerTitle: offer.name,
+              description: offer.description,
+              costCity: Math.floor(Number(formatUnits(offer.costCity, 18))),
+              acceptsMCE: profile.acceptsMCECredits,
+              mceOnly: offer.mceOnly,
+              category: offer.mceOnly ? "Culture" : "Essentials",
+              emoji: offer.mceOnly ? "🏆" : "🛒",
+            });
+          }
+        }
+
+        dispatch({ type: "SYNC_ONCHAIN_OFFERS", offers: discovered });
+      } catch {
+        // Keep static offers if discovery fails.
+      }
+    };
+
+    void syncOffers();
+  }, [publicClient]);
 
   const setRole = useCallback(
     (role: Role) => {
@@ -789,6 +882,27 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
       const offer = state.offers.find(o => o.id === offerId);
       if (!offer) return;
+
+      const onchainRoute = parseOnchainOfferId(offerId);
+      if (onchainRoute) {
+        if (offer.mceOnly) {
+          void writeContractAsync({
+            address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
+            abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
+            functionName: "purchaseOffer",
+            args: [onchainRoute.redeemer, onchainRoute.offerId],
+          }).catch(() => undefined);
+          return;
+        }
+
+        void writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
+          abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+          functionName: "purchaseOffer",
+          args: [onchainRoute.redeemer, onchainRoute.offerId],
+        }).catch(() => undefined);
+        return;
+      }
 
       const route = DEMO_OFFER_ROUTES[offerId];
       if (!route) return;

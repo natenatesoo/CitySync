@@ -6,6 +6,9 @@
 ## Starting a New Session
 Type **"Start Session"** at the beginning of any new Cowork session. Claude will read `citysync/CLAUDE.md` and `citysync/docs/SESSION.md` and give you a briefing before you begin.
 
+## Maintenance Rule
+When major product, contract-integration, or deployment-impacting changes are made, update this `SESSION.md` in the same working session before commit.
+
 ---
 
 ## Last Updated
@@ -46,12 +49,23 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
     - City credits path → `Redemption.purchaseOffer`
     - MCE credits path → `MCERedemption.purchaseOffer`
   - Unmapped offers continue reducer-local fallback to keep demo UX intact.
+- Replaced right-side role stat panels with live Base Sepolia transaction activity feeds + explorer links:
+  - new `app/demo/_components/OnchainActivityPanel.tsx`
+  - participant/issuer/redeemer panels now show recent role-relevant txs with tx hash, block number, and timestamp
+- Removed hard dependency on manual `NEXT_PUBLIC_DEMO_OFFER_ROUTES` for ongoing redeemer onboarding:
+  - `DemoContext` now discovers redeemers and offers directly from `DemoRedeemerRegistry` (`getAllRedeemers`, `getProfile`, `nextOfferId`, `getOffer`)
+  - discovered onchain offers are merged into demo offer list and route automatically to:
+    - `Redemption.purchaseOffer` for CITY offers
+    - `MCERedemption.purchaseOffer` for MCE-only offers
+  - `NEXT_PUBLIC_DEMO_OFFER_ROUTES` remains optional fallback for legacy static mock offer IDs
+- Updated role shells to surface connected wallet address in app chrome instead of only fake placeholder addresses.
 - Type-check confirmed passing: `yarn workspace @se-2/nextjs check-types`
 
 ### Current State
 - `/demo` now uses chain-backed balances and role registration flags across all role views.
 - `/demo` now performs best-effort contract writes for core role/task/offer actions while preserving current reducer flows for UX continuity.
-- Some flows still require explicit mapping for full parity (e.g., participant redemption of mock seeded offers, slot-instance lifecycle semantics).
+- Onchain offer discovery/routing no longer requires manual redeemer wallet entry in Vercel for newly created offers.
+- Remaining parity gaps are mainly semantic/UI-model differences (e.g., slot-instance lifecycle versus single opportunity IDs).
 
 ### Next Step
 - Wire `/demo` write actions to contracts incrementally:

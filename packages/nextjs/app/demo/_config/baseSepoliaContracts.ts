@@ -94,6 +94,62 @@ export const BASE_SEPOLIA_CONTRACTS = {
         inputs: [{ name: "redeemer", type: "address", internalType: "address" }],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
       },
+      {
+        type: "function",
+        name: "getAllRedeemers",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ name: "", type: "address[]", internalType: "address[]" }],
+      },
+      {
+        type: "function",
+        name: "nextOfferId",
+        stateMutability: "view",
+        inputs: [{ name: "", type: "address", internalType: "address" }],
+        outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+      },
+      {
+        type: "function",
+        name: "getOffer",
+        stateMutability: "view",
+        inputs: [
+          { name: "redeemer", type: "address", internalType: "address" },
+          { name: "offerId", type: "uint256", internalType: "uint256" },
+        ],
+        outputs: [
+          {
+            name: "",
+            type: "tuple",
+            internalType: "struct DemoRedeemerRegistry.Offer",
+            components: [
+              { name: "name", type: "string", internalType: "string" },
+              { name: "description", type: "string", internalType: "string" },
+              { name: "costCity", type: "uint256", internalType: "uint256" },
+              { name: "active", type: "bool", internalType: "bool" },
+              { name: "mceOnly", type: "bool", internalType: "bool" },
+            ],
+          },
+        ],
+      },
+      {
+        type: "function",
+        name: "getProfile",
+        stateMutability: "view",
+        inputs: [{ name: "redeemer", type: "address", internalType: "address" }],
+        outputs: [
+          {
+            name: "",
+            type: "tuple",
+            internalType: "struct DemoRedeemerRegistry.RedeemerProfile",
+            components: [
+              { name: "orgName", type: "string", internalType: "string" },
+              { name: "registeredAt", type: "uint64", internalType: "uint64" },
+              { name: "active", type: "bool", internalType: "bool" },
+              { name: "acceptsMCECredits", type: "bool", internalType: "bool" },
+            ],
+          },
+        ],
+      },
     ] as const,
   },
   MCERedemption: {

@@ -6,6 +6,7 @@ import { NavTab } from "../_components/BottomNav";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
+import { useAccount } from "wagmi";
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
@@ -2387,6 +2388,7 @@ function RedeemTab() {
 
 export default function ParticipantPage() {
   const { state, setRole } = useDemo();
+  const { address } = useAccount();
   const [activeTab, setActiveTab] = useState("profile");
 
   useEffect(() => {
@@ -2399,7 +2401,7 @@ export default function ParticipantPage() {
     <>
       <AppShell
         role="participant"
-        address={FAKE_WALLETS.participant}
+        address={address ?? FAKE_WALLETS.participant}
         cityBalance={state.participant.cityBalance}
         voteBalance={state.participant.voteBalance}
         mceBalance={state.participant.mceBalance}
