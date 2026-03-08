@@ -5,7 +5,7 @@ import { useAccount } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, Post, PostCategory } from "../_data/mockData";
+import { FAKE_WALLETS, Post, PostCategory, RedemptionOffer } from "../_data/mockData";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -148,6 +148,12 @@ const STATUS_COLOR: Record<string, string> = {
   Active: "#34eeb6",
   Closed: "rgba(255,255,255,0.3)",
   Rejected: "#ff6b9d",
+};
+
+type OfferWriteStatus = {
+  state: "idle" | "pending" | "confirmed" | "failed";
+  hash?: `0x${string}`;
+  error?: string;
 };
 
 // ─── Local Offering Types ─────────────────────────────────────────────────────
@@ -365,7 +371,7 @@ function getRedeemerPanels(
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RedeemerApp() {
-  const { state, setRole, redeemerProcessRedemption, dispatch } = useDemo();
+  const { state, setRole, redeemerProcessRedemption, redeemerAddOffer, dispatch } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
   const [offeringSheet, setOfferingSheet] = useState<"committed" | "mce" | null>(null);
@@ -376,6 +382,7 @@ export default function RedeemerApp() {
   const [committedOfferings, setCommittedOfferings] = useState<CustomOffering[]>([]);
   const [mceOfferings, setMceOfferings] = useState<MCECustomOffering[]>([]);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+  const [offerWriteStatus, setOfferWriteStatus] = useState<OfferWriteStatus>({ state: "idle" });
 
   const { redeemer, mces } = state;
   const allPosts = [...localPosts, ...state.posts];
@@ -385,7 +392,7 @@ export default function RedeemerApp() {
     setRole("redeemer");
   }, [setRole]);
 
-  const handleCreateCommittedOffering = (data: { name: string; costCity: number; stipulations: string }) => {
+  const handleCreateCommittedOffering = async (data: { name: string; costCity: number; stipulations: string }) => {
     const offering: CustomOffering = {
       id: `committed-${Date.now()}`,
       name: data.name,
@@ -395,10 +402,32 @@ export default function RedeemerApp() {
     };
     setCommittedOfferings(prev => [offering, ...prev]);
     setOfferingSheet(null);
-    setToast("Committed Offering created and locked for this Epoch!");
+
+    const onchainOffer: RedemptionOffer = {
+      id: `offer-${Date.now()}`,
+      redeemerName: redeemer.orgName || "Redeemer",
+      redeemerId: address ?? FAKE_WALLETS.redeemer,
+      offerTitle: data.name,
+      description: data.stipulations || "No additional stipulations",
+      costCity: data.costCity,
+      acceptsMCE: redeemer.acceptsMCE,
+      mceOnly: false,
+      category: "Essentials",
+      emoji: "🏪",
+    };
+
+    setOfferWriteStatus({ state: "pending" });
+    const result = await redeemerAddOffer(onchainOffer);
+    if (result.ok) {
+      setOfferWriteStatus({ state: "confirmed", hash: result.hash });
+      setToast("Committed Offering created and submitted onchain.");
+    } else {
+      setOfferWriteStatus({ state: "failed", error: result.error });
+      setToast("Offering saved locally, but onchain write failed.");
+    }
   };
 
-  const handleCreateMCEOffering = (data: {
+  const handleCreateMCEOffering = async (data: {
     name: string;
     costCity: number;
     stipulations: string;
@@ -416,7 +445,29 @@ export default function RedeemerApp() {
     };
     setMceOfferings(prev => [offering, ...prev]);
     setOfferingSheet(null);
-    setToast("MCE Offering created and locked!");
+
+    const onchainOffer: RedemptionOffer = {
+      id: `offer-${Date.now()}`,
+      redeemerName: redeemer.orgName || "Redeemer",
+      redeemerId: address ?? FAKE_WALLETS.redeemer,
+      offerTitle: data.name,
+      description: data.stipulations || "No additional stipulations",
+      costCity: data.costCity,
+      acceptsMCE: true,
+      mceOnly: true,
+      category: "Culture",
+      emoji: "🏆",
+    };
+
+    setOfferWriteStatus({ state: "pending" });
+    const result = await redeemerAddOffer(onchainOffer);
+    if (result.ok) {
+      setOfferWriteStatus({ state: "confirmed", hash: result.hash });
+      setToast("MCE Offering created and submitted onchain.");
+    } else {
+      setOfferWriteStatus({ state: "failed", error: result.error });
+      setToast("Offering saved locally, but onchain write failed.");
+    }
   };
 
   const handleProcess = (queueId: string) => {
@@ -459,6 +510,7 @@ export default function RedeemerApp() {
             onRemoveAttempt={id => setRemoveTarget(id)}
             onProcess={handleProcess}
             orgName={redeemer.orgName}
+            offerWriteStatus={offerWriteStatus}
           />
         )}
         {activeTab === "mycity" && (
@@ -859,6 +911,7 @@ function OfferingsTab({
   onRemoveAttempt,
   onProcess,
   orgName,
+  offerWriteStatus,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
   committedOfferings: CustomOffering[];
@@ -869,8 +922,10 @@ function OfferingsTab({
   onRemoveAttempt: (id: string) => void;
   onProcess: (queueId: string) => void;
   orgName: string;
+  offerWriteStatus: OfferWriteStatus;
 }) {
   const [view, setView] = useState<"committed" | "mce">("committed");
+  const explorerHref = offerWriteStatus.hash ? `https://sepolia.basescan.org/tx/${offerWriteStatus.hash}` : null;
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
@@ -899,6 +954,49 @@ function OfferingsTab({
           </button>
         ))}
       </div>
+
+      {offerWriteStatus.state !== "idle" && (
+        <div
+          style={{
+            ...surfaceCard,
+            marginBottom: 16,
+            border:
+              offerWriteStatus.state === "confirmed"
+                ? "1px solid rgba(52,238,182,0.35)"
+                : offerWriteStatus.state === "failed"
+                  ? "1px solid rgba(255,107,157,0.35)"
+                  : "1px solid rgba(65,105,225,0.35)",
+            background:
+              offerWriteStatus.state === "confirmed"
+                ? "rgba(52,238,182,0.08)"
+                : offerWriteStatus.state === "failed"
+                  ? "rgba(255,107,157,0.08)"
+                  : "rgba(65,105,225,0.08)",
+          }}
+        >
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Last Offer Write</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+            {offerWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+            {offerWriteStatus.state === "confirmed" && "Confirmed onchain"}
+            {offerWriteStatus.state === "failed" && "Failed onchain (UI-only for this attempt)"}
+          </div>
+          {offerWriteStatus.error && (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>
+              {offerWriteStatus.error}
+            </div>
+          )}
+          {explorerHref && (
+            <a
+              href={explorerHref}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
+            >
+              View on Base Sepolia Explorer ↗
+            </a>
+          )}
+        </div>
+      )}
 
       {/* ── Committed Offerings ── */}
       {view === "committed" && (

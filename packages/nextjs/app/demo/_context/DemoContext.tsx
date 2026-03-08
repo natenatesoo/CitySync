@@ -611,7 +611,7 @@ interface DemoContextValue {
   issuerCreateTask: (task: Task) => void;
   issuerVerifyCompletion: (taskId: string, citizenAddress: string) => void;
   redeemerToggleMCE: () => void;
-  redeemerAddOffer: (offer: RedemptionOffer) => void;
+  redeemerAddOffer: (offer: RedemptionOffer) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   redeemerRemoveOffer: (offerId: string) => void;
   redeemerProcessRedemption: (queueId: string) => void;
   dispatch: React.Dispatch<Action>;
@@ -625,7 +625,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
   const { sendUserOperationAsync } = useSendUserOperation({
     client,
-    waitForTxn: false,
+    waitForTxn: true,
   });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
 
@@ -652,6 +652,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     },
     [client, sendUserOperationAsync],
   );
+
+  const getResultHash = (result: unknown): `0x${string}` | undefined => {
+    if (result && typeof result === "object" && "hash" in result) {
+      const hash = (result as { hash?: unknown }).hash;
+      if (typeof hash === "string" && hash.startsWith("0x")) return hash as `0x${string}`;
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     if (!address) return;
@@ -997,15 +1005,26 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, [state.redeemer.acceptsMCE, writeContractAsync]);
 
   const redeemerAddOffer = useCallback(
-    (offer: RedemptionOffer) => {
+    async (offer: RedemptionOffer) => {
       dispatch({ type: "REDEEMER_ADD_OFFER", offer });
 
-      void writeContractAsync({
-        address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-        abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-        functionName: "createOffer",
-        args: [offer.offerTitle, offer.description, parseUnits(String(Math.max(0, offer.costCity)), 18), offer.mceOnly],
-      }).catch(() => undefined);
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "createOffer",
+          args: [
+            offer.offerTitle,
+            offer.description,
+            parseUnits(String(Math.max(0, offer.costCity)), 18),
+            offer.mceOnly,
+          ],
+        });
+        return { ok: true, hash: getResultHash(result) };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Offer creation failed";
+        return { ok: false, error: message };
+      }
     },
     [writeContractAsync],
   );

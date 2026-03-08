@@ -42,6 +42,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
 - Validation:
   - `yarn next:lint --fix --file ...` passes (only existing non-blocking `<img>` warnings remain).
   - `yarn next:check-types` passes.
+- Redeemer Offerings flow now writes onchain from the UI:
+  - `redeemer/page.tsx` committed and MCE offering handlers now call `redeemerAddOffer(...)` with mapped `RedemptionOffer` payloads.
+  - Added explicit `Last Offer Write` status block in Offerings tab with `pending | confirmed | failed` state and Base Sepolia explorer link when hash is present.
+  - This closes the ambiguity where offerings appeared created in UI without an explicit onchain success/failure signal.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
