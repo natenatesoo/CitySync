@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import AppShell from "../_components/AppShell";
 import { NavTab } from "../_components/BottomNav";
+import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
 
@@ -53,40 +54,11 @@ function PanelCard({
   );
 }
 
-function PanelStats({ stats, accent }: { stats: { label: string; value: string | number }[]; accent: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {stats.map(({ label, value }) => (
-        <div
-          key={label}
-          style={{
-            background: "rgba(255,255,255,0.025)",
-            border: "1px solid rgba(255,255,255,0.05)",
-            borderRadius: 12,
-            padding: "12px 14px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{label}</span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: accent }}>{value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function getParticipantPanels(
   activeTab: string,
-  state: ReturnType<typeof useDemo>["state"],
+  _state: ReturnType<typeof useDemo>["state"],
 ): { left: React.ReactNode; right: React.ReactNode } {
-  const { participant, mces, epoch2Proposals, posts, availableTasks, offers, pastRedemptions } = state;
-  const openTasks = availableTasks.filter(t => t.slotsRemaining > 0 && !t.isOnboarding);
-  const uniqueIssuers = new Set(availableTasks.map(t => t.issuerId)).size;
-  const uniqueRedeemers = new Set(offers.map(o => o.redeemerId)).size;
-  const totalAllocated = Object.values(participant.mceVoteAllocations).reduce((a, b) => a + b, 0);
-  const totalCreditsAvailable = openTasks.reduce((n, t) => n + t.credits, 0);
+  const rightPanel = <OnchainActivityPanel role="participant" accent={ACCENT} />;
 
   switch (activeTab) {
     case "profile":
@@ -107,17 +79,7 @@ function getParticipantPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "CITYx Balance", value: participant.cityBalance },
-              { label: "VOTE Balance", value: participant.voteBalance },
-              { label: "Tasks Completed", value: participant.completedTasks.length },
-              { label: "Active Issuers", value: uniqueIssuers },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "explore":
@@ -149,17 +111,7 @@ function getParticipantPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Open Tasks", value: openTasks.length },
-              { label: "Claimed by You", value: participant.claimedTaskIds.length },
-              { label: "Issuing Orgs", value: uniqueIssuers },
-              { label: "CITYx Available", value: `${totalCreditsAvailable}+` },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "mycity":
@@ -176,17 +128,7 @@ function getParticipantPanels(
             </p>
           </PanelCard>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Posts in Feed", value: posts.length },
-              { label: "Active Orgs", value: new Set(posts.map(p => p.authorId)).size },
-              { label: "Post Categories", value: 4 },
-              { label: "Liked by You", value: participant.likedPostIds.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "vote":
@@ -215,18 +157,7 @@ function getParticipantPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Your VOTE Balance", value: participant.voteBalance },
-              { label: "Allocated", value: totalAllocated },
-              { label: "Remaining", value: participant.voteBalance - totalAllocated },
-              { label: "Epoch 1 Proposals", value: mces.length },
-              { label: "Epoch 2 Proposals", value: epoch2Proposals.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "redeem":
@@ -243,17 +174,7 @@ function getParticipantPanels(
             </p>
           </PanelCard>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Partner Venues", value: uniqueRedeemers },
-              { label: "Offer Categories", value: 5 },
-              { label: "Your CITYx", value: participant.cityBalance },
-              { label: "Past Redemptions", value: pastRedemptions.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     default:

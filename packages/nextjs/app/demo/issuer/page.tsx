@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import AppShell from "../_components/AppShell";
+import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, MOCK_TASKS, Post, PostCategory, Task } from "../_data/mockData";
 
@@ -155,39 +156,11 @@ function PanelCard({
   );
 }
 
-function PanelStats({ stats, accent }: { stats: { label: string; value: string | number }[]; accent: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {stats.map(({ label, value }) => (
-        <div
-          key={label}
-          style={{
-            background: "rgba(255,255,255,0.025)",
-            border: "1px solid rgba(255,255,255,0.05)",
-            borderRadius: 12,
-            padding: "12px 14px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{label}</span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: accent }}>{value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function getIssuerPanels(
   activeTab: string,
-  state: ReturnType<typeof useDemo>["state"],
+  _state: ReturnType<typeof useDemo>["state"],
 ): { left: React.ReactNode; right: React.ReactNode } {
-  const { issuer, mces, posts, availableTasks } = state;
-  const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
-  const totalVerified = issuer.tasks.reduce((n, t) => n + t.verifiedCount, 0);
-  const catalogSize = availableTasks.filter(t => !t.isMCE && !t.isOnboarding).length;
-  const totalParticipants = mces.reduce((n, m) => n + m.participantCount, 0);
+  const rightPanel = <OnchainActivityPanel role="issuer" accent={ACCENT} />;
 
   switch (activeTab) {
     case "profile":
@@ -216,17 +189,7 @@ function getIssuerPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Tasks Created", value: issuer.totalTasksIssued },
-              { label: "Credits Issued", value: `${issuer.totalCreditsIssued} CITYx` },
-              { label: "Pending Verifications", value: totalPending },
-              { label: "Catalog Tasks Available", value: catalogSize },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "tasks":
@@ -255,17 +218,7 @@ function getIssuerPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Catalog Size", value: catalogSize },
-              { label: "Your Posted Tasks", value: issuer.tasks.length },
-              { label: "Pending Completions", value: totalPending },
-              { label: "Total Verified", value: totalVerified },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "mycity":
@@ -282,17 +235,7 @@ function getIssuerPanels(
             </p>
           </PanelCard>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Posts in Feed", value: posts.length },
-              { label: "Active Orgs Posting", value: new Set(posts.map(p => p.authorId)).size },
-              { label: "Post Categories", value: 4 },
-              { label: "Your Posted Tasks", value: issuer.tasks.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "verify":
@@ -322,17 +265,7 @@ function getIssuerPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Tasks Issued", value: issuer.totalTasksIssued },
-              { label: "CITYx Issued", value: issuer.totalCreditsIssued },
-              { label: "Total Verified", value: totalVerified },
-              { label: "Pending Now", value: totalPending },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "mces":
@@ -361,17 +294,7 @@ function getIssuerPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Total MCEs", value: mces.length },
-              { label: "Currently Voting", value: mces.filter(m => m.status === "Voting").length },
-              { label: "Active MCEs", value: mces.filter(m => m.status === "Active").length },
-              { label: "Total Participants", value: totalParticipants.toLocaleString() },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     default:

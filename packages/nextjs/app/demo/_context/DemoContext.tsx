@@ -1,6 +1,18 @@
 "use client";
 
-import React, { ReactNode, createContext, useCallback, useContext, useReducer } from "react";
+import React, {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+} from "react";
+import { formatUnits, keccak256, parseUnits, stringToHex } from "viem";
+import { useAccount, useReadContracts, useWriteContract } from "wagmi";
+import { BASE_SEPOLIA_CONTRACTS, DEMO_OFFER_ROUTES } from "../_config/baseSepoliaContracts";
 import {
   CompletedTask,
   Epoch2Proposal,
@@ -117,6 +129,14 @@ type Action =
   | { type: "REDEEMER_ADD_OFFER"; offer: RedemptionOffer }
   | { type: "REDEEMER_REMOVE_OFFER"; offerId: string }
   | { type: "REDEEMER_PROCESS_REDEMPTION"; queueId: string }
+  | {
+      type: "SYNC_ONCHAIN_STATE";
+      cityBalance: number;
+      voteBalance: number;
+      mceBalance: number;
+      issuerRegistered: boolean;
+      redeemerRegistered: boolean;
+    }
   | { type: "ADD_QUEUE_REDEMPTION"; redemption: QueuedRedemption }
   | { type: "CLEAR_NOTIFICATION" };
 
@@ -140,6 +160,16 @@ const _randomAddress = () =>
   ).join("");
 
 const VERIFY_DURATION = 7; // seconds
+
+const parseTaskOpportunityId = (taskId: string): bigint | null => {
+  const m = taskId.match(/^task-(\d+)$/);
+  return m ? BigInt(m[1]) : null;
+};
+
+const parseNumericSuffix = (id: string): bigint | null => {
+  const m = id.match(/(\d+)$/);
+  return m ? BigInt(m[1]) : null;
+};
 
 // ─── Issuer org name generator ────────────────────────────────────────────────
 
@@ -511,6 +541,26 @@ function reducer(state: DemoState, action: Action): DemoState {
       };
     }
 
+    case "SYNC_ONCHAIN_STATE": {
+      return {
+        ...state,
+        participant: {
+          ...state.participant,
+          cityBalance: action.cityBalance,
+          voteBalance: action.voteBalance,
+          mceBalance: action.mceBalance,
+        },
+        issuer: {
+          ...state.issuer,
+          registered: action.issuerRegistered,
+        },
+        redeemer: {
+          ...state.redeemer,
+          registered: action.redeemerRegistered,
+        },
+      };
+    }
+
     case "ADD_QUEUE_REDEMPTION": {
       return {
         ...state,
@@ -552,24 +602,178 @@ const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
 
-  const setRole = useCallback((role: Role) => dispatch({ type: "SET_ROLE", role }), []);
-  const setCitizenName = useCallback((name: string) => dispatch({ type: "SET_CITIZEN_NAME", name }), []);
-  const claimTask = useCallback((taskId: string) => dispatch({ type: "CLAIM_TASK", taskId }), []);
-  const unclaimTask = useCallback((taskId: string) => dispatch({ type: "UNCLAIM_TASK", taskId }), []);
+  const onchainContracts = useMemo(() => {
+    if (!address) return [];
 
-  const startVerify = useCallback((taskId: string, taskTitle: string) => {
-    dispatch({ type: "START_VERIFY", taskId, taskTitle });
-    let remaining = VERIFY_DURATION;
-    const interval = setInterval(() => {
-      remaining -= 1;
-      dispatch({ type: "TICK_VERIFY" });
-      if (remaining <= 0) {
-        clearInterval(interval);
-        dispatch({ type: "COMPLETE_VERIFY" });
+    return [
+      {
+        address: BASE_SEPOLIA_CONTRACTS.CityToken.address,
+        abi: BASE_SEPOLIA_CONTRACTS.CityToken.abi,
+        functionName: "balanceOf" as const,
+        args: [address as `0x${string}`] as const,
+      },
+      {
+        address: BASE_SEPOLIA_CONTRACTS.VoteToken.address,
+        abi: BASE_SEPOLIA_CONTRACTS.VoteToken.abi,
+        functionName: "balanceOf" as const,
+        args: [address as `0x${string}`] as const,
+      },
+      {
+        address: BASE_SEPOLIA_CONTRACTS.MCECredit.address,
+        abi: BASE_SEPOLIA_CONTRACTS.MCECredit.abi,
+        functionName: "balanceOf" as const,
+        args: [address as `0x${string}`] as const,
+      },
+      {
+        address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+        abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+        functionName: "isActiveIssuer" as const,
+        args: [address as `0x${string}`] as const,
+      },
+      {
+        address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+        abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+        functionName: "isActiveRedeemer" as const,
+        args: [address as `0x${string}`] as const,
+      },
+    ];
+  }, [address]);
+
+  const { data: onchainReads } = useReadContracts({
+    contracts: onchainContracts,
+    query: {
+      enabled: !!address,
+      refetchInterval: 6000,
+    },
+  });
+
+  useEffect(() => {
+    if (!address || !onchainReads || onchainReads.length < 5) return;
+
+    const cityRaw = onchainReads[0]?.result as bigint | undefined;
+    const voteRaw = onchainReads[1]?.result as bigint | undefined;
+    const mceRaw = onchainReads[2]?.result as bigint | undefined;
+    const issuerRegistered = onchainReads[3]?.result as boolean | undefined;
+    const redeemerRegistered = onchainReads[4]?.result as boolean | undefined;
+
+    if (
+      cityRaw === undefined ||
+      voteRaw === undefined ||
+      mceRaw === undefined ||
+      issuerRegistered === undefined ||
+      redeemerRegistered === undefined
+    ) {
+      return;
+    }
+
+    dispatch({
+      type: "SYNC_ONCHAIN_STATE",
+      cityBalance: Math.floor(Number(formatUnits(cityRaw, 18))),
+      voteBalance: Math.floor(Number(formatUnits(voteRaw, 18))),
+      mceBalance: Math.floor(Number(formatUnits(mceRaw, 18))),
+      issuerRegistered,
+      redeemerRegistered,
+    });
+  }, [address, onchainReads]);
+
+  const setRole = useCallback(
+    (role: Role) => {
+      dispatch({ type: "SET_ROLE", role });
+
+      if (!address) return;
+
+      if (role === "issuer" && !state.issuer.registered && !roleRegisterInFlight.current.issuer) {
+        roleRegisterInFlight.current.issuer = true;
+        void writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+          abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+          functionName: "register",
+          args: [],
+        }).finally(() => {
+          roleRegisterInFlight.current.issuer = false;
+        });
       }
-    }, 1000);
-  }, []);
+
+      if (role === "redeemer" && !state.redeemer.registered && !roleRegisterInFlight.current.redeemer) {
+        roleRegisterInFlight.current.redeemer = true;
+        void writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "register",
+          args: [],
+        }).finally(() => {
+          roleRegisterInFlight.current.redeemer = false;
+        });
+      }
+    },
+    [address, state.issuer.registered, state.redeemer.registered, writeContractAsync],
+  );
+  const setCitizenName = useCallback((name: string) => dispatch({ type: "SET_CITIZEN_NAME", name }), []);
+  const claimTask = useCallback(
+    (taskId: string) => {
+      dispatch({ type: "CLAIM_TASK", taskId });
+
+      const opportunityId = parseTaskOpportunityId(taskId);
+      if (!opportunityId) return;
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+        functionName: "claimOpportunity",
+        args: [opportunityId],
+      }).catch(() => undefined);
+    },
+    [writeContractAsync],
+  );
+
+  const unclaimTask = useCallback(
+    (taskId: string) => {
+      dispatch({ type: "UNCLAIM_TASK", taskId });
+
+      const opportunityId = parseTaskOpportunityId(taskId);
+      if (!opportunityId) return;
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+        functionName: "unclaimOpportunity",
+        args: [opportunityId],
+      }).catch(() => undefined);
+    },
+    [writeContractAsync],
+  );
+
+  const startVerify = useCallback(
+    (taskId: string, taskTitle: string) => {
+      dispatch({ type: "START_VERIFY", taskId, taskTitle });
+      let remaining = VERIFY_DURATION;
+      const interval = setInterval(() => {
+        remaining -= 1;
+        dispatch({ type: "TICK_VERIFY" });
+        if (remaining <= 0) {
+          clearInterval(interval);
+
+          const opportunityId = parseTaskOpportunityId(taskId);
+          if (opportunityId) {
+            const proofHash = keccak256(stringToHex(`${taskId}:${taskTitle}:${Date.now()}`));
+            void writeContractAsync({
+              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+              abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+              functionName: "submitCompletion",
+              args: [opportunityId, proofHash],
+            }).catch(() => undefined);
+          }
+
+          dispatch({ type: "COMPLETE_VERIFY" });
+        }
+      }, 1000);
+    },
+    [writeContractAsync],
+  );
 
   const allocateMceVote = useCallback(
     (mceId: string, amount: number) => dispatch({ type: "ALLOCATE_MCE_VOTE", mceId, amount }),
@@ -579,22 +783,126 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const likePost = useCallback((postId: string) => dispatch({ type: "LIKE_POST", postId }), []);
   const likeEpoch2 = useCallback((proposalId: string) => dispatch({ type: "LIKE_EPOCH2", proposalId }), []);
 
-  const redeemOffer = useCallback((offerId: string) => dispatch({ type: "REDEEM_OFFER", offerId }), []);
+  const redeemOffer = useCallback(
+    (offerId: string) => {
+      dispatch({ type: "REDEEM_OFFER", offerId });
 
-  const issuerCreateTask = useCallback((task: Task) => dispatch({ type: "ISSUER_CREATE_TASK", task }), []);
+      const offer = state.offers.find(o => o.id === offerId);
+      if (!offer) return;
 
-  const issuerVerifyCompletion = useCallback(
-    (taskId: string, citizenAddress: string) => dispatch({ type: "ISSUER_VERIFY_COMPLETION", taskId, citizenAddress }),
-    [],
+      const route = DEMO_OFFER_ROUTES[offerId];
+      if (!route) return;
+
+      if (route.mode === "mce" || offer.mceOnly) {
+        void writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
+          abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
+          functionName: "purchaseOffer",
+          args: [route.redeemer, route.offerId],
+        }).catch(() => undefined);
+        return;
+      }
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
+        abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+        functionName: "purchaseOffer",
+        args: [route.redeemer, route.offerId],
+      }).catch(() => undefined);
+    },
+    [state.offers, writeContractAsync],
   );
 
-  const redeemerToggleMCE = useCallback(() => dispatch({ type: "REDEEMER_TOGGLE_MCE" }), []);
+  const issuerCreateTask = useCallback(
+    (task: Task) => {
+      dispatch({ type: "ISSUER_CREATE_TASK", task });
 
-  const redeemerAddOffer = useCallback((offer: RedemptionOffer) => dispatch({ type: "REDEEMER_ADD_OFFER", offer }), []);
+      const rewardCity = parseUnits(String(Math.max(0, task.credits)), 18);
+      const metadataURI = JSON.stringify({
+        title: task.title,
+        description: task.description,
+        taskDate: task.taskDate,
+        location: task.location,
+        category: task.category,
+      });
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+        functionName: "createOpportunity",
+        args: [
+          metadataURI,
+          rewardCity,
+          0n,
+          "0x0000000000000000000000000000000000000000",
+          0,
+          BigInt(task.slots),
+          0n,
+          0n,
+        ],
+      }).catch(() => undefined);
+    },
+    [writeContractAsync],
+  );
+
+  const issuerVerifyCompletion = useCallback(
+    (taskId: string, citizenAddress: string) => {
+      dispatch({ type: "ISSUER_VERIFY_COMPLETION", taskId, citizenAddress });
+
+      const opportunityId = parseTaskOpportunityId(taskId);
+      if (!opportunityId) return;
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+        functionName: "verifyCompletion",
+        args: [opportunityId, citizenAddress as `0x${string}`],
+      }).catch(() => undefined);
+    },
+    [writeContractAsync],
+  );
+
+  const redeemerToggleMCE = useCallback(() => {
+    const next = !state.redeemer.acceptsMCE;
+    dispatch({ type: "REDEEMER_TOGGLE_MCE" });
+
+    void writeContractAsync({
+      address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+      abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+      functionName: "setMCEOptIn",
+      args: [next],
+    }).catch(() => undefined);
+  }, [state.redeemer.acceptsMCE, writeContractAsync]);
+
+  const redeemerAddOffer = useCallback(
+    (offer: RedemptionOffer) => {
+      dispatch({ type: "REDEEMER_ADD_OFFER", offer });
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+        abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+        functionName: "createOffer",
+        args: [offer.offerTitle, offer.description, parseUnits(String(Math.max(0, offer.costCity)), 18), offer.mceOnly],
+      }).catch(() => undefined);
+    },
+    [writeContractAsync],
+  );
 
   const redeemerRemoveOffer = useCallback(
-    (offerId: string) => dispatch({ type: "REDEEMER_REMOVE_OFFER", offerId }),
-    [],
+    (offerId: string) => {
+      dispatch({ type: "REDEEMER_REMOVE_OFFER", offerId });
+
+      const id = parseNumericSuffix(offerId);
+      if (!id) return;
+
+      void writeContractAsync({
+        address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+        abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+        functionName: "removeOffer",
+        args: [id],
+      }).catch(() => undefined);
+    },
+    [writeContractAsync],
   );
 
   const redeemerProcessRedemption = useCallback(

@@ -9,10 +9,55 @@ Type **"Start Session"** at the beginning of any new Cowork session. Claude will
 ---
 
 ## Last Updated
-2026-03-08 (Session 15)
+2026-03-08 (Session 16)
 
 ## Current Branch
 `main`
+
+## Session 16 Summary (2026-03-08)
+
+### Completed This Session
+- Added first live `/demo` → Base Sepolia shared-state bridge.
+- Created `packages/nextjs/app/demo/_config/baseSepoliaContracts.ts` with Base Sepolia addresses + ABIs for demo sync reads.
+- Updated `packages/nextjs/app/demo/_context/DemoContext.tsx`:
+  - Added `wagmi` `useReadContracts` polling for:
+    - `CityToken.balanceOf(address)`
+    - `VoteToken.balanceOf(address)`
+    - `MCECredit.balanceOf(address)` (minimal ABI)
+    - `OpportunityManager.hasRole(CERTIFIED_ISSUER_ROLE, address)`
+    - `RedeemerRegistry.canRedeem(address)`
+  - Added `SYNC_ONCHAIN_STATE` reducer action to hydrate:
+    - `participant.cityBalance`
+    - `participant.voteBalance`
+    - `participant.mceBalance`
+    - `issuer.registered`
+    - `redeemer.registered`
+- Added hybrid write handlers in `DemoContext` (preserve existing reducer UX while attempting contract writes):
+  - `setRole("issuer" | "redeemer")` now attempts self-registration on demo registries.
+  - `claimTask` / `unclaimTask` now attempt `OpportunityManager.claimOpportunity` / `unclaimOpportunity` for mapped task IDs.
+  - `startVerify` now attempts `OpportunityManager.submitCompletion` with generated proof hash at timer completion.
+  - `issuerCreateTask` now attempts `OpportunityManager.createOpportunity` with JSON metadata + CITY reward.
+  - `issuerVerifyCompletion` now attempts `OpportunityManager.verifyCompletion` for mapped task IDs.
+  - `redeemerToggleMCE` now attempts `DemoRedeemerRegistry.setMCEOptIn`.
+  - `redeemerAddOffer` / `redeemerRemoveOffer` now attempt `DemoRedeemerRegistry.createOffer` / `removeOffer`.
+- Added participant redemption route mapping support:
+  - `packages/nextjs/app/demo/_config/baseSepoliaContracts.ts` now includes `Redemption` contract ABI + `DEMO_OFFER_ROUTES` parser from `NEXT_PUBLIC_DEMO_OFFER_ROUTES`.
+  - `redeemOffer` in `DemoContext` now attempts onchain `purchaseOffer` for mapped offers:
+    - City credits path → `Redemption.purchaseOffer`
+    - MCE credits path → `MCERedemption.purchaseOffer`
+  - Unmapped offers continue reducer-local fallback to keep demo UX intact.
+- Type-check confirmed passing: `yarn workspace @se-2/nextjs check-types`
+
+### Current State
+- `/demo` now uses chain-backed balances and role registration flags across all role views.
+- `/demo` now performs best-effort contract writes for core role/task/offer actions while preserving current reducer flows for UX continuity.
+- Some flows still require explicit mapping for full parity (e.g., participant redemption of mock seeded offers, slot-instance lifecycle semantics).
+
+### Next Step
+- Wire `/demo` write actions to contracts incrementally:
+  1. task claim/unclaim + completion submit/verify
+  2. redeemer offer create/remove + MCE opt-in
+  3. redemption/purchase flows and history from onchain events
 
 ## Recent Commits (needs push)
 - `Round-3: VerifyTab per-slot instances, venue cleanup, logo centering` (075f599) ← Session 15 — **needs push**
@@ -60,11 +105,13 @@ Full brand asset suite created. True colors extracted from Nate's SVG source fil
 
 ### Demo Frontend (`packages/nextjs/app/demo/`) — NEW Session 5
 
-Full interactive demo built with React, Tailwind, mocked data (no live contract calls yet). Three roles, each a standalone mobile-first app with 5 tabs. Shared `DemoContext` (useReducer) holds all cross-role state — credits earned as Participant are spendable at Redeemer offers, Issuer verifications increment stats, etc.
+Full interactive demo built with React, Tailwind, and hybrid state. Three roles, each a standalone mobile-first app with 5 tabs. Shared `DemoContext` (useReducer) still drives most UI workflows, and now syncs key state from Base Sepolia (CITY/VOTE/MCE balances + issuer/redeemer registration flags) so role views share chain-backed state.
 
 **Files:**
 - `_data/mockData.ts` — **UPDATED Session 13** (originally Session 10). Now 15 tasks: added `task-11` through `task-15` (Neighborhood Mural Design Input, Library Book Sorting & Cataloging, Youth Sports Day Volunteer, Transit Stop Accessibility Audit, Urban Air Quality Monitoring). Task type now includes `taskDate`, `successCriteria`, `creditRatePerHr`, `credentials` fields. Originally: Onboarding category with 3 tasks, 5 Epoch 1 MCE proposals (all Voting), 6 Epoch 2 proposals, 7 mock org Posts, 7 redemption offers, 3 issuer profiles. `Epoch2Proposal` and `Post` types.
 - `_context/DemoContext.tsx` — **UPDATED Session 13** (originally Session 10). `VERIFY_DURATION` constant changed from 12→7. ParticipantState adds: `citizenName`, `mceVoteAllocations`, `likedPostIds`, `likedEpoch2Ids`. New actions: `SET_CITIZEN_NAME`, `UNCLAIM_TASK`, `ALLOCATE_MCE_VOTE`, `LIKE_POST`, `LIKE_EPOCH2`. `ISSUER_CREATE_TASK` wraps `Task` into `IssuerTask` (adds `pendingCompletions: []`, `verifiedCount: 0`). `issuerCreateTask` adds task to both `issuer.tasks` AND `availableTasks` (participant-visible). Budget tracking via `creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0)`.
+- `_context/DemoContext.tsx` — **UPDATED Session 16.** Added `wagmi` `useReadContracts` sync loop for onchain state hydration from Base Sepolia. New reducer action `SYNC_ONCHAIN_STATE` updates: `participant.cityBalance`, `participant.voteBalance`, `participant.mceBalance`, `issuer.registered`, `redeemer.registered` from contract reads. Reads currently target `CityToken.balanceOf`, `VoteToken.balanceOf`, `MCECredit.balanceOf` (minimal ABI), `OpportunityManager.hasRole(CERTIFIED_ISSUER_ROLE, address)`, and `RedeemerRegistry.canRedeem(address)`.
+- `_config/baseSepoliaContracts.ts` — **NEW Session 16.** Centralized Base Sepolia addresses and ABIs for demo sync wiring: `CityToken`, `VoteToken`, `MCECredit`, `OpportunityManager`, `RedeemerRegistry`.
 - `_components/AppShell.tsx` — Full-screen fixed overlay (hides Scaffold-ETH header). Phone-width container (max-width 480px), header with wallet button, scrollable content, BottomNav.
 - `_components/BottomNav.tsx` — 5-tab bottom navigation; active tab highlighted in role accent color.
 - `_components/WalletModal.tsx` — Bottom sheet showing CITY/VOTE/MCE balances, wallet address, role badge.
@@ -213,6 +260,7 @@ Oracle wallet must be granted CITY_ADMIN_ROLE on MCETaskRegistry to sign verific
 ## Pending / Next Steps
 
 ### High Priority
+- **Demo onchain integration (writes + shared state parity)** — in progress (Session 16). Read-side sync for balances/role status is now live in `/demo`; next pass is wiring task claim/submit/verify, offer create/remove, and redemption actions to contract writes.
 - **~~Civic Participant demo rebuild~~** — ✅ Done (Session 10).
 - **~~Issuer Organization demo rebuild~~** — ✅ Done (Session 11).
 - **~~Redeemer Organization demo rebuild~~** — ✅ Done (Session 12).

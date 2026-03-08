@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import AppShell from "../_components/AppShell";
+import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, Post, PostCategory } from "../_data/mockData";
 
@@ -241,44 +242,13 @@ function PanelCard({
   );
 }
 
-function PanelStats({ stats, accent }: { stats: { label: string; value: string | number }[]; accent: string }) {
-  return (
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 12,
-        padding: "14px 16px",
-        marginTop: 16,
-      }}
-    >
-      {stats.map((s, i) => (
-        <div
-          key={i}
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "7px 0",
-            borderBottom: i < stats.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
-          }}
-        >
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{s.label}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: accent }}>{s.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function getRedeemerPanels(
   activeTab: string,
-  state: ReturnType<typeof useDemo>["state"],
-  committedOfferings: CustomOffering[],
-  mceOfferings: MCECustomOffering[],
+  _state: ReturnType<typeof useDemo>["state"],
+  _committedOfferings: CustomOffering[],
+  _mceOfferings: MCECustomOffering[],
 ): { left: React.ReactNode; right: React.ReactNode } {
-  const { redeemer, mces, posts } = state;
-  const totalCityxBurned = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
+  const rightPanel = <OnchainActivityPanel role="redeemer" accent={ACCENT} />;
 
   switch (activeTab) {
     case "profile":
@@ -295,17 +265,7 @@ function getRedeemerPanels(
             </p>
           </PanelCard>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Committed Offerings", value: committedOfferings.length },
-              { label: "MCE Offerings", value: mceOfferings.length },
-              { label: "Processed Redemptions", value: redeemer.processedRedemptions.length },
-              { label: "CITYx Settled", value: totalCityxBurned.toLocaleString() },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "offerings":
@@ -332,17 +292,7 @@ function getRedeemerPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Committed Offerings", value: committedOfferings.length },
-              { label: "MCE Offerings", value: mceOfferings.length },
-              { label: "Queue Pending", value: redeemer.redemptionQueue.length },
-              { label: "CITYx Burned", value: totalCityxBurned.toLocaleString() },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "mycity":
@@ -359,17 +309,7 @@ function getRedeemerPanels(
             </p>
           </PanelCard>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Total Posts", value: posts.length },
-              { label: "Active Orgs", value: 3 },
-              { label: "Committed Offerings", value: committedOfferings.length },
-              { label: "MCE Offerings", value: mceOfferings.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "dashboard":
@@ -386,17 +326,7 @@ function getRedeemerPanels(
             </p>
           </PanelCard>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Total Offerings", value: committedOfferings.length + mceOfferings.length },
-              { label: "Total Processed", value: redeemer.processedRedemptions.length },
-              { label: "CITYx Burned", value: totalCityxBurned.toLocaleString() },
-              { label: "Queue Pending", value: redeemer.redemptionQueue.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     case "mces":
@@ -423,17 +353,7 @@ function getRedeemerPanels(
             </PanelCard>
           </>
         ),
-        right: (
-          <PanelStats
-            accent={ACCENT}
-            stats={[
-              { label: "Total MCEs", value: mces.length },
-              { label: "Currently Voting", value: mces.filter(m => m.status === "Voting").length },
-              { label: "Active MCEs", value: mces.filter(m => m.status === "Active").length },
-              { label: "MCE Offerings", value: mceOfferings.length },
-            ]}
-          />
-        ),
+        right: rightPanel,
       };
 
     default:
