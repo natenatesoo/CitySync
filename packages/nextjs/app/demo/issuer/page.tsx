@@ -528,7 +528,12 @@ export default function IssuerApp() {
   };
 
   const handleIssueTask = (task: Task, slots: number) => {
-    issuerCreateTask({ ...task, id: `task-issued-${Date.now()}`, slots, slotsRemaining: slots });
+    issuerCreateTask({
+      ...task,
+      id: `task-issued-${Date.now()}`,
+      slots,
+      slotsRemaining: slots,
+    });
     setApprovedCatalogTasks(prev => prev.filter(t => t.id !== task.id));
     setIssueTaskId(null);
     setToast("Task issued — now visible to participants!");

@@ -163,9 +163,8 @@ type MCECustomOffering = {
   name: string;
   costCity: number;
   stipulations: string;
-  mceId: string;
-  mceName: string;
-  duration: string;
+  mceIds: string[];
+  mceNames: string[];
   createdAt: string;
 };
 
@@ -481,18 +480,16 @@ export default function RedeemerApp() {
     name: string;
     costCity: number;
     stipulations: string;
-    mceId: string;
-    mceName: string;
-    duration: string;
+    mceIds: string[];
+    mceNames: string[];
   }) => {
     const offering: MCECustomOffering = {
       id: `mce-offering-${Date.now()}`,
       name: data.name,
       costCity: data.costCity,
       stipulations: data.stipulations,
-      mceId: data.mceId,
-      mceName: data.mceName,
-      duration: data.duration,
+      mceIds: data.mceIds,
+      mceNames: data.mceNames,
       createdAt: new Date().toISOString(),
     };
     setMceOfferings(prev => [offering, ...prev]);
@@ -606,6 +603,29 @@ function ProfileTab({
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Venue info editable fields
+  const [venueAddress, setVenueAddress] = useState("123 Main Street, Oakland, CA 94601");
+  const [venuePhone, setVenuePhone] = useState("(510) 555-0198");
+  const [venueWebsite, setVenueWebsite] = useState("https://yourvenuesite.com");
+  const [editingVenue, setEditingVenue] = useState(false);
+  const [draftAddress, setDraftAddress] = useState(venueAddress);
+  const [draftPhone, setDraftPhone] = useState(venuePhone);
+  const [draftWebsite, setDraftWebsite] = useState(venueWebsite);
+
+  const startVenueEdit = () => {
+    setDraftAddress(venueAddress);
+    setDraftPhone(venuePhone);
+    setDraftWebsite(venueWebsite);
+    setEditingVenue(true);
+  };
+
+  const saveVenueEdit = () => {
+    setVenueAddress(draftAddress.trim() || venueAddress);
+    setVenuePhone(draftPhone.trim() || venuePhone);
+    setVenueWebsite(draftWebsite.trim() || venueWebsite);
+    setEditingVenue(false);
+  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -775,46 +795,138 @@ function ProfileTab({
         </p>
       </div>
 
-      {/* Venue Stats */}
-      <SectionLabel text="Venue Information" />
+      {/* Venue Information */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <SectionLabel text="Venue Information" />
+        {!editingVenue && (
+          <button
+            onClick={startVenueEdit}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: MUTED,
+              padding: 4,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <IconPencil />
+          </button>
+        )}
+      </div>
       <div
         style={{
           ...surfaceCard,
           marginBottom: 20,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, color: MUTED }}>Venue Address</span>
-            <span style={{ fontFamily: "monospace", fontSize: 11, color: DIMMED }}>
-              {FAKE_WALLETS.redeemer.slice(0, 10)}…
-            </span>
+        {editingVenue ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              {
+                label: "Address",
+                value: draftAddress,
+                setter: setDraftAddress,
+                placeholder: "Street, City, State ZIP",
+              },
+              { label: "Phone Number", value: draftPhone, setter: setDraftPhone, placeholder: "(555) 555-5555" },
+              { label: "Website", value: draftWebsite, setter: setDraftWebsite, placeholder: "https://yoursite.com" },
+            ].map(field => (
+              <div key={field.label}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, marginBottom: 4 }}>{field.label}</div>
+                <input
+                  value={field.value}
+                  onChange={e => field.setter(e.target.value)}
+                  placeholder={field.placeholder}
+                  style={{
+                    width: "100%",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(52,238,182,0.4)",
+                    borderRadius: 8,
+                    color: "#fff",
+                    fontSize: 13,
+                    padding: "8px 10px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <button
+                onClick={saveVenueEdit}
+                style={{
+                  flex: 1,
+                  background: ACCENT,
+                  border: "none",
+                  borderRadius: 10,
+                  padding: "9px 0",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: BG,
+                  cursor: "pointer",
+                }}
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditingVenue(false)}
+                style={{
+                  flex: 1,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10,
+                  padding: "9px 0",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: MUTED,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <div
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              paddingTop: 10,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontSize: 13, color: MUTED }}>Status</span>
-            <StatusPill label="Active" color={ACCENT} />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              { label: "Address", value: venueAddress },
+              { label: "Phone Number", value: venuePhone },
+              { label: "Website", value: venueWebsite },
+              { label: "Status", node: <StatusPill label="Active" color={ACCENT} /> },
+              { label: "Network", value: "Base Mainnet" },
+            ].map((row, i) => (
+              <div
+                key={row.label}
+                style={{
+                  ...(i > 0 ? { borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 } : {}),
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <span style={{ fontSize: 13, color: MUTED, flexShrink: 0 }}>{row.label}</span>
+                {"node" in row ? (
+                  row.node
+                ) : (
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: row.label === "Network" ? "#fff" : DIMMED,
+                      fontWeight: row.label === "Network" ? 600 : 400,
+                      textAlign: "right",
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {row.value}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
-          <div
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              paddingTop: 10,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontSize: 13, color: MUTED }}>Network</span>
-            <span style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>Base Mainnet</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -1179,8 +1291,9 @@ function OfferingsTab({
                           MCE
                         </span>
                       </div>
-                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 2 }}>Event: {offering.mceName}</div>
-                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6 }}>Duration: {offering.duration}</div>
+                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6 }}>
+                        Events: {offering.mceNames.join(", ")}
+                      </div>
                       {offering.stipulations && (
                         <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6, lineHeight: 1.4 }}>
                           {offering.stipulations}
@@ -1261,24 +1374,26 @@ function AddOfferingSheet({
     name: string;
     costCity: number;
     stipulations: string;
-    mceId: string;
-    mceName: string;
-    duration: string;
+    mceIds: string[];
+    mceNames: string[];
   }) => void;
 }) {
   const [name, setName] = useState("");
   const [costCity, setCostCity] = useState("");
   const [stipulations, setStipulations] = useState("");
-  const [selectedMceId, setSelectedMceId] = useState("");
-  const [duration, setDuration] = useState("Until MCE ends");
+  const [selectedMceIds, setSelectedMceIds] = useState<string[]>([]);
+  const [showEpochConfirm, setShowEpochConfirm] = useState(false);
 
   const activeMces = mces.filter(m => m.status === "Active" || m.status === "Voting");
-  const selectedMce = mces.find(m => m.id === selectedMceId);
 
   const canSubmitCommitted = name.trim() && parseInt(costCity) > 0;
-  const canSubmitMCE = name.trim() && parseInt(costCity) > 0 && selectedMceId;
+  const canSubmitMCE = name.trim() && parseInt(costCity) > 0 && selectedMceIds.length > 0;
 
-  const handleSubmit = () => {
+  const toggleMce = (id: string) => {
+    setSelectedMceIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  };
+
+  const doSubmit = () => {
     if (type === "committed") {
       if (!canSubmitCommitted) return;
       onSubmitCommitted({ name: name.trim(), costCity: parseInt(costCity), stipulations: stipulations.trim() });
@@ -1288,10 +1403,18 @@ function AddOfferingSheet({
         name: name.trim(),
         costCity: parseInt(costCity),
         stipulations: stipulations.trim(),
-        mceId: selectedMceId,
-        mceName: selectedMce?.title ?? selectedMceId,
-        duration,
+        mceIds: selectedMceIds,
+        mceNames: selectedMceIds.map(id => activeMces.find(m => m.id === id)?.title ?? id),
       });
+    }
+  };
+
+  const handleSubmit = () => {
+    if (type === "committed") {
+      if (!canSubmitCommitted) return;
+      setShowEpochConfirm(true);
+    } else {
+      doSubmit();
     }
   };
 
@@ -1361,7 +1484,7 @@ function AddOfferingSheet({
         <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
           {type === "committed"
             ? "This offering will be locked for the duration of the current Epoch. Set your terms carefully — changes are not permitted until the Epoch ends."
-            : "This offering is linked to a specific MCE event. Once created, it cannot be modified. Select the event and duration carefully."}
+            : "This offering is linked to one or more MCE events. Once created, it cannot be modified. It is locked until the MCE ends."}
         </div>
 
         {/* Epoch lock notice */}
@@ -1409,10 +1532,13 @@ function AddOfferingSheet({
             />
           </div>
 
-          {/* MCE Selector (MCE type only) */}
+          {/* MCE Selector (MCE type only) — multi-select checkboxes */}
           {type === "mce" && (
             <div>
-              <label style={labelStyle}>Select MCE Event *</label>
+              <label style={labelStyle}>Select MCE Events (choose all that apply) *</label>
+              <div style={{ fontSize: 11, color: DIMMED, marginBottom: 8, lineHeight: 1.4 }}>
+                Select the MCE proposals you would create this offering for. Your selection signals influence on voting.
+              </div>
               {activeMces.length === 0 ? (
                 <div
                   style={{
@@ -1426,75 +1552,60 @@ function AddOfferingSheet({
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {activeMces.map(mce => (
-                    <button
-                      key={mce.id}
-                      type="button"
-                      onClick={() => setSelectedMceId(mce.id)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 14px",
-                        borderRadius: 10,
-                        border:
-                          selectedMceId === mce.id
-                            ? "1px solid rgba(221,158,51,0.5)"
-                            : "1px solid rgba(255,255,255,0.1)",
-                        background: selectedMceId === mce.id ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.04)",
-                        cursor: "pointer",
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>{mce.title}</span>
-                      <span
+                  {activeMces.map(mce => {
+                    const checked = selectedMceIds.includes(mce.id);
+                    return (
+                      <button
+                        key={mce.id}
+                        type="button"
+                        onClick={() => toggleMce(mce.id)}
                         style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
-                          color: STATUS_COLOR[mce.status] ?? ACCENT,
-                          borderRadius: 20,
-                          padding: "2px 8px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "12px 14px",
+                          borderRadius: 10,
+                          border: checked ? "1px solid rgba(221,158,51,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                          background: checked ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.04)",
+                          cursor: "pointer",
+                          textAlign: "left",
                         }}
                       >
-                        {mce.status}
-                      </span>
-                    </button>
-                  ))}
+                        {/* Checkbox indicator */}
+                        <div
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: 4,
+                            border: checked ? "none" : "1.5px solid rgba(255,255,255,0.25)",
+                            background: checked ? "#DD9E33" : "transparent",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {checked && <span style={{ fontSize: 11, color: "#0d1117", fontWeight: 800 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize: 13, color: "#fff", fontWeight: 500, flex: 1 }}>{mce.title}</span>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
+                            color: STATUS_COLOR[mce.status] ?? ACCENT,
+                            borderRadius: 20,
+                            padding: "2px 8px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {mce.status}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Duration (MCE type only) */}
-          {type === "mce" && (
-            <div>
-              <label style={labelStyle}>Offer Duration *</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {["Until MCE ends", "1 week", "2 weeks", "1 month"].map(opt => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setDuration(opt)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: duration === opt ? "1px solid rgba(221,158,51,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                      background: duration === opt ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.03)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: duration === opt ? "#DD9E33" : MUTED, fontWeight: 500 }}>
-                      {opt}
-                    </span>
-                    {duration === opt && <span style={{ fontSize: 14, color: "#DD9E33" }}>✓</span>}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -1529,8 +1640,91 @@ function AddOfferingSheet({
             marginTop: 20,
           }}
         >
-          {type === "committed" ? "Commit Offering" : "Lock MCE Offering"}
+          {type === "committed" ? "Lock Committed Offering" : "Lock MCE Offering"}
         </button>
+
+        {/* Epoch confirmation popup (committed type only) */}
+        {showEpochConfirm && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(4px)",
+              padding: 20,
+            }}
+            onClick={() => setShowEpochConfirm(false)}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth: 360,
+                background: "#1a1f2e",
+                borderRadius: 20,
+                padding: "28px 24px",
+                border: "1px solid rgba(52,238,182,0.25)",
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ fontSize: 28, textAlign: "center", marginBottom: 12 }}>🔒</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", textAlign: "center", marginBottom: 10 }}>
+                Lock Offering?
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: MUTED,
+                  textAlign: "center",
+                  lineHeight: 1.6,
+                  marginBottom: 24,
+                }}
+              >
+                This Offering will remain Valid until the end of the current Epoch. Are you sure?
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  onClick={() => {
+                    setShowEpochConfirm(false);
+                    doSubmit();
+                  }}
+                  style={{
+                    width: "100%",
+                    background: ACCENT,
+                    border: "none",
+                    borderRadius: 12,
+                    padding: "13px 0",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: BG,
+                    cursor: "pointer",
+                  }}
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setShowEpochConfirm(false)}
+                  style={{
+                    width: "100%",
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 12,
+                    padding: "12px 0",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: MUTED,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

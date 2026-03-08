@@ -422,9 +422,6 @@ function reducer(state: DemoState, action: Action): DemoState {
         pendingCompletions: [],
         verifiedCount: 0,
       };
-      // Simulate some pending completions appearing
-      const mockPending = Array.from({ length: Math.floor(Math.random() * 3) }, () => randomAddress());
-      issuerTask.pendingCompletions = mockPending;
 
       return {
         ...state,
