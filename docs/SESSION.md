@@ -63,6 +63,8 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Updated `packages/nextjs/app/demo/_config/baseSepoliaContracts.ts` hardcoded addresses to match the latest Base Sepolia deployment set from `deployments/84532.json`.
 - Issuer UX persistence tweak:
   - Issuer Verify `slotInstances` now persist in browser storage keyed by connected wallet, so issued instances remain visible after switching roles and returning to Issuer view.
+- Right-side activity panel changed from wallet-scoped to role-scoped network feed:
+  - `OnchainActivityPanel` now fetches role-relevant events without address filtering and displays cumulative onchain activity from all users of the selected role.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

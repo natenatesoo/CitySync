@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useAccount } from "@account-kit/react";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 
@@ -46,8 +45,6 @@ function toItems(
 }
 
 export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; accent: string }) {
-  const { address } = useAccount({ type: "ModularAccountV2" });
-
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [latestBlock, setLatestBlock] = useState<bigint | null>(null);
 
@@ -77,7 +74,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
   useEffect(() => {
     const run = async () => {
-      if (!address || latestBlock === null) return;
+      if (latestBlock === null) return;
 
       const queries: Promise<any>[] = [];
 
@@ -93,7 +90,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: true, name: "citizen", type: "address" },
               ],
             },
-            args: { citizen: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -112,7 +108,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "voteMinted", type: "uint256" },
               ],
             },
-            args: { citizen: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -132,7 +127,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "receiptId", type: "uint256" },
               ],
             },
-            args: { citizen: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -153,7 +147,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "offerName", type: "string" },
               ],
             },
-            args: { citizen: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -172,7 +165,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "orgName", type: "string" },
               ],
             },
-            args: { issuer: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -193,7 +185,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "metadataURI", type: "string" },
               ],
             },
-            args: { issuer: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -212,7 +203,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "orgName", type: "string" },
               ],
             },
-            args: { redeemer: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -233,7 +223,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "mceOnly", type: "bool" },
               ],
             },
-            args: { redeemer: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -253,7 +242,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { indexed: false, name: "receiptId", type: "uint256" },
               ],
             },
-            args: { redeemer: address },
             fromBlock,
             toBlock: latestBlock,
           } as any),
@@ -307,7 +295,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     };
 
     void run();
-  }, [address, fromBlock, latestBlock, role]);
+  }, [fromBlock, latestBlock, role]);
 
   return (
     <div
@@ -331,9 +319,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         Recent Onchain Activity
       </div>
 
-      {!address ? (
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>Connect wallet to view activity.</div>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>No recent transactions detected yet.</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
