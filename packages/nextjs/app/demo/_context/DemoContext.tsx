@@ -602,8 +602,8 @@ interface DemoContextValue {
   state: DemoState;
   setRole: (role: Role) => void;
   setCitizenName: (name: string) => void;
-  claimTask: (taskId: string) => void;
-  unclaimTask: (taskId: string) => void;
+  claimTask: (taskId: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
+  unclaimTask: (taskId: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   startVerify: (taskId: string, taskTitle: string) => void;
   allocateMceVote: (mceId: string, amount: number) => void;
   likePost: (postId: string) => void;
@@ -897,37 +897,49 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   );
   const setCitizenName = useCallback((name: string) => dispatch({ type: "SET_CITIZEN_NAME", name }), []);
   const claimTask = useCallback(
-    (taskId: string) => {
+    async (taskId: string) => {
       dispatch({ type: "CLAIM_TASK", taskId });
 
       const opportunityId = parseTaskOpportunityId(taskId);
-      if (!opportunityId) return;
+      if (!opportunityId) return { ok: false, error: "Invalid opportunity id." };
 
-      void writeContractAsync({
-        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-        functionName: "claimOpportunity",
-        args: [opportunityId],
-      }).catch(() => undefined);
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "claimOpportunity",
+          args: [opportunityId],
+        });
+        return { ok: true, hash: getResultHash(result) };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Claim failed";
+        return { ok: false, error: message };
+      }
     },
-    [writeContractAsync],
+    [getResultHash, writeContractAsync],
   );
 
   const unclaimTask = useCallback(
-    (taskId: string) => {
+    async (taskId: string) => {
       dispatch({ type: "UNCLAIM_TASK", taskId });
 
       const opportunityId = parseTaskOpportunityId(taskId);
-      if (!opportunityId) return;
+      if (!opportunityId) return { ok: false, error: "Invalid opportunity id." };
 
-      void writeContractAsync({
-        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-        functionName: "unclaimOpportunity",
-        args: [opportunityId],
-      }).catch(() => undefined);
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "unclaimOpportunity",
+          args: [opportunityId],
+        });
+        return { ok: true, hash: getResultHash(result) };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unclaim failed";
+        return { ok: false, error: message };
+      }
     },
-    [writeContractAsync],
+    [getResultHash, writeContractAsync],
   );
 
   const startVerify = useCallback(

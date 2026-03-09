@@ -575,3 +575,20 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - sort panel with checkbox options: highest value, lowest value, date issued, organization
   - category pills remain available (`All` + categories).
 - Updated verify reducer behavior: `COMPLETE_VERIFY` now clears overlay only (no local auto-mint/auto-complete side effects).
+
+## 2026-03-09 — Participant Task Lifecycle (Open / Claimed / Completed)
+
+- `Explore` now has three sections:
+  - `Open Tasks`
+  - `Claimed Tasks`
+  - `Completed Tasks`
+- `claimTask` / `unclaimTask` in `DemoContext` now return async success/error results so UI can handle failures.
+- Fixed unclaim flow in participant Explore:
+  - waits for onchain unclaim call result
+  - applies optimistic unclaim transition so task immediately leaves Claimed and re-enters Open pool
+  - clears optimistic state once onchain sync reflects new claim status
+- Execute -> Pending -> Completed lifecycle:
+  - execute adds task to pending verification (persisted per wallet)
+  - when task is no longer claimed onchain, pending entry resolves
+  - resolved executed tasks are added to local `Completed Tasks` list (persisted per wallet)
+  - unclaimed/no-show tasks that were never executed do not move to completed

@@ -1571,7 +1571,7 @@ function TaskCard({
 function ExploreTab() {
   const { claimTask, unclaimTask, startVerify } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const [view, setView] = useState<"open" | "mine">("open");
+  const [view, setView] = useState<"open" | "claimed" | "completed">("open");
   const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
   const [executeTask, setExecuteTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -1590,15 +1590,31 @@ function ExploreTab() {
     organization: false,
   });
   const [pendingVerificationIds, setPendingVerificationIds] = useState<string[]>([]);
+  const [pendingTaskSnapshots, setPendingTaskSnapshots] = useState<Record<string, Task>>({});
+  const [completedTasks, setCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
+  const [optimisticUnclaimIds, setOptimisticUnclaimIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const key = `citysync:demo:participant:pending-verification:${(address ?? FAKE_WALLETS.participant).toLowerCase()}`;
+    const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
+    const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
+    const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
+    const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
     try {
-      const raw = window.localStorage.getItem(key);
+      const raw = window.localStorage.getItem(pendingKey);
       if (raw) {
         const parsed = JSON.parse(raw) as string[];
         if (Array.isArray(parsed)) setPendingVerificationIds(parsed);
+      }
+      const rawSnapshots = window.localStorage.getItem(pendingSnapshotsKey);
+      if (rawSnapshots) {
+        const parsed = JSON.parse(rawSnapshots) as Record<string, Task>;
+        if (parsed && typeof parsed === "object") setPendingTaskSnapshots(parsed);
+      }
+      const rawCompleted = window.localStorage.getItem(completedKey);
+      if (rawCompleted) {
+        const parsed = JSON.parse(rawCompleted) as Array<Task & { completedAt: string }>;
+        if (Array.isArray(parsed)) setCompletedTasks(parsed);
       }
     } catch {
       // Ignore hydration failures.
@@ -1607,13 +1623,18 @@ function ExploreTab() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const key = `citysync:demo:participant:pending-verification:${(address ?? FAKE_WALLETS.participant).toLowerCase()}`;
+    const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
+    const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
+    const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
+    const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
     try {
-      window.localStorage.setItem(key, JSON.stringify(pendingVerificationIds));
+      window.localStorage.setItem(pendingKey, JSON.stringify(pendingVerificationIds));
+      window.localStorage.setItem(pendingSnapshotsKey, JSON.stringify(pendingTaskSnapshots));
+      window.localStorage.setItem(completedKey, JSON.stringify(completedTasks));
     } catch {
       // Ignore persistence failures.
     }
-  }, [address, pendingVerificationIds]);
+  }, [address, pendingVerificationIds, pendingTaskSnapshots, completedTasks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1744,9 +1765,13 @@ function ExploreTab() {
     };
   }, []);
 
-  const openTasks = onchainTasks.filter(
-    t => !t.claimedBy || t.claimedBy === "0x0000000000000000000000000000000000000000",
-  );
+  const addressLower = address?.toLowerCase();
+  const openTasks = onchainTasks.filter(t => {
+    const claimedBy = t.claimedBy?.toLowerCase();
+    const isUnclaimed = !claimedBy || claimedBy === "0x0000000000000000000000000000000000000000";
+    const optimisticUnclaimedByMe = !!addressLower && claimedBy === addressLower && optimisticUnclaimIds.includes(t.id);
+    return isUnclaimed || optimisticUnclaimedByMe;
+  });
   const searchedOpenTasks = openTasks.filter(t => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
@@ -1771,31 +1796,81 @@ function ExploreTab() {
     return 0;
   });
   const myTasks = onchainTasks.filter(
-    t => !!address && !!t.claimedBy && t.claimedBy.toLowerCase() === address.toLowerCase(),
+    t =>
+      !!addressLower &&
+      !!t.claimedBy &&
+      t.claimedBy.toLowerCase() === addressLower &&
+      !optimisticUnclaimIds.includes(t.id),
   ) as Task[];
   const myTaskIds = new Set(myTasks.map(t => t.id));
 
   useEffect(() => {
     const claimedIds = new Set(myTasks.map(t => t.id));
     setPendingVerificationIds(prev => {
+      const resolved = prev.filter(id => !claimedIds.has(id));
+      if (resolved.length > 0) {
+        setCompletedTasks(current => {
+          const existing = new Set(current.map(t => t.id));
+          const additions = resolved
+            .map(id => pendingTaskSnapshots[id])
+            .filter(Boolean)
+            .filter(task => !existing.has(task.id))
+            .map(task => ({
+              ...task,
+              completedAt: new Date().toISOString(),
+            }));
+          return additions.length > 0 ? [...additions, ...current] : current;
+        });
+        setPendingTaskSnapshots(current => {
+          const next = { ...current };
+          resolved.forEach(id => {
+            delete next[id];
+          });
+          return next;
+        });
+        setToast("Task verified by issuer.");
+      }
+
       const next = prev.filter(id => claimedIds.has(id));
-      if (next.length !== prev.length) setToast("Task verified by issuer.");
       return next;
     });
-  }, [myTasks]);
+  }, [myTasks, pendingTaskSnapshots]);
 
-  const handleClaim = (task: Task) => {
+  useEffect(() => {
+    setOptimisticUnclaimIds(prev => {
+      if (!addressLower) return [];
+      const myClaimed = new Set(onchainTasks.filter(t => t.claimedBy?.toLowerCase() === addressLower).map(t => t.id));
+      return prev.filter(id => myClaimed.has(id));
+    });
+  }, [addressLower, onchainTasks]);
+
+  const handleClaim = async (task: Task) => {
     if (myTasks.length >= 2) {
       setToast("Max 2 tasks can be claimed at a time");
       return;
     }
-    claimTask(task.id);
-    setToast(`Claimed: ${task.title}`);
+    const result = await claimTask(task.id);
+    if (result.ok) {
+      setToast(`Claimed: ${task.title}`);
+    } else {
+      setToast("Claim failed");
+    }
   };
 
-  const handleUnclaim = (task: Task) => {
-    unclaimTask(task.id);
-    setToast(`Removed from My Tasks`);
+  const handleUnclaim = async (task: Task) => {
+    const result = await unclaimTask(task.id);
+    if (result.ok) {
+      setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+      setPendingVerificationIds(prev => prev.filter(id => id !== task.id));
+      setPendingTaskSnapshots(prev => {
+        const next = { ...prev };
+        delete next[task.id];
+        return next;
+      });
+      setToast("Task returned to Open Tasks");
+    } else {
+      setToast("Unclaim failed");
+    }
   };
 
   const handleExecuteConfirm = () => {
@@ -1803,13 +1878,14 @@ function ExploreTab() {
     const task = executeTask;
     setExecuteTask(null);
     setPendingVerificationIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+    setPendingTaskSnapshots(prev => ({ ...prev, [task.id]: task }));
     setToast("Submitted. Pending verification by issuer.");
     startVerify(task.id, task.title);
   };
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      {/* Open / My Tasks toggle */}
+      {/* Open / Claimed / Completed toggle */}
       <div
         style={{
           display: "flex",
@@ -1819,7 +1895,7 @@ function ExploreTab() {
           marginBottom: 16,
         }}
       >
-        {(["open", "mine"] as const).map(v => (
+        {(["open", "claimed", "completed"] as const).map(v => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -1836,7 +1912,11 @@ function ExploreTab() {
               transition: "all 0.15s",
             }}
           >
-            {v === "open" ? "Open Tasks" : `My Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`}
+            {v === "open"
+              ? `Open Tasks${sortedOpenTasks.length > 0 ? ` (${sortedOpenTasks.length})` : ""}`
+              : v === "claimed"
+                ? `Claimed Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`
+                : `Completed Tasks${completedTasks.length > 0 ? ` (${completedTasks.length})` : ""}`}
           </button>
         ))}
       </div>
@@ -1995,23 +2075,36 @@ function ExploreTab() {
             />
           ))
         )
-      ) : myTasks.length === 0 ? (
+      ) : view === "claimed" ? (
+        myTasks.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0" }}>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No claimed tasks yet</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Head to Open Tasks to claim one</div>
+          </div>
+        ) : (
+          myTasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              isClaimed
+              locked={false}
+              pendingVerification={pendingVerificationIds.includes(task.id)}
+              showUnclaimButton
+              onUnclaim={() => handleUnclaim(task)}
+              onExecute={() => setExecuteTask(task)}
+            />
+          ))
+        )
+      ) : completedTasks.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0" }}>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No claimed tasks yet</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Head to Open Tasks to claim one</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No completed tasks yet</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
+            Completed tasks will appear after issuer verification
+          </div>
         </div>
       ) : (
-        myTasks.map(task => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            isClaimed
-            locked={false}
-            pendingVerification={pendingVerificationIds.includes(task.id)}
-            showUnclaimButton
-            onUnclaim={() => handleUnclaim(task)}
-            onExecute={() => setExecuteTask(task)}
-          />
+        completedTasks.map(task => (
+          <TaskCard key={task.id} task={task} isClaimed={false} locked={false} pendingVerification={false} />
         ))
       )}
 
