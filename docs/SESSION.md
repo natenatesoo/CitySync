@@ -71,6 +71,8 @@ When major product, contract-integration, or deployment-impacting changes are ma
 - Follow-up visibility fix:
   - Participant Open Tasks now defensively merges `availableTasks` + `issuer.tasks`, dedupes by task ID, and sorts newest-first (onboarding pinned first) so newly issued tasks are easier to find.
   - Reduced activity query window and narrowed fallback window in `OnchainActivityPanel` to avoid provider log-range failures that could silently produce empty issuer activity feeds.
+- Task persistence race fix:
+  - Prevented `DemoContext` task-state persistence from writing initial reducer state before local hydration completes; this avoids wiping issued tasks during remount/role switches.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

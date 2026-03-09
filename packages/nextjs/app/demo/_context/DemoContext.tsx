@@ -642,6 +642,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     waitForTxn: true,
   });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
+  const taskStateHydratedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -662,11 +663,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       });
     } catch {
       // Ignore hydration failures.
+    } finally {
+      taskStateHydratedRef.current = true;
     }
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!taskStateHydratedRef.current) return;
     try {
       window.localStorage.setItem(
         TASK_STATE_STORAGE_KEY,
