@@ -126,6 +126,12 @@ When major product, contract-integration, or deployment-impacting changes are ma
 - Issuer persistence follow-up:
   - Added local persistence for Issuer Task Catalog templates (`approvedCatalogTasks`) keyed by issuer wallet so approved tasks remain available after role switches/sign-out/sign-in.
   - Added local persistence for Issuer activity feed snapshot + cursor so recent activity remains visible across role switches/re-auth while continuing to append new onchain events.
+- Activity persistence bug fix:
+  - Fixed issuer activity cache serialization by converting `bigint` fields (`blockNumber`, `timestamp`) to strings for localStorage and restoring them to `bigint` on hydration.
+  - This resolves silent localStorage write failures that prevented activity panel persistence.
+- Issuer Verify write-status UX:
+  - Added a dedicated `Last Verify & Mint Write` status box in Issuer Verify → Completed, matching the Task Issuance status format.
+  - Updated `issuerVerifyCompletion` context action to return write status `{ ok, hash, error }` so the verify UI can render confirmed/failed state and explorer link.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

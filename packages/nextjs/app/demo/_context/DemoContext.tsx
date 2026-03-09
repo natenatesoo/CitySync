@@ -623,7 +623,10 @@ interface DemoContextValue {
   likeEpoch2: (proposalId: string) => void;
   redeemOffer: (offerId: string) => void;
   issuerCreateTask: (task: Task) => Promise<{ ok: boolean; hash?: `0x${string}`; taskId: string; error?: string }>;
-  issuerVerifyCompletion: (taskId: string, citizenAddress: string) => void;
+  issuerVerifyCompletion: (
+    taskId: string,
+    citizenAddress: string,
+  ) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   redeemerToggleMCE: () => void;
   redeemerAddOffer: (offer: RedemptionOffer) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   redeemerRemoveOffer: (offerId: string) => void;
@@ -1095,20 +1098,26 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   );
 
   const issuerVerifyCompletion = useCallback(
-    (taskId: string, citizenAddress: string) => {
+    async (taskId: string, citizenAddress: string) => {
       dispatch({ type: "ISSUER_VERIFY_COMPLETION", taskId, citizenAddress });
 
       const opportunityId = parseTaskOpportunityId(taskId);
-      if (!opportunityId) return;
+      if (!opportunityId) return { ok: false, error: "Invalid opportunity id." };
 
-      void writeContractAsync({
-        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-        functionName: "verifyCompletion",
-        args: [opportunityId, citizenAddress as `0x${string}`],
-      }).catch(() => undefined);
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "verifyCompletion",
+          args: [opportunityId, citizenAddress as `0x${string}`],
+        });
+        return { ok: true, hash: getResultHash(result) };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Verify completion failed";
+        return { ok: false, error: message };
+      }
     },
-    [writeContractAsync],
+    [getResultHash, writeContractAsync],
   );
 
   const redeemerToggleMCE = useCallback(() => {

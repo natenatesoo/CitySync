@@ -395,6 +395,7 @@ export default function IssuerApp() {
   const [catalogModifyTaskId, setCatalogModifyTaskId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
+  const [verifyWriteStatus, setVerifyWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
 
   const { issuer } = state;
   const { left: leftPanel, right: rightPanel } = getIssuerPanels(activeTab, state);
@@ -435,9 +436,16 @@ export default function IssuerApp() {
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
   const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
 
-  const handleVerify = (taskId: string, citizen: string) => {
-    issuerVerifyCompletion(taskId, citizen);
-    setToast("Verification complete — credits minted!");
+  const handleVerify = async (taskId: string, citizen: string) => {
+    setVerifyWriteStatus({ state: "pending" });
+    const result = await issuerVerifyCompletion(taskId, citizen);
+    if (result.ok) {
+      setVerifyWriteStatus({ state: "confirmed", hash: result.hash });
+      setToast("Verification complete — credits minted!");
+      return;
+    }
+    setVerifyWriteStatus({ state: "failed", error: result.error });
+    setToast("Verify & Mint failed onchain.");
   };
 
   const handleProposeTask = (proposed: ProposedTask) => {
@@ -565,7 +573,7 @@ export default function IssuerApp() {
         {activeTab === "mycity" && (
           <MyCityTab posts={allPosts} orgName={issuer.orgName} onCompose={() => setComposeOpen(true)} />
         )}
-        {activeTab === "verify" && <VerifyTab onVerify={handleVerify} />}
+        {activeTab === "verify" && <VerifyTab onVerify={handleVerify} verifyWriteStatus={verifyWriteStatus} />}
         {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} />}
       </AppShell>
 
@@ -2056,7 +2064,13 @@ type OnchainVerifyItem = {
   submittedAt?: bigint;
 };
 
-function VerifyTab({ onVerify }: { onVerify: (taskId: string, citizen: string) => void }) {
+function VerifyTab({
+  onVerify,
+  verifyWriteStatus,
+}: {
+  onVerify: (taskId: string, citizen: string) => Promise<void>;
+  verifyWriteStatus: TaskWriteStatus;
+}) {
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"issued" | "claimed" | "completed">("issued");
   const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
@@ -2363,6 +2377,49 @@ function VerifyTab({ onVerify }: { onVerify: (taskId: string, citizen: string) =
       {/* ── Completed Instances ── */}
       {view === "completed" && (
         <>
+          {verifyWriteStatus.state !== "idle" && (
+            <div
+              style={{
+                ...surfaceCard,
+                marginBottom: 12,
+                border:
+                  verifyWriteStatus.state === "confirmed"
+                    ? "1px solid rgba(221,158,51,0.35)"
+                    : verifyWriteStatus.state === "failed"
+                      ? "1px solid rgba(255,107,157,0.35)"
+                      : "1px solid rgba(65,105,225,0.35)",
+                background:
+                  verifyWriteStatus.state === "confirmed"
+                    ? "rgba(221,158,51,0.08)"
+                    : verifyWriteStatus.state === "failed"
+                      ? "rgba(255,107,157,0.08)"
+                      : "rgba(65,105,225,0.08)",
+              }}
+            >
+              <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Last Verify & Mint Write</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+                {verifyWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+                {verifyWriteStatus.state === "confirmed" && "Confirmed onchain"}
+                {verifyWriteStatus.state === "failed" && "Failed onchain"}
+              </div>
+              {verifyWriteStatus.error && (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>
+                  {verifyWriteStatus.error}
+                </div>
+              )}
+              {verifyWriteStatus.hash && (
+                <a
+                  href={`https://sepolia.basescan.org/tx/${verifyWriteStatus.hash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
+                >
+                  View on Base Sepolia Explorer ↗
+                </a>
+              )}
+            </div>
+          )}
+
           {completedItems.length === 0 ? (
             <EmptyState
               emoji="🎉"
@@ -2433,9 +2490,9 @@ function VerifyTab({ onVerify }: { onVerify: (taskId: string, citizen: string) =
                     />
 
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!task.claimant) return;
-                        onVerify(task.taskId, task.claimant);
+                        await onVerify(task.taskId, task.claimant);
                       }}
                       disabled={!task.claimant}
                       style={{
