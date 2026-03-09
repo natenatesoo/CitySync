@@ -545,7 +545,7 @@ export default function IssuerApp() {
         role="issuer"
         orgName={issuer.orgName}
         address={address ?? FAKE_WALLETS.issuer}
-        cityBalance={0}
+        cityBalance={state.participant.cityBalance}
         voteBalance={0}
         mceBalance={0}
         tabs={TABS}

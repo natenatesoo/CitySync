@@ -12,7 +12,6 @@ import {
   MCEProposal,
   MOCK_EPOCH2_PROPOSALS,
   MOCK_MCES,
-  MOCK_OFFERS,
   MOCK_POSTS,
   MOCK_TASKS,
   PastRedemption,
@@ -112,7 +111,7 @@ type Action =
   | { type: "ALLOCATE_MCE_VOTE"; mceId: string; amount: number }
   | { type: "LIKE_POST"; postId: string }
   | { type: "LIKE_EPOCH2"; proposalId: string }
-  | { type: "REDEEM_OFFER"; offerId: string }
+  | { type: "REDEEM_OFFER"; offerId: string; txHash?: `0x${string}` }
   | { type: "ISSUER_REGISTER"; orgName: string }
   | { type: "ISSUER_CREATE_TASK"; task: Task }
   | { type: "ISSUER_VERIFY_COMPLETION"; taskId: string; citizenAddress: string }
@@ -225,7 +224,7 @@ const INITIAL_STATE: DemoState = {
   epoch2Proposals: MOCK_EPOCH2_PROPOSALS,
   posts: MOCK_POSTS,
   availableTasks: MOCK_TASKS,
-  offers: MOCK_OFFERS,
+  offers: [],
   verifying: null,
   pastRedemptions: [],
   notifications: [],
@@ -387,7 +386,6 @@ function reducer(state: DemoState, action: Action): DemoState {
     case "REDEEM_OFFER": {
       const offer = state.offers.find(o => o.id === action.offerId);
       if (!offer) return state;
-      if (state.participant.cityBalance < offer.costCity) return state;
 
       const redemption: PastRedemption = {
         id: `redemption-${Date.now()}`,
@@ -395,7 +393,7 @@ function reducer(state: DemoState, action: Action): DemoState {
         redeemerName: offer.redeemerName,
         costCity: offer.costCity,
         redeemedAt: new Date().toISOString(),
-        txHash: randomTxHash(),
+        txHash: action.txHash ?? randomTxHash(),
       };
 
       // Also add to redeemer queue for cross-role simulation
@@ -410,11 +408,6 @@ function reducer(state: DemoState, action: Action): DemoState {
 
       return {
         ...state,
-        participant: {
-          ...state.participant,
-          cityBalance: state.participant.cityBalance - offer.costCity,
-          mceBalance: offer.mceOnly ? state.participant.mceBalance - offer.costCity : state.participant.mceBalance,
-        },
         pastRedemptions: [redemption, ...state.pastRedemptions],
         redeemer: {
           ...state.redeemer,
@@ -555,17 +548,9 @@ function reducer(state: DemoState, action: Action): DemoState {
     }
 
     case "SYNC_ONCHAIN_OFFERS": {
-      const staticOffers = MOCK_OFFERS;
-      if (action.offers.length === 0) {
-        return {
-          ...state,
-          offers: staticOffers,
-        };
-      }
-
       return {
         ...state,
-        offers: [...action.offers, ...staticOffers],
+        offers: action.offers,
       };
     }
 
@@ -852,7 +837,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: "SYNC_ONCHAIN_OFFERS", offers: discovered });
       } catch {
-        // Keep static offers if discovery fails.
+        // Keep last-known offer state if discovery fails.
       }
     };
 
@@ -980,8 +965,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const redeemOffer = useCallback(
     (offerId: string) => {
-      dispatch({ type: "REDEEM_OFFER", offerId });
-
       const offer = state.offers.find(o => o.id === offerId);
       if (!offer) return;
 
@@ -993,7 +976,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
             abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
             functionName: "purchaseOffer",
             args: [onchainRoute.redeemer, onchainRoute.offerId],
-          }).catch(() => undefined);
+          })
+            .then(result => {
+              dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
+            })
+            .catch(() => undefined);
           return;
         }
 
@@ -1002,7 +989,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
           functionName: "purchaseOffer",
           args: [onchainRoute.redeemer, onchainRoute.offerId],
-        }).catch(() => undefined);
+        })
+          .then(result => {
+            dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
+          })
+          .catch(() => undefined);
         return;
       }
 
@@ -1015,7 +1006,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
           functionName: "purchaseOffer",
           args: [route.redeemer, route.offerId],
-        }).catch(() => undefined);
+        })
+          .then(result => {
+            dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
+          })
+          .catch(() => undefined);
         return;
       }
 
@@ -1024,9 +1019,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
         functionName: "purchaseOffer",
         args: [route.redeemer, route.offerId],
-      }).catch(() => undefined);
+      })
+        .then(result => {
+          dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
+        })
+        .catch(() => undefined);
     },
-    [state.offers, writeContractAsync],
+    [getResultHash, state.offers, writeContractAsync],
   );
 
   const issuerCreateTask = useCallback(

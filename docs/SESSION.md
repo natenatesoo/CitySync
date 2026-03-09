@@ -610,3 +610,11 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - tracks: `claimOpportunity`, `unclaimOpportunity`, `submitCompletion`, `verifyCompletion`
   - global participant task activity labels with tx links
   - local persistence under `citysync:demo:participant:activity:v1` (items + cursor)
+
+## 2026-03-09 — CITY Token Wiring (Onchain-Authoritative Redemption)
+
+- Removed simulated CITY/MCE balance deductions from reducer `REDEEM_OFFER`; participant balances now remain onchain-authoritative via `SYNC_ONCHAIN_STATE`.
+- `redeemOffer` now records local redemption history only after a successful contract write (`purchaseOffer`) and stores the real transaction hash on success.
+- Demo offers list now syncs from onchain discovery only in `SYNC_ONCHAIN_OFFERS` (no static mock offer merge), so redemption actions map to real contract routes.
+- Demo initial state now starts with an empty offers list and hydrates from onchain offer discovery.
+- Issuer and Redeemer shells now display the synced CITY balance value in the top wallet pill (instead of hardcoded `0`).

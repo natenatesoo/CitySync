@@ -620,7 +620,7 @@ export default function RedeemerApp() {
         role="redeemer"
         orgName={redeemer.orgName}
         address={address ?? FAKE_WALLETS.redeemer}
-        cityBalance={0}
+        cityBalance={state.participant.cityBalance}
         voteBalance={0}
         mceBalance={0}
         tabs={TABS}
