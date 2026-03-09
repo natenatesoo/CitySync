@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { NavTab } from "../_components/BottomNav";
@@ -1526,11 +1526,34 @@ function ExploreTab() {
   const p = state.participant;
   const isNewMember = p.cityBalance === 0 && p.completedTasks.length === 0 && p.claimedTaskIds.length === 0;
 
+  const allKnownTasks = useMemo(() => {
+    const merged = [...state.availableTasks, ...state.issuer.tasks];
+    const seen = new Set<string>();
+    const unique: Task[] = [];
+    for (const task of merged) {
+      if (seen.has(task.id)) continue;
+      seen.add(task.id);
+      unique.push(task);
+    }
+
+    // Show onboarding first, then most recently issued/created tasks first.
+    const taskIdScore = (id: string): number => {
+      const m = id.match(/(\d+)$/);
+      return m ? Number(m[1]) : 0;
+    };
+
+    return unique.sort((a, b) => {
+      if (a.isOnboarding && !b.isOnboarding) return -1;
+      if (!a.isOnboarding && b.isOnboarding) return 1;
+      return taskIdScore(b.id) - taskIdScore(a.id);
+    });
+  }, [state.availableTasks, state.issuer.tasks]);
+
   // Open Tasks: always show onboarding; show non-claimed regular tasks
-  const openTasks = state.availableTasks.filter(t => t.isOnboarding || !p.claimedTaskIds.includes(t.id));
+  const openTasks = allKnownTasks.filter(t => t.isOnboarding || !p.claimedTaskIds.includes(t.id));
   const filteredOpenTasks = catFilter === "All" ? openTasks : openTasks.filter(t => t.category === catFilter);
 
-  const myTasks = p.claimedTaskIds.map(id => state.availableTasks.find(t => t.id === id)).filter(Boolean) as Task[];
+  const myTasks = p.claimedTaskIds.map(id => allKnownTasks.find(t => t.id === id)).filter(Boolean) as Task[];
 
   const handleClaim = (task: Task) => {
     if (task.isOnboarding && !isNewMember) return;

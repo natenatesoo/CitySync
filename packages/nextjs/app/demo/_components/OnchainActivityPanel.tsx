@@ -50,7 +50,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
   const fromBlock = useMemo(() => {
     if (!latestBlock) return 0n;
-    return latestBlock > 40_000n ? latestBlock - 40_000n : 0n;
+    return latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
+  }, [latestBlock]);
+
+  const fallbackFromBlock = useMemo(() => {
+    if (!latestBlock) return 0n;
+    return latestBlock > 1_500n ? latestBlock - 1_500n : 0n;
   }, [latestBlock]);
 
   useEffect(() => {
@@ -194,7 +199,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         queries.push(
           baseSepoliaPublicClient.getLogs({
             address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            fromBlock,
+            fromBlock: fallbackFromBlock,
             toBlock: latestBlock,
           } as any),
         );
@@ -305,7 +310,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     };
 
     void run();
-  }, [fromBlock, latestBlock, role]);
+  }, [fallbackFromBlock, fromBlock, latestBlock, role]);
 
   return (
     <div
