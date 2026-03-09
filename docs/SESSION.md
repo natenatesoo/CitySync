@@ -61,6 +61,8 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Updated frontend issuer preflight in `DemoContext.tsx` to validate against `IssuerRegistry.isActiveIssuer` instead of `OpportunityManager.hasRole`.
 - Deployment alignment:
   - Updated `packages/nextjs/app/demo/_config/baseSepoliaContracts.ts` hardcoded addresses to match the latest Base Sepolia deployment set from `deployments/84532.json`.
+- Issuer UX persistence tweak:
+  - Issuer Verify `slotInstances` now persist in browser storage keyed by connected wallet, so issued instances remain visible after switching roles and returning to Issuer view.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

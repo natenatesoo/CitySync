@@ -413,6 +413,53 @@ export default function IssuerApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const slotStorageKey = React.useMemo(
+    () => `citysync:demo:issuer:slotInstances:${(address ?? FAKE_WALLETS.issuer).toLowerCase()}`,
+    [address],
+  );
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(slotStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as SlotInstance[];
+        if (Array.isArray(parsed)) {
+          setSlotInstances(parsed);
+          return;
+        }
+      }
+    } catch {
+      // ignore parse/storage errors
+    }
+
+    // Bootstrap once for previously-issued tasks when no persisted slot state exists.
+    if (issuer.tasks.length > 0) {
+      const bootstrapped = issuer.tasks.flatMap(task =>
+        Array.from({ length: Math.max(0, task.slots) }, (_, i) => ({
+          instanceId: `${task.id}-slot-${i + 1}`,
+          taskId: task.id,
+          slotIndex: i + 1,
+          status: "issued" as const,
+        })),
+      );
+      setSlotInstances(bootstrapped);
+    } else {
+      setSlotInstances([]);
+    }
+    // Intentionally keyed to wallet switch only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotStorageKey]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(slotStorageKey, JSON.stringify(slotInstances));
+    } catch {
+      // ignore storage errors
+    }
+  }, [slotInstances, slotStorageKey]);
+
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
   const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
