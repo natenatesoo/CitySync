@@ -618,3 +618,11 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Demo offers list now syncs from onchain discovery only in `SYNC_ONCHAIN_OFFERS` (no static mock offer merge), so redemption actions map to real contract routes.
 - Demo initial state now starts with an empty offers list and hydrates from onchain offer discovery.
 - Issuer and Redeemer shells now display the synced CITY balance value in the top wallet pill (instead of hardcoded `0`).
+
+## 2026-03-09 — Remove Simulated Task/Offering Seeds
+
+- Removed mock task seeding from `DemoContext` initial state (`availableTasks` now starts empty and hydrates from real task sources).
+- Bumped task persistence key to `citysync:demo:taskState:v2` to clear legacy locally-seeded/simulated task history.
+- Issuer task issuance no longer creates local task entries on failed/no-wallet/non-active-issuer paths; tasks are only added when onchain create succeeds.
+- Redeemer offer creation no longer pre-adds local offers before onchain commit.
+- Bumped redeemer catalog/active-offering storage keys to `v2` to clear legacy simulated offering data.

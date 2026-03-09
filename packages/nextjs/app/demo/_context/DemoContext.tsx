@@ -13,7 +13,6 @@ import {
   MOCK_EPOCH2_PROPOSALS,
   MOCK_MCES,
   MOCK_POSTS,
-  MOCK_TASKS,
   PastRedemption,
   Post,
   RedemptionOffer,
@@ -154,7 +153,7 @@ const _randomAddress = () =>
   ).join("");
 
 const VERIFY_DURATION = 7; // seconds
-const TASK_STATE_STORAGE_KEY = "citysync:demo:taskState:v1";
+const TASK_STATE_STORAGE_KEY = "citysync:demo:taskState:v2";
 
 const parseTaskOpportunityId = (taskId: string): bigint | null => {
   const m = taskId.match(/^task-(\d+)$/);
@@ -223,7 +222,7 @@ const INITIAL_STATE: DemoState = {
   mces: MOCK_MCES,
   epoch2Proposals: MOCK_EPOCH2_PROPOSALS,
   posts: MOCK_POSTS,
-  availableTasks: MOCK_TASKS,
+  availableTasks: [],
   offers: [],
   verifying: null,
   pastRedemptions: [],
@@ -1040,7 +1039,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       });
 
       if (!address) {
-        dispatch({ type: "ISSUER_CREATE_TASK", task });
         return { ok: false, taskId: task.id, error: "No connected issuer wallet found." };
       }
 
@@ -1053,7 +1051,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         })) as boolean;
 
         if (!isActiveIssuer) {
-          dispatch({ type: "ISSUER_CREATE_TASK", task });
           return {
             ok: false,
             taskId: task.id,
@@ -1087,7 +1084,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "ISSUER_CREATE_TASK", task: { ...task, id: finalTaskId } });
         return { ok: true, hash, taskId: finalTaskId };
       } catch (error) {
-        dispatch({ type: "ISSUER_CREATE_TASK", task });
         const message = error instanceof Error ? error.message : "Task issuance failed";
         return { ok: false, taskId: task.id, error: message };
       }
@@ -1132,8 +1128,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const redeemerAddOffer = useCallback(
     async (offer: RedemptionOffer) => {
-      dispatch({ type: "REDEEMER_ADD_OFFER", offer });
-
       try {
         if (offer.mceOnly && !state.redeemer.acceptsMCE) {
           await writeContractAsync({

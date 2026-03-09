@@ -151,10 +151,10 @@ const STATUS_COLOR: Record<string, string> = {
   Rejected: "#ff6b9d",
 };
 
-const REDEEMER_COMMITTED_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:committed-catalog:v1";
-const REDEEMER_MCE_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:mce-catalog:v1";
-const REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY = "citysync:demo:redeemer:active-committed:v1";
-const REDEEMER_ACTIVE_MCE_STORAGE_KEY = "citysync:demo:redeemer:active-mce:v1";
+const REDEEMER_COMMITTED_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:committed-catalog:v2";
+const REDEEMER_MCE_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:mce-catalog:v2";
+const REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY = "citysync:demo:redeemer:active-committed:v2";
+const REDEEMER_ACTIVE_MCE_STORAGE_KEY = "citysync:demo:redeemer:active-mce:v2";
 
 type OfferWriteStatus = {
   state: "idle" | "pending" | "confirmed" | "failed";
