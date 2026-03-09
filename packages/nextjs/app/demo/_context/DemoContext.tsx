@@ -2,7 +2,7 @@
 
 import React, { ReactNode, createContext, useCallback, useContext, useEffect, useReducer, useRef } from "react";
 import { useAccount, useSendUserOperation, useSmartAccountClient } from "@account-kit/react";
-import { encodeFunctionData, formatUnits, keccak256, parseUnits, stringToHex } from "viem";
+import { decodeEventLog, encodeFunctionData, formatUnits, keccak256, parseUnits, stringToHex } from "viem";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS, DEMO_OFFER_ROUTES } from "../_config/baseSepoliaContracts";
 import {
@@ -608,7 +608,7 @@ interface DemoContextValue {
   likePost: (postId: string) => void;
   likeEpoch2: (proposalId: string) => void;
   redeemOffer: (offerId: string) => void;
-  issuerCreateTask: (task: Task) => void;
+  issuerCreateTask: (task: Task) => Promise<{ ok: boolean; hash?: `0x${string}`; taskId: string; error?: string }>;
   issuerVerifyCompletion: (taskId: string, citizenAddress: string) => void;
   redeemerToggleMCE: () => void;
   redeemerAddOffer: (offer: RedemptionOffer) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
@@ -653,13 +653,37 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     [client, sendUserOperationAsync],
   );
 
-  const getResultHash = (result: unknown): `0x${string}` | undefined => {
+  const getResultHash = useCallback((result: unknown): `0x${string}` | undefined => {
     if (result && typeof result === "object" && "hash" in result) {
       const hash = (result as { hash?: unknown }).hash;
       if (typeof hash === "string" && hash.startsWith("0x")) return hash as `0x${string}`;
     }
     return undefined;
-  };
+  }, []);
+
+  const getOpportunityIdFromReceipt = useCallback(async (hash?: `0x${string}`): Promise<bigint | undefined> => {
+    if (!hash) return undefined;
+    try {
+      const receipt = await baseSepoliaPublicClient.getTransactionReceipt({ hash });
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
+            data: log.data,
+            topics: log.topics,
+            eventName: "OpportunityCreated",
+          });
+          const maybeId = (decoded.args as { opportunityId?: bigint }).opportunityId;
+          if (typeof maybeId === "bigint") return maybeId;
+        } catch {
+          // Ignore non-matching logs.
+        }
+      }
+    } catch {
+      // Ignore receipt parsing errors and fallback to local ID.
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => {
     if (!address) return;
@@ -948,9 +972,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   );
 
   const issuerCreateTask = useCallback(
-    (task: Task) => {
-      dispatch({ type: "ISSUER_CREATE_TASK", task });
-
+    async (task: Task) => {
       const rewardCity = parseUnits(String(Math.max(0, task.credits)), 18);
       const metadataURI = JSON.stringify({
         title: task.title,
@@ -960,23 +982,35 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         category: task.category,
       });
 
-      void writeContractAsync({
-        address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-        abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-        functionName: "createOpportunity",
-        args: [
-          metadataURI,
-          rewardCity,
-          0n,
-          "0x0000000000000000000000000000000000000000",
-          0,
-          BigInt(task.slots),
-          0n,
-          0n,
-        ],
-      }).catch(() => undefined);
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "createOpportunity",
+          args: [
+            metadataURI,
+            rewardCity,
+            0n,
+            "0x0000000000000000000000000000000000000000",
+            0,
+            BigInt(task.slots),
+            0n,
+            0n,
+          ],
+        });
+
+        const hash = getResultHash(result);
+        const opportunityId = await getOpportunityIdFromReceipt(hash);
+        const finalTaskId = opportunityId !== undefined ? `task-${opportunityId.toString()}` : task.id;
+        dispatch({ type: "ISSUER_CREATE_TASK", task: { ...task, id: finalTaskId } });
+        return { ok: true, hash, taskId: finalTaskId };
+      } catch (error) {
+        dispatch({ type: "ISSUER_CREATE_TASK", task });
+        const message = error instanceof Error ? error.message : "Task issuance failed";
+        return { ok: false, taskId: task.id, error: message };
+      }
     },
-    [writeContractAsync],
+    [getOpportunityIdFromReceipt, getResultHash, writeContractAsync],
   );
 
   const issuerVerifyCompletion = useCallback(
@@ -1030,7 +1064,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: message };
       }
     },
-    [writeContractAsync],
+    [getResultHash, writeContractAsync],
   );
 
   const redeemerRemoveOffer = useCallback(

@@ -50,6 +50,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Fixed Redeemer right-side onchain panel `OfferCreated` log filter to match deployed event signature (added missing `description` field in the event shape).
   - Prevented repeated role-setting loops on Issuer/Redeemer pages by making role mount-effect run once.
   - Added safe error handling to auto-register writes in `setRole(...)` to avoid unhandled promise rejections.
+- Task issuance wiring pass:
+  - `issuerCreateTask(...)` now returns onchain write status and resolves the real `opportunityId` from `OpportunityCreated` logs when available.
+  - Issuer UI now tracks `Last Task Write` state (`pending | confirmed | failed`) with explorer link.
+  - Issuing tasks from catalog now uses returned onchain task ID (`task-<opportunityId>`) when available so downstream claim/verify mapping aligns with contract IDs.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

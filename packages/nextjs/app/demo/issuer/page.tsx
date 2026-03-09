@@ -382,6 +382,12 @@ type SlotInstance = {
   status: "issued" | "claimed" | "completed";
 };
 
+type TaskWriteStatus = {
+  state: "idle" | "pending" | "confirmed" | "failed";
+  hash?: `0x${string}`;
+  error?: string;
+};
+
 export default function IssuerApp() {
   const { state, setRole, issuerCreateTask, issuerVerifyCompletion } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
@@ -396,6 +402,7 @@ export default function IssuerApp() {
   const [modifyTaskId, setModifyTaskId] = useState<string | null>(null);
   const [slotInstances, setSlotInstances] = useState<SlotInstance[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
 
   const { issuer } = state;
   const { left: leftPanel, right: rightPanel } = getIssuerPanels(activeTab, state);
@@ -415,10 +422,17 @@ export default function IssuerApp() {
     setToast("Verification complete — credits minted!");
   };
 
-  const handleCreateTask = (task: Task) => {
-    issuerCreateTask(task);
+  const handleCreateTask = async (task: Task) => {
+    setTaskWriteStatus({ state: "pending" });
+    const result = await issuerCreateTask(task);
+    if (result.ok) {
+      setTaskWriteStatus({ state: "confirmed", hash: result.hash });
+      setToast("Task posted and submitted onchain.");
+    } else {
+      setTaskWriteStatus({ state: "failed", error: result.error });
+      setToast("Task saved locally, but onchain issuance failed.");
+    }
     setCreateSheet(false);
-    setToast("Task posted to the network!");
   };
 
   const handleProposeTask = (proposed: ProposedTask) => {
@@ -461,19 +475,28 @@ export default function IssuerApp() {
     setToast("Task approved and added to your catalog!");
   };
 
-  const handleIssueTask = (task: Task, slots: number) => {
-    const newId = `task-issued-${Date.now()}`;
-    issuerCreateTask({ ...task, id: newId, slots, slotsRemaining: slots });
+  const handleIssueTask = async (task: Task, slots: number) => {
+    const localId = `task-issued-${Date.now()}`;
+    setTaskWriteStatus({ state: "pending" });
+    const result = await issuerCreateTask({ ...task, id: localId, slots, slotsRemaining: slots });
+    const issuedTaskId = result.taskId;
+
     const instances: SlotInstance[] = Array.from({ length: slots }, (_, i) => ({
-      instanceId: `${newId}-slot-${i + 1}`,
-      taskId: newId,
+      instanceId: `${issuedTaskId}-slot-${i + 1}`,
+      taskId: issuedTaskId,
       slotIndex: i + 1,
       status: "issued",
     }));
     setSlotInstances(prev => [...prev, ...instances]);
     setApprovedCatalogTasks(prev => prev.filter(t => t.id !== task.id));
     setIssueTaskId(null);
-    setToast(`Task issued with ${slots} slot${slots > 1 ? "s" : ""} — now visible to participants!`);
+    if (result.ok) {
+      setTaskWriteStatus({ state: "confirmed", hash: result.hash });
+      setToast(`Task issued with ${slots} slot${slots > 1 ? "s" : ""} and recorded onchain.`);
+    } else {
+      setTaskWriteStatus({ state: "failed", error: result.error });
+      setToast(`Task issued in UI with ${slots} slot${slots > 1 ? "s" : ""}, but onchain write failed.`);
+    }
   };
 
   const handleModifyApproved = (taskId: string, updates: { location: string; taskDate: string }) => {
@@ -548,6 +571,7 @@ export default function IssuerApp() {
             onModifyTask={id => setModifyTaskId(id)}
             slotInstances={slotInstances}
             onReissueSlots={handleReissueSlots}
+            taskWriteStatus={taskWriteStatus}
           />
         )}
         {activeTab === "mycity" && (
@@ -914,6 +938,7 @@ function TasksTab({
   onModifyTask,
   slotInstances,
   onReissueSlots,
+  taskWriteStatus,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
   totalPending: number;
@@ -928,9 +953,11 @@ function TasksTab({
   onModifyTask: (id: string) => void;
   slotInstances: SlotInstance[];
   onReissueSlots: (taskId: string, count: number) => void;
+  taskWriteStatus: TaskWriteStatus;
 }) {
   const [view, setView] = useState<"my" | "pending">("my");
   const pendingAll = issuerTasks.flatMap(t => t.pendingCompletions.map(addr => ({ task: t, citizen: addr })));
+  const explorerHref = taskWriteStatus.hash ? `https://sepolia.basescan.org/tx/${taskWriteStatus.hash}` : null;
   const creditsRemaining = EPOCH1_CAP - creditsCommitted;
   const atCap = creditsRemaining <= 0;
 
@@ -961,6 +988,47 @@ function TasksTab({
           </button>
         ))}
       </div>
+
+      {taskWriteStatus.state !== "idle" && (
+        <div
+          style={{
+            ...surfaceCard,
+            marginBottom: 16,
+            border:
+              taskWriteStatus.state === "confirmed"
+                ? "1px solid rgba(221,158,51,0.35)"
+                : taskWriteStatus.state === "failed"
+                  ? "1px solid rgba(255,107,157,0.35)"
+                  : "1px solid rgba(65,105,225,0.35)",
+            background:
+              taskWriteStatus.state === "confirmed"
+                ? "rgba(221,158,51,0.08)"
+                : taskWriteStatus.state === "failed"
+                  ? "rgba(255,107,157,0.08)"
+                  : "rgba(65,105,225,0.08)",
+          }}
+        >
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Last Task Write</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+            {taskWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+            {taskWriteStatus.state === "confirmed" && "Confirmed onchain"}
+            {taskWriteStatus.state === "failed" && "Failed onchain (UI-only for this attempt)"}
+          </div>
+          {taskWriteStatus.error && (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>{taskWriteStatus.error}</div>
+          )}
+          {explorerHref && (
+            <a
+              href={explorerHref}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
+            >
+              View on Base Sepolia Explorer ↗
+            </a>
+          )}
+        </div>
+      )}
 
       {view === "my" && (
         <>
