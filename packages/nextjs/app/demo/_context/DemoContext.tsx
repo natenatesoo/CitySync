@@ -324,30 +324,9 @@ function reducer(state: DemoState, action: Action): DemoState {
 
     case "COMPLETE_VERIFY": {
       if (!state.verifying) return state;
-      const task = state.availableTasks.find(t => t.id === state.verifying!.taskId);
-      if (!task) return { ...state, verifying: null };
-
-      const completed: CompletedTask = {
-        taskId: task.id,
-        title: task.title,
-        credits: task.credits,
-        voteTokens: task.voteTokens,
-        completedAt: new Date().toISOString(),
-        issuerName: task.issuerName,
-        txHash: randomTxHash(),
-      };
-
       return {
         ...state,
         verifying: null,
-        participant: {
-          ...state.participant,
-          cityBalance: state.participant.cityBalance + task.credits,
-          voteBalance: state.participant.voteBalance + task.voteTokens,
-          mceBalance: task.isMCE ? state.participant.mceBalance + task.credits : state.participant.mceBalance,
-          claimedTaskIds: state.participant.claimedTaskIds.filter(id => id !== task.id),
-          completedTasks: [completed, ...state.participant.completedTasks],
-        },
       };
     }
 

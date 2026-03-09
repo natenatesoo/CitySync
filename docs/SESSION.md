@@ -561,3 +561,17 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - `citysync:demo:redeemer:active-committed:v1`
   - `citysync:demo:redeemer:active-mce:v1`
 - Active Committed Offerings and Active MCE Offerings now persist across tab/role switches and refreshes.
+
+## 2026-03-09 — Participant Explore Workflow Update
+
+- Explore `My Tasks` now supports pending-verification UX after execute:
+  - executing a task marks it as `Pending Verification` and disables execute/unclaim actions on that card
+  - pending IDs persist per participant wallet in localStorage
+  - pending IDs are removed when the task no longer appears claimed onchain (issuer verified path)
+- Claim limit is now enforced against onchain claimed tasks count (`myTasks.length`) with max 2.
+- Open task cards now include issuing organization label (`🏢 issuerName`).
+- Added Open Tasks search + sort controls:
+  - search input with icon left of filters
+  - sort panel with checkbox options: highest value, lowest value, date issued, organization
+  - category pills remain available (`All` + categories).
+- Updated verify reducer behavior: `COMPLETE_VERIFY` now clears overlay only (no local auto-mint/auto-complete side effects).

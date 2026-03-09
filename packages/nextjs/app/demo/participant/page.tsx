@@ -355,6 +355,33 @@ const IconLock = () => (
     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </svg>
 );
+const IconSearch = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-3.5-3.5" />
+  </svg>
+);
+const IconSort = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
+    <path d="M4 6h16M7 12h10M10 18h4" />
+  </svg>
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1295,6 +1322,7 @@ function TaskCard({
   task,
   isClaimed,
   locked,
+  pendingVerification,
   showClaimButton,
   showUnclaimButton,
   onClaim,
@@ -1304,6 +1332,7 @@ function TaskCard({
   task: Task;
   isClaimed: boolean;
   locked: boolean;
+  pendingVerification?: boolean;
   showClaimButton?: boolean;
   showUnclaimButton?: boolean;
   onClaim?: () => void;
@@ -1365,6 +1394,7 @@ function TaskCard({
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>🏢 {task.issuerName}</span>
         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>⏱ {task.estimatedTime}</span>
         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>📍 {task.location}</span>
         {!task.isOnboarding && (
@@ -1443,6 +1473,25 @@ function TaskCard({
         </div>
       )}
 
+      {pendingVerification && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 12px",
+            background: "rgba(65,105,225,0.12)",
+            border: "1px solid rgba(65,105,225,0.35)",
+            borderRadius: 8,
+            marginBottom: 10,
+            fontSize: 12,
+            color: "rgba(255,255,255,0.85)",
+          }}
+        >
+          ⏳ Pending Verification
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 8 }}>
         {showClaimButton && !isClaimed && !locked && (
           <button
@@ -1479,7 +1528,7 @@ function TaskCard({
             ✓ Claimed — go to My Tasks
           </div>
         )}
-        {showUnclaimButton && (
+        {showUnclaimButton && !pendingVerification && (
           <>
             <button
               onClick={onUnclaim}
@@ -1520,15 +1569,51 @@ function TaskCard({
 }
 
 function ExploreTab() {
-  const { state, claimTask, unclaimTask, startVerify } = useDemo();
+  const { claimTask, unclaimTask, startVerify } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"open" | "mine">("open");
   const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
   const [executeTask, setExecuteTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [onchainTasks, setOnchainTasks] = useState<Array<Task & { claimedBy?: `0x${string}` }>>([]);
+  const [search, setSearch] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<{
+    highValue: boolean;
+    lowValue: boolean;
+    dateIssued: boolean;
+    organization: boolean;
+  }>({
+    highValue: false,
+    lowValue: false,
+    dateIssued: true,
+    organization: false,
+  });
+  const [pendingVerificationIds, setPendingVerificationIds] = useState<string[]>([]);
 
-  const p = state.participant;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = `citysync:demo:participant:pending-verification:${(address ?? FAKE_WALLETS.participant).toLowerCase()}`;
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw) as string[];
+        if (Array.isArray(parsed)) setPendingVerificationIds(parsed);
+      }
+    } catch {
+      // Ignore hydration failures.
+    }
+  }, [address]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = `citysync:demo:participant:pending-verification:${(address ?? FAKE_WALLETS.participant).toLowerCase()}`;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(pendingVerificationIds));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [address, pendingVerificationIds]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1662,13 +1747,45 @@ function ExploreTab() {
   const openTasks = onchainTasks.filter(
     t => !t.claimedBy || t.claimedBy === "0x0000000000000000000000000000000000000000",
   );
-  const filteredOpenTasks = catFilter === "All" ? openTasks : openTasks.filter(t => t.category === catFilter);
+  const searchedOpenTasks = openTasks.filter(t => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      t.title.toLowerCase().includes(q) ||
+      t.description.toLowerCase().includes(q) ||
+      t.issuerName.toLowerCase().includes(q) ||
+      t.tags.join(" ").toLowerCase().includes(q)
+    );
+  });
+  const filteredOpenTasks =
+    catFilter === "All" ? searchedOpenTasks : searchedOpenTasks.filter(t => t.category === catFilter);
+  const sortedOpenTasks = [...filteredOpenTasks].sort((a, b) => {
+    if (sortBy.highValue) return b.credits - a.credits;
+    if (sortBy.lowValue) return a.credits - b.credits;
+    if (sortBy.organization) return a.issuerName.localeCompare(b.issuerName);
+    if (sortBy.dateIssued) {
+      const aId = Number(a.id.match(/(\d+)$/)?.[1] ?? "0");
+      const bId = Number(b.id.match(/(\d+)$/)?.[1] ?? "0");
+      return bId - aId;
+    }
+    return 0;
+  });
   const myTasks = onchainTasks.filter(
     t => !!address && !!t.claimedBy && t.claimedBy.toLowerCase() === address.toLowerCase(),
   ) as Task[];
+  const myTaskIds = new Set(myTasks.map(t => t.id));
+
+  useEffect(() => {
+    const claimedIds = new Set(myTasks.map(t => t.id));
+    setPendingVerificationIds(prev => {
+      const next = prev.filter(id => claimedIds.has(id));
+      if (next.length !== prev.length) setToast("Task verified by issuer.");
+      return next;
+    });
+  }, [myTasks]);
 
   const handleClaim = (task: Task) => {
-    if (p.claimedTaskIds.length >= 2) {
+    if (myTasks.length >= 2) {
       setToast("Max 2 tasks can be claimed at a time");
       return;
     }
@@ -1685,6 +1802,8 @@ function ExploreTab() {
     if (!executeTask) return;
     const task = executeTask;
     setExecuteTask(null);
+    setPendingVerificationIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+    setToast("Submitted. Pending verification by issuer.");
     startVerify(task.id, task.title);
   };
 
@@ -1724,37 +1843,137 @@ function ExploreTab() {
 
       {/* Category filter — Open Tasks only */}
       {view === "open" && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            overflowX: "auto",
-            paddingBottom: 14,
-            marginBottom: 2,
-            scrollbarWidth: "none",
-          }}
-        >
-          {(["All", ...ALL_CATEGORIES] as (TaskCategory | "All")[]).map(c => (
-            <button
-              key={c}
-              onClick={() => setCatFilter(c)}
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <div
               style={{
-                flexShrink: 0,
-                padding: "6px 14px",
-                borderRadius: 20,
-                border: "none",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-                background: catFilter === c ? (c === "All" ? ACCENT : CAT_COLORS[c]) : "rgba(255,255,255,0.06)",
-                color: catFilter === c ? (c === "Onboarding" ? "#15151E" : "white") : "rgba(255,255,255,0.55)",
-                transition: "all 0.15s",
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
               }}
             >
-              {c}
-            </button>
-          ))}
-        </div>
+              <span style={{ color: "rgba(255,255,255,0.5)" }}>
+                <IconSearch />
+              </span>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search tasks"
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "white",
+                  fontSize: 12,
+                }}
+              />
+            </div>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setSortOpen(v => !v)}
+                style={{
+                  height: "100%",
+                  padding: "0 12px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.05)",
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <IconSort /> Sort
+              </button>
+              {sortOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: 0,
+                    width: 220,
+                    background: "#1c2235",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 10,
+                    padding: 10,
+                    zIndex: 20,
+                  }}
+                >
+                  {[
+                    { key: "highValue", label: "Highest value" },
+                    { key: "lowValue", label: "Lowest value" },
+                    { key: "dateIssued", label: "Date issued" },
+                    { key: "organization", label: "Organization" },
+                  ].map(opt => (
+                    <label
+                      key={opt.key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.8)",
+                        marginBottom: 7,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={sortBy[opt.key as keyof typeof sortBy]}
+                        onChange={e =>
+                          setSortBy(prev => ({
+                            ...prev,
+                            [opt.key]: e.target.checked,
+                          }))
+                        }
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              overflowX: "auto",
+              paddingBottom: 14,
+              marginBottom: 2,
+              scrollbarWidth: "none",
+            }}
+          >
+            {(["All", ...ALL_CATEGORIES] as (TaskCategory | "All")[]).map(c => (
+              <button
+                key={c}
+                onClick={() => setCatFilter(c)}
+                style={{
+                  flexShrink: 0,
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: catFilter === c ? (c === "All" ? ACCENT : CAT_COLORS[c]) : "rgba(255,255,255,0.06)",
+                  color: catFilter === c ? (c === "Onboarding" ? "#15151E" : "white") : "rgba(255,255,255,0.55)",
+                  transition: "all 0.15s",
+                }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Task list */}
@@ -1764,11 +1983,11 @@ function ExploreTab() {
             No tasks in this category
           </div>
         ) : (
-          filteredOpenTasks.map(task => (
+          sortedOpenTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
-              isClaimed={p.claimedTaskIds.includes(task.id)}
+              isClaimed={myTaskIds.has(task.id)}
               locked={false}
               showClaimButton
               onClaim={() => handleClaim(task)}
@@ -1788,6 +2007,7 @@ function ExploreTab() {
             task={task}
             isClaimed
             locked={false}
+            pendingVerification={pendingVerificationIds.includes(task.id)}
             showUnclaimButton
             onUnclaim={() => handleUnclaim(task)}
             onExecute={() => setExecuteTask(task)}
