@@ -107,6 +107,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Issuer right panel now labels entries as `Issuer Onchain Activity (Global)`.
   - Activity rows now render as `Issuer Org Name · functionName` with explicit `View Tx` explorer links.
   - Added recent-block transaction scan fallback for issuer contracts when log-based queries return sparse/empty results.
+- Stability fixes for activity and active-task flicker:
+  - Issuer activity panel now uses direct recent-block transaction scanning (issuer contracts only) as the primary path, instead of relying on potentially flaky large-range log queries.
+  - Issuer activity panel preserves last successful snapshot when a poll cycle returns empty/fails, preventing visible disappear/reappear behavior.
+  - Issuer Active Tasks sync now keeps last good onchain task snapshot on transient read errors instead of clearing the list to empty.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

@@ -979,9 +979,7 @@ function TasksTab({
           setOnchainTasks(tasks);
         }
       } catch {
-        if (!cancelled) {
-          setOnchainTasks([]);
-        }
+        // Keep last good snapshot on transient RPC/read failures to avoid UI flicker.
       } finally {
         if (!cancelled) setLoadingOnchain(false);
       }

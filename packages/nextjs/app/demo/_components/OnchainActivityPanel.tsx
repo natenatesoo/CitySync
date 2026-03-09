@@ -74,6 +74,100 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     const run = async () => {
       if (latestBlock === null) return;
 
+      if (role === "issuer") {
+        const issuerProfiles = new Map<string, string>();
+        try {
+          const issuers = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+            abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+            functionName: "getAllIssuers",
+            args: [],
+          })) as `0x${string}`[];
+
+          const profiles = await Promise.all(
+            issuers.map(async issuer => {
+              try {
+                const p = (await baseSepoliaPublicClient.readContract({
+                  address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+                  abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+                  functionName: "getProfile",
+                  args: [issuer],
+                })) as { orgName: string; active: boolean; registeredAt: bigint };
+                if (p.active && p.registeredAt > 0n && p.orgName) return [issuer.toLowerCase(), p.orgName] as const;
+              } catch {
+                // Ignore profile read failures and fallback to short address.
+              }
+              return [issuer.toLowerCase(), `${issuer.slice(0, 6)}...${issuer.slice(-4)}`] as const;
+            }),
+          );
+          profiles.forEach(([addr, name]) => issuerProfiles.set(addr, name));
+        } catch {
+          // Continue with address fallback labels.
+        }
+
+        const decodeIssuerAction = (to: string | null, input: string) => {
+          if (!to || input === "0x") return "unknownCall";
+          try {
+            if (to.toLowerCase() === BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase()) {
+              const d = decodeFunctionData({
+                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
+                data: input as `0x${string}`,
+              });
+              return String(d.functionName);
+            }
+            if (to.toLowerCase() === BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address.toLowerCase()) {
+              const d = decodeFunctionData({
+                abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi as any,
+                data: input as `0x${string}`,
+              });
+              return String(d.functionName);
+            }
+          } catch {
+            // Fall through to selector fallback.
+          }
+          return `${input.slice(0, 10)}...`;
+        };
+
+        const candidate: ActivityItem[] = [];
+        for (let offset = 0n; offset < 600n && candidate.length < 24; offset++) {
+          const bn = latestBlock - offset;
+          if (bn < 0n) break;
+          try {
+            const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn, includeTransactions: true });
+            for (const tx of block.transactions) {
+              const to = tx.to?.toLowerCase();
+              if (
+                to !== BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase() &&
+                to !== BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address.toLowerCase()
+              ) {
+                continue;
+              }
+              const actorAddress = tx.from.toLowerCase();
+              const actorName = issuerProfiles.get(actorAddress) ?? `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`;
+              const action = decodeIssuerAction(tx.to, tx.input);
+              candidate.push({
+                hash: tx.hash,
+                blockNumber: bn,
+                timestamp: block.timestamp,
+                actor: actorName,
+                action,
+                label: `${actorName} · ${action}`,
+              });
+              if (candidate.length >= 24) break;
+            }
+          } catch {
+            // Skip failed blocks.
+          }
+        }
+
+        if (candidate.length > 0) {
+          candidate.sort((a, b) => Number(b.blockNumber - a.blockNumber));
+          setItems(candidate.slice(0, 12));
+        }
+        // Keep last successful items if scan returned nothing.
+        return;
+      }
+
       const roleContracts =
         role === "participant"
           ? [
@@ -81,16 +175,11 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
               { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Participant Redemption Activity" },
               { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Participant MCE Activity" },
             ]
-          : role === "issuer"
-            ? [
-                { address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address, label: "Issuer Registration Activity" },
-                { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, label: "Issuer Task Activity" },
-              ]
-            : [
-                { address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address, label: "Redeemer Registry Activity" },
-                { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Redeemer Redemption Activity" },
-                { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Redeemer MCE Activity" },
-              ];
+          : [
+              { address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address, label: "Redeemer Registry Activity" },
+              { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Redeemer Redemption Activity" },
+              { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Redeemer MCE Activity" },
+            ];
 
       const fetchLogsBackwards = async (address: `0x${string}`) => {
         const collected: Array<{ transactionHash?: `0x${string}`; blockNumber?: bigint }> = [];
@@ -127,139 +216,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         if (s.status === "fulfilled") next.push(...toItems(roleContracts[i].label, s.value || []));
       });
 
-      if (role === "issuer") {
-        const uniqueByHash = new Map<string, ActivityItem>();
-        next.forEach(item => {
-          if (!uniqueByHash.has(item.hash)) uniqueByHash.set(item.hash, item);
-        });
-
-        if (uniqueByHash.size === 0) {
-          for (let offset = 0n; offset < 160n; offset++) {
-            const bn = latestBlock - offset;
-            if (bn < 0n) break;
-            try {
-              const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn, includeTransactions: true });
-              for (const tx of block.transactions) {
-                const to = tx.to?.toLowerCase();
-                if (
-                  to === BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase() ||
-                  to === BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address.toLowerCase()
-                ) {
-                  uniqueByHash.set(tx.hash, {
-                    hash: tx.hash,
-                    label: "Issuer Activity",
-                    blockNumber: bn,
-                    timestamp: block.timestamp,
-                  });
-                }
-              }
-              if (uniqueByHash.size >= 24) break;
-            } catch {
-              // continue scanning
-            }
-          }
-        }
-
-        const issuerProfiles = new Map<string, string>();
-        try {
-          const issuers = (await baseSepoliaPublicClient.readContract({
-            address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
-            abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
-            functionName: "getAllIssuers",
-            args: [],
-          })) as `0x${string}`[];
-          const profileEntries = await Promise.all(
-            issuers.map(async issuer => {
-              try {
-                const p = (await baseSepoliaPublicClient.readContract({
-                  address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
-                  abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
-                  functionName: "getProfile",
-                  args: [issuer],
-                })) as { orgName: string; active: boolean; registeredAt: bigint };
-                if (p.active && p.registeredAt > 0n && p.orgName) return [issuer.toLowerCase(), p.orgName] as const;
-              } catch {
-                // ignore profile read failures
-              }
-              return [issuer.toLowerCase(), `${issuer.slice(0, 6)}...${issuer.slice(-4)}`] as const;
-            }),
-          );
-          profileEntries.forEach(([k, v]) => issuerProfiles.set(k, v));
-        } catch {
-          // continue with address fallback
-        }
-
-        const decodeIssuerAction = (to: string | null, input: string) => {
-          if (!to || input === "0x") return "unknownCall";
-          try {
-            if (to.toLowerCase() === BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase()) {
-              const d = decodeFunctionData({
-                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
-                data: input as `0x${string}`,
-              });
-              return String(d.functionName);
-            }
-            if (to.toLowerCase() === BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address.toLowerCase()) {
-              const d = decodeFunctionData({
-                abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi as any,
-                data: input as `0x${string}`,
-              });
-              return String(d.functionName);
-            }
-          } catch {
-            // fallback below
-          }
-          return `${input.slice(0, 10)}...`;
-        };
-
-        const txDetails = await Promise.all(
-          Array.from(uniqueByHash.values()).map(async item => {
-            try {
-              const tx = await baseSepoliaPublicClient.getTransaction({ hash: item.hash });
-              const actorAddress = tx.from?.toLowerCase();
-              const actorName = actorAddress
-                ? (issuerProfiles.get(actorAddress) ?? `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`)
-                : "Unknown issuer";
-              const action = decodeIssuerAction(tx.to, tx.input);
-              return {
-                ...item,
-                actor: actorName,
-                action,
-                label: `${actorName} · ${action}`,
-              };
-            } catch {
-              return item;
-            }
-          }),
-        );
-
-        txDetails.sort((a, b) => Number(b.blockNumber - a.blockNumber));
-        const topIssuer = txDetails.slice(0, 12);
-
-        const uniqueBlocks = Array.from(new Set(topIssuer.map(item => item.blockNumber.toString()))).map(v =>
-          BigInt(v),
-        );
-        const blockPairs = await Promise.all(
-          uniqueBlocks.map(async bn => {
-            try {
-              const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn });
-              return [bn.toString(), block.timestamp] as const;
-            } catch {
-              return [bn.toString(), undefined] as const;
-            }
-          }),
-        );
-        const blockTimeMap = new Map<string, bigint | undefined>(blockPairs);
-
-        setItems(
-          topIssuer.map(item => ({
-            ...item,
-            timestamp: blockTimeMap.get(item.blockNumber.toString()),
-          })),
-        );
-        return;
-      }
-
       next.sort((a, b) => Number(b.blockNumber - a.blockNumber));
       const top = next.slice(0, 12);
 
@@ -276,12 +232,12 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
       );
       const blockTimeMap = new Map<string, bigint | undefined>(blockPairs);
 
-      setItems(
-        top.map(item => ({
-          ...item,
-          timestamp: blockTimeMap.get(item.blockNumber.toString()),
-        })),
-      );
+      const hydrated = top.map(item => ({
+        ...item,
+        timestamp: blockTimeMap.get(item.blockNumber.toString()),
+      }));
+      if (hydrated.length > 0) setItems(hydrated);
+      // Keep previous state on empty responses to avoid panel flicker.
     };
 
     void run();
