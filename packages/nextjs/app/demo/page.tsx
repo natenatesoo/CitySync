@@ -21,7 +21,7 @@ function HeroLogo() {
   return (
     <>
       {/* Load Rajdhani so the SVG font matches the landing page exactly */}
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      {}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');`}</style>
       <svg
         viewBox="-8 0 215 35"
@@ -174,6 +174,12 @@ const ROLES = [
   },
 ] as const;
 
+const ROLE_ORDER: Record<(typeof ROLES)[number]["key"], number> = {
+  issuer: 0,
+  redeemer: 1,
+  participant: 2,
+};
+
 // ─── Economy section data ─────────────────────────────────────────────────────
 
 const ECONOMY_INTRO = {
@@ -224,6 +230,7 @@ export default function DemoHome() {
   const { setRole } = useDemo();
   const { isConnected } = useSignerStatus();
   const { logout } = useLogout();
+  const orderedRoles = [...ROLES].sort((a, b) => ROLE_ORDER[a.key] - ROLE_ORDER[b.key]);
 
   if (!isConnected) return <LoginScreen />;
 
@@ -293,7 +300,7 @@ export default function DemoHome() {
         </p>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {ROLES.map(role => (
+          {orderedRoles.map(role => (
             <div
               key={role.key}
               className="rounded-3xl overflow-hidden"
