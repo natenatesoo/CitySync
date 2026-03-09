@@ -54,6 +54,8 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   const issuerProfilesLoadedRef = useRef(false);
   const issuerHydratedRef = useRef(false);
   const issuerPersistenceReadyRef = useRef(false);
+  const redeemerHydratedRef = useRef(false);
+  const redeemerPersistenceReadyRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +107,34 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   }, [role]);
 
   useEffect(() => {
+    if (role !== "redeemer") return;
+    if (typeof window === "undefined") return;
+    redeemerHydratedRef.current = false;
+    redeemerPersistenceReadyRef.current = false;
+    try {
+      const raw = window.localStorage.getItem("citysync:demo:redeemer:activity:v1");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        items?: Array<{ hash: `0x${string}`; label: string; blockNumber: string; timestamp?: string | null }>;
+      };
+      if (Array.isArray(parsed.items)) {
+        setItems(
+          parsed.items.slice(0, 12).map(item => ({
+            hash: item.hash,
+            label: item.label,
+            blockNumber: BigInt(item.blockNumber),
+            timestamp: item.timestamp ? BigInt(item.timestamp) : undefined,
+          })),
+        );
+      }
+    } catch {
+      // Ignore hydration failures.
+    } finally {
+      redeemerHydratedRef.current = true;
+    }
+  }, [role]);
+
+  useEffect(() => {
     if (role !== "issuer") return;
     if (typeof window === "undefined") return;
     if (!issuerHydratedRef.current) return;
@@ -117,6 +147,31 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         "citysync:demo:issuer:activity:v1",
         JSON.stringify({
           cursor: issuerCursorRef.current?.toString() ?? null,
+          items: items.map(item => ({
+            hash: item.hash,
+            label: item.label,
+            blockNumber: item.blockNumber.toString(),
+            timestamp: item.timestamp ? item.timestamp.toString() : null,
+          })),
+        }),
+      );
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [items, role]);
+
+  useEffect(() => {
+    if (role !== "redeemer") return;
+    if (typeof window === "undefined") return;
+    if (!redeemerHydratedRef.current) return;
+    if (!redeemerPersistenceReadyRef.current) {
+      redeemerPersistenceReadyRef.current = true;
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        "citysync:demo:redeemer:activity:v1",
+        JSON.stringify({
           items: items.map(item => ({
             hash: item.hash,
             label: item.label,
@@ -371,7 +426,11 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
           marginBottom: 10,
         }}
       >
-        {role === "issuer" ? "Issuer Onchain Activity (Global)" : "Recent Onchain Activity"}
+        {role === "issuer"
+          ? "Issuer Onchain Activity (Global)"
+          : role === "redeemer"
+            ? "Redeemer Onchain Activity (Global)"
+            : "Recent Onchain Activity"}
       </div>
 
       {items.length === 0 ? (

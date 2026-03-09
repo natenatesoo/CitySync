@@ -510,3 +510,24 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Large files may need to be read in chunks
 - Node scripts: `NODE_PATH=/usr/local/lib/node_modules_global/lib/node_modules node <script.js>`
 - Images uploaded inline in Cowork chat are NOT saved to uploads folder — only file attachments are
+
+---
+
+## 2026-03-09 — Redeemer Catalog + Activity Persistence
+
+- Redeemer right panel heading renamed to **Redeemer Onchain Activity (Global)**.
+- Added local persistence/hydration for redeemer onchain activity feed:
+  - storage key: `citysync:demo:redeemer:activity:v1`
+  - first-write guard to avoid overwriting hydrated entries on initial mount.
+- Redeemer Offerings flow split into **catalog** vs **active issued offerings**:
+  - New buttons in both sections:
+    - `+ Issue Offering From Catalog`
+    - `+ Add Offering to Catalog` (renamed from `+ Add New Offering`)
+  - Section labels updated to:
+    - `Active Committed Offerings`
+    - `Active MCE Offerings`
+- Added separate, non-shared persisted catalogs:
+  - Committed catalog key: `citysync:demo:redeemer:committed-catalog:v1`
+  - MCE catalog key: `citysync:demo:redeemer:mce-catalog:v1`
+- Added bottom-sheet picker to issue from the relevant catalog:
+  - selecting a template issues an onchain write and creates an active offering instance.
