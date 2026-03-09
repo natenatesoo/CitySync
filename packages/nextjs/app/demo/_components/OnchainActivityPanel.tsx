@@ -189,6 +189,15 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             toBlock: latestBlock,
           } as any),
         );
+
+        // Fallback network feed for demo managers with ABI/event shape drift.
+        queries.push(
+          baseSepoliaPublicClient.getLogs({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            fromBlock,
+            toBlock: latestBlock,
+          } as any),
+        );
       }
 
       if (role === "redeemer") {
@@ -262,6 +271,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
       if (role === "issuer") {
         next.push(...toItems("Issuer Registered", (settled[0] as PromiseFulfilledResult<any>)?.value || []));
         next.push(...toItems("Opportunity Created", (settled[1] as PromiseFulfilledResult<any>)?.value || []));
+        next.push(...toItems("Issuer Network Activity", (settled[2] as PromiseFulfilledResult<any>)?.value || []));
       }
 
       if (role === "redeemer") {

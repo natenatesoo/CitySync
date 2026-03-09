@@ -65,6 +65,9 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Issuer Verify `slotInstances` now persist in browser storage keyed by connected wallet, so issued instances remain visible after switching roles and returning to Issuer view.
 - Right-side activity panel changed from wallet-scoped to role-scoped network feed:
   - `OnchainActivityPanel` now fetches role-relevant events without address filtering and displays cumulative onchain activity from all users of the selected role.
+- Reliability pass for issuer → participant task flow and issuer activity feed:
+  - Added persisted task-state hydration in `DemoContext` (`availableTasks`, `issuer.tasks`, `issuer.totalTasksIssued`) so issued tasks survive provider remounts/role switching and continue appearing in Participant Open Tasks.
+  - Added issuer activity fallback query in `OnchainActivityPanel` (all logs from OpportunityManager address in range) to ensure recent issuer onchain activity is visible even if strict event decoding/filter shape drifts.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

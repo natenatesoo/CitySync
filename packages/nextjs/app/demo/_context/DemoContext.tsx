@@ -130,6 +130,7 @@ type Action =
       redeemerRegistered: boolean;
     }
   | { type: "SYNC_ONCHAIN_OFFERS"; offers: RedemptionOffer[] }
+  | { type: "HYDRATE_TASK_STATE"; availableTasks: Task[]; issuerTasks: IssuerTask[]; totalTasksIssued: number }
   | { type: "ADD_QUEUE_REDEMPTION"; redemption: QueuedRedemption }
   | { type: "CLEAR_NOTIFICATION" };
 
@@ -153,6 +154,7 @@ const _randomAddress = () =>
   ).join("");
 
 const VERIFY_DURATION = 7; // seconds
+const TASK_STATE_STORAGE_KEY = "citysync:demo:taskState:v1";
 
 const parseTaskOpportunityId = (taskId: string): bigint | null => {
   const m = taskId.match(/^task-(\d+)$/);
@@ -580,6 +582,18 @@ function reducer(state: DemoState, action: Action): DemoState {
       };
     }
 
+    case "HYDRATE_TASK_STATE": {
+      return {
+        ...state,
+        availableTasks: action.availableTasks,
+        issuer: {
+          ...state.issuer,
+          tasks: action.issuerTasks,
+          totalTasksIssued: action.totalTasksIssued,
+        },
+      };
+    }
+
     case "ADD_QUEUE_REDEMPTION": {
       return {
         ...state,
@@ -628,6 +642,44 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     waitForTxn: true,
   });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(TASK_STATE_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        availableTasks?: Task[];
+        issuerTasks?: IssuerTask[];
+        totalTasksIssued?: number;
+      };
+      if (!parsed.availableTasks || !parsed.issuerTasks || typeof parsed.totalTasksIssued !== "number") return;
+      dispatch({
+        type: "HYDRATE_TASK_STATE",
+        availableTasks: parsed.availableTasks,
+        issuerTasks: parsed.issuerTasks,
+        totalTasksIssued: parsed.totalTasksIssued,
+      });
+    } catch {
+      // Ignore hydration failures.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        TASK_STATE_STORAGE_KEY,
+        JSON.stringify({
+          availableTasks: state.availableTasks,
+          issuerTasks: state.issuer.tasks,
+          totalTasksIssued: state.issuer.totalTasksIssued,
+        }),
+      );
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [state.availableTasks, state.issuer.tasks, state.issuer.totalTasksIssued]);
 
   const writeContractAsync = useCallback(
     async (params: {
