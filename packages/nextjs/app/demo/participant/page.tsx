@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
+import { formatUnits } from "viem";
 import AppShell from "../_components/AppShell";
 import { NavTab } from "../_components/BottomNav";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
+import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
+import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
 
@@ -1518,45 +1521,147 @@ function TaskCard({
 
 function ExploreTab() {
   const { state, claimTask, unclaimTask, startVerify } = useDemo();
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"open" | "mine">("open");
   const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
   const [executeTask, setExecuteTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [onchainTasks, setOnchainTasks] = useState<Array<Task & { claimedBy?: `0x${string}` }>>([]);
 
   const p = state.participant;
-  const isNewMember = p.cityBalance === 0 && p.completedTasks.length === 0 && p.claimedTaskIds.length === 0;
 
-  const allKnownTasks = useMemo(() => {
-    const merged = [...state.availableTasks, ...state.issuer.tasks];
-    const seen = new Set<string>();
-    const unique: Task[] = [];
-    for (const task of merged) {
-      if (seen.has(task.id)) continue;
-      seen.add(task.id);
-      unique.push(task);
-    }
+  useEffect(() => {
+    let cancelled = false;
 
-    // Show onboarding first, then most recently issued/created tasks first.
-    const taskIdScore = (id: string): number => {
-      const m = id.match(/(\d+)$/);
-      return m ? Number(m[1]) : 0;
+    const parseMetadata = (raw: string): Partial<Task> => {
+      try {
+        const parsed = JSON.parse(raw) as Partial<Task>;
+        return parsed;
+      } catch {
+        return {};
+      }
     };
 
-    return unique.sort((a, b) => {
-      if (a.isOnboarding && !b.isOnboarding) return -1;
-      if (!a.isOnboarding && b.isOnboarding) return 1;
-      return taskIdScore(b.id) - taskIdScore(a.id);
-    });
-  }, [state.availableTasks, state.issuer.tasks]);
+    const syncOnchainTasks = async () => {
+      try {
+        const nextId = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "nextOpportunityId",
+          args: [],
+        })) as bigint;
 
-  // Open Tasks: always show onboarding; show non-claimed regular tasks
-  const openTasks = allKnownTasks.filter(t => t.isOnboarding || !p.claimedTaskIds.includes(t.id));
+        if (nextId <= 1n) {
+          if (!cancelled) setOnchainTasks([]);
+          return;
+        }
+
+        const taskPromises: Promise<(Task & { claimedBy?: `0x${string}` }) | null>[] = [];
+        for (let id = 1n; id < nextId; id++) {
+          taskPromises.push(
+            (async () => {
+              const oppRaw = (await baseSepoliaPublicClient.readContract({
+                address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+                functionName: "opportunities",
+                args: [id],
+              })) as unknown as readonly [
+                issuer: `0x${string}`,
+                metadataURI: string,
+                rewardCity: bigint,
+                rewardVote: bigint,
+                eligibilityHook: `0x${string}`,
+                mode: number,
+                maxCompletions: bigint,
+                expiresAt: bigint,
+                cooldownSeconds: bigint,
+                active: boolean,
+                verifiedCount: number,
+              ];
+
+              const opp = {
+                issuer: oppRaw[0],
+                metadataURI: oppRaw[1],
+                rewardCity: oppRaw[2],
+                rewardVote: oppRaw[3],
+                maxCompletions: oppRaw[6],
+                expiresAt: oppRaw[7],
+                active: oppRaw[9],
+                verifiedCount: oppRaw[10],
+              };
+
+              if (!opp.active) return null;
+              if (opp.expiresAt > 0n && Number(opp.expiresAt) * 1000 < Date.now()) return null;
+
+              const claimedBy = (await baseSepoliaPublicClient.readContract({
+                address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+                functionName: "claimedBy",
+                args: [id],
+              })) as `0x${string}`;
+
+              const metadata = parseMetadata(opp.metadataURI);
+              const slots = opp.maxCompletions === 0n ? 9_999 : Number(opp.maxCompletions);
+              const verified = Number(opp.verifiedCount ?? 0);
+
+              return {
+                id: `task-${id.toString()}`,
+                title: metadata.title || `Opportunity #${id.toString()}`,
+                description: metadata.description || "Onchain issuer opportunity",
+                category: (metadata.category as TaskCategory) || "Community",
+                credits: Math.floor(Number(formatUnits(opp.rewardCity, 18))),
+                voteTokens: Math.floor(
+                  Number(formatUnits(opp.rewardVote === 0n ? opp.rewardCity : opp.rewardVote, 18)),
+                ),
+                estimatedTime: metadata.estimatedTime || "TBD",
+                location: metadata.location || "TBD",
+                slots,
+                slotsRemaining: Math.max(0, slots - verified),
+                issuerName: `${opp.issuer.slice(0, 6)}...${opp.issuer.slice(-4)}`,
+                issuerId: opp.issuer,
+                tags: metadata.tags || ["onchain"],
+                isMCE: false,
+                isOnboarding: false,
+                taskDate: metadata.taskDate || "TBD",
+                successCriteria: metadata.successCriteria || "Complete and submit proof for verification.",
+                creditRatePerHr: metadata.creditRatePerHr || 0,
+                credentials: metadata.credentials || "None",
+                claimedBy,
+              };
+            })(),
+          );
+        }
+
+        const all = (await Promise.all(taskPromises)).filter(Boolean) as Array<Task & { claimedBy?: `0x${string}` }>;
+        all.sort((a, b) => {
+          const aId = Number((a.id.match(/(\d+)$/)?.[1] ?? "0").toString());
+          const bId = Number((b.id.match(/(\d+)$/)?.[1] ?? "0").toString());
+          return bId - aId;
+        });
+
+        if (!cancelled) setOnchainTasks(all);
+      } catch {
+        if (!cancelled) setOnchainTasks([]);
+      }
+    };
+
+    void syncOnchainTasks();
+    const id = window.setInterval(() => void syncOnchainTasks(), 7000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
+
+  const openTasks = onchainTasks.filter(
+    t => !t.claimedBy || t.claimedBy === "0x0000000000000000000000000000000000000000",
+  );
   const filteredOpenTasks = catFilter === "All" ? openTasks : openTasks.filter(t => t.category === catFilter);
-
-  const myTasks = p.claimedTaskIds.map(id => allKnownTasks.find(t => t.id === id)).filter(Boolean) as Task[];
+  const myTasks = onchainTasks.filter(
+    t => !!address && !!t.claimedBy && t.claimedBy.toLowerCase() === address.toLowerCase(),
+  ) as Task[];
 
   const handleClaim = (task: Task) => {
-    if (task.isOnboarding && !isNewMember) return;
     if (p.claimedTaskIds.length >= 2) {
       setToast("Max 2 tasks can be claimed at a time");
       return;
@@ -1658,7 +1763,7 @@ function ExploreTab() {
               key={task.id}
               task={task}
               isClaimed={p.claimedTaskIds.includes(task.id)}
-              locked={task.isOnboarding ? !isNewMember : isNewMember}
+              locked={false}
               showClaimButton
               onClaim={() => handleClaim(task)}
               onExecute={() => setExecuteTask(task)}

@@ -75,6 +75,9 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Prevented `DemoContext` task-state persistence from writing initial reducer state before local hydration completes; this avoids wiping issued tasks during remount/role switches.
 - Issuer Verify UX alignment with shared-state flow:
   - Removed `Move to Claimed` button from Issued instances in Issuer Verify tab; Issued section now only supports removal, as claim progression should be driven by participant-side activity.
+- Onchain-only participant task sourcing + activity feed robustness:
+  - Participant Explore now fetches tasks directly from onchain `OpportunityManager` (`nextOpportunityId`, `opportunities(id)`, `claimedBy(id)`), parses metadata, and builds Open/My task lists from contract state instead of simulated local task arrays.
+  - Right-side activity panel was simplified to role-relevant contract log streams (per contract address) rather than strict event-shape decoding to reduce empty-feed failures when ABI/event-shape drift occurs.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

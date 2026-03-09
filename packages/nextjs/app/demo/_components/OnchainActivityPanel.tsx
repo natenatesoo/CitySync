@@ -81,209 +81,38 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     const run = async () => {
       if (latestBlock === null) return;
 
-      const queries: Promise<any>[] = [];
+      const roleContracts =
+        role === "participant"
+          ? [
+              { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, label: "Participant Task Activity" },
+              { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Participant Redemption Activity" },
+              { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Participant MCE Activity" },
+            ]
+          : role === "issuer"
+            ? [
+                { address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address, label: "Issuer Registration Activity" },
+                { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, label: "Issuer Task Activity" },
+              ]
+            : [
+                { address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address, label: "Redeemer Registry Activity" },
+                { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Redeemer Redemption Activity" },
+                { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Redeemer MCE Activity" },
+              ];
 
-      if (role === "participant") {
-        queries.push(
+      const settled = await Promise.allSettled(
+        roleContracts.map(c =>
           baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            event: {
-              type: "event",
-              name: "OpportunityClaimed",
-              inputs: [
-                { indexed: true, name: "opportunityId", type: "uint256" },
-                { indexed: true, name: "citizen", type: "address" },
-              ],
-            },
-            fromBlock,
+            address: c.address,
+            fromBlock: role === "issuer" ? fallbackFromBlock : fromBlock,
             toBlock: latestBlock,
           } as any),
-        );
-
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            event: {
-              type: "event",
-              name: "CompletionVerified",
-              inputs: [
-                { indexed: true, name: "opportunityId", type: "uint256" },
-                { indexed: true, name: "citizen", type: "address" },
-                { indexed: false, name: "cityMinted", type: "uint256" },
-                { indexed: false, name: "voteMinted", type: "uint256" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
-            event: {
-              type: "event",
-              name: "OfferPurchased",
-              inputs: [
-                { indexed: true, name: "citizen", type: "address" },
-                { indexed: true, name: "redeemer", type: "address" },
-                { indexed: true, name: "offerId", type: "uint256" },
-                { indexed: false, name: "costCity", type: "uint256" },
-                { indexed: false, name: "receiptId", type: "uint256" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
-            event: {
-              type: "event",
-              name: "MCEOfferPurchased",
-              inputs: [
-                { indexed: true, name: "receiptId", type: "uint256" },
-                { indexed: true, name: "citizen", type: "address" },
-                { indexed: true, name: "redeemer", type: "address" },
-                { indexed: false, name: "offerId", type: "uint256" },
-                { indexed: false, name: "costMCE", type: "uint256" },
-                { indexed: false, name: "offerName", type: "string" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-      }
-
-      if (role === "issuer") {
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
-            event: {
-              type: "event",
-              name: "IssuerRegistered",
-              inputs: [
-                { indexed: true, name: "issuer", type: "address" },
-                { indexed: false, name: "orgName", type: "string" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            event: {
-              type: "event",
-              name: "OpportunityCreated",
-              inputs: [
-                { indexed: true, name: "opportunityId", type: "uint256" },
-                { indexed: true, name: "issuer", type: "address" },
-                { indexed: false, name: "rewardCity", type: "uint256" },
-                { indexed: false, name: "rewardVote", type: "uint256" },
-                { indexed: false, name: "mode", type: "uint8" },
-                { indexed: false, name: "metadataURI", type: "string" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-
-        // Fallback network feed for demo managers with ABI/event shape drift.
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            fromBlock: fallbackFromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-      }
-
-      if (role === "redeemer") {
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-            event: {
-              type: "event",
-              name: "RedeemerRegistered",
-              inputs: [
-                { indexed: true, name: "redeemer", type: "address" },
-                { indexed: false, name: "orgName", type: "string" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-            event: {
-              type: "event",
-              name: "OfferCreated",
-              inputs: [
-                { indexed: true, name: "redeemer", type: "address" },
-                { indexed: true, name: "offerId", type: "uint256" },
-                { indexed: false, name: "name", type: "string" },
-                { indexed: false, name: "description", type: "string" },
-                { indexed: false, name: "cost", type: "uint256" },
-                { indexed: false, name: "mceOnly", type: "bool" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-
-        queries.push(
-          baseSepoliaPublicClient.getLogs({
-            address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
-            event: {
-              type: "event",
-              name: "OfferPurchased",
-              inputs: [
-                { indexed: true, name: "citizen", type: "address" },
-                { indexed: true, name: "redeemer", type: "address" },
-                { indexed: true, name: "offerId", type: "uint256" },
-                { indexed: false, name: "costCity", type: "uint256" },
-                { indexed: false, name: "receiptId", type: "uint256" },
-              ],
-            },
-            fromBlock,
-            toBlock: latestBlock,
-          } as any),
-        );
-      }
-
-      const settled = await Promise.allSettled(queries);
+        ),
+      );
 
       const next: ActivityItem[] = [];
-
-      if (role === "participant") {
-        next.push(...toItems("Task Claimed", (settled[0] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("Task Verified", (settled[1] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("CITY Redemption", (settled[2] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("MCE Redemption", (settled[3] as PromiseFulfilledResult<any>)?.value || []));
-      }
-
-      if (role === "issuer") {
-        next.push(...toItems("Issuer Registered", (settled[0] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("Opportunity Created", (settled[1] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("Issuer Network Activity", (settled[2] as PromiseFulfilledResult<any>)?.value || []));
-      }
-
-      if (role === "redeemer") {
-        next.push(...toItems("Redeemer Registered", (settled[0] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("Offer Created", (settled[1] as PromiseFulfilledResult<any>)?.value || []));
-        next.push(...toItems("Redemption Processed", (settled[2] as PromiseFulfilledResult<any>)?.value || []));
-      }
+      settled.forEach((s, i) => {
+        if (s.status === "fulfilled") next.push(...toItems(roleContracts[i].label, s.value || []));
+      });
 
       next.sort((a, b) => Number(b.blockNumber - a.blockNumber));
       const top = next.slice(0, 12);
