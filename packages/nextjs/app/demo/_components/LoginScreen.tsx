@@ -67,7 +67,7 @@ export function LoginScreen() {
             margin: "0 auto",
           }}
         >
-          Civic participation infrastructure for local communities
+          Civic Coordination Infrastructure for Cities
         </p>
       </div>
 
