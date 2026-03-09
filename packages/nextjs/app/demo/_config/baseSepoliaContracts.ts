@@ -49,6 +49,33 @@ export const BASE_SEPOLIA_CONTRACTS = {
         inputs: [{ name: "issuer", type: "address", internalType: "address" }],
         outputs: [{ name: "", type: "bool", internalType: "bool" }],
       },
+      {
+        type: "function",
+        name: "getAllIssuers",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ name: "", type: "address[]", internalType: "address[]" }],
+      },
+      {
+        type: "function",
+        name: "getProfile",
+        stateMutability: "view",
+        inputs: [{ name: "issuer", type: "address", internalType: "address" }],
+        outputs: [
+          {
+            name: "",
+            type: "tuple",
+            internalType: "struct IssuerRegistry.IssuerProfile",
+            components: [
+              { name: "orgName", type: "string", internalType: "string" },
+              { name: "registeredAt", type: "uint64", internalType: "uint64" },
+              { name: "active", type: "bool", internalType: "bool" },
+              { name: "totalTasksIssued", type: "uint256", internalType: "uint256" },
+              { name: "totalCreditsIssued", type: "uint256", internalType: "uint256" },
+            ],
+          },
+        ],
+      },
     ] as const,
   },
   DemoRedeemerRegistry: {

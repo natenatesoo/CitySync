@@ -8,7 +8,7 @@ import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, MOCK_TASKS, Post, PostCategory, Task } from "../_data/mockData";
+import { FAKE_WALLETS, Post, PostCategory, Task } from "../_data/mockData";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -108,8 +108,6 @@ const TABS = [
   { key: "verify", label: "Verify", icon: <IconVerify /> },
   { key: "mces", label: "MCEs", icon: <IconBolt /> },
 ];
-
-const CATALOG_TASKS = MOCK_TASKS.filter(t => !t.isMCE && !t.isOnboarding);
 
 const EPOCH1_CAP = 312;
 
@@ -394,7 +392,7 @@ export default function IssuerApp() {
   const [proposedTasks, setProposedTasks] = useState<ProposedTask[]>([]);
   const [approvedCatalogTasks, setApprovedCatalogTasks] = useState<Task[]>([]);
   const [issueTaskId, setIssueTaskId] = useState<string | null>(null);
-  const [modifyTaskId, setModifyTaskId] = useState<string | null>(null);
+  const [catalogModifyTaskId, setCatalogModifyTaskId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
 
@@ -414,19 +412,6 @@ export default function IssuerApp() {
   const handleVerify = (taskId: string, citizen: string) => {
     issuerVerifyCompletion(taskId, citizen);
     setToast("Verification complete — credits minted!");
-  };
-
-  const handleCreateTask = async (task: Task) => {
-    setTaskWriteStatus({ state: "pending" });
-    const result = await issuerCreateTask(task);
-    if (result.ok) {
-      setTaskWriteStatus({ state: "confirmed", hash: result.hash });
-      setToast("Task posted and submitted onchain.");
-    } else {
-      setTaskWriteStatus({ state: "failed", error: result.error });
-      setToast("Task saved locally, but onchain issuance failed.");
-    }
-    setCreateSheet(false);
   };
 
   const handleProposeTask = (proposed: ProposedTask) => {
@@ -473,7 +458,6 @@ export default function IssuerApp() {
     const localId = `task-issued-${Date.now()}`;
     setTaskWriteStatus({ state: "pending" });
     const result = await issuerCreateTask({ ...task, id: localId, slots, slotsRemaining: slots });
-    setApprovedCatalogTasks(prev => prev.filter(t => t.id !== task.id));
     setIssueTaskId(null);
     if (result.ok) {
       setTaskWriteStatus({ state: "confirmed", hash: result.hash });
@@ -486,7 +470,7 @@ export default function IssuerApp() {
 
   const handleModifyApproved = (taskId: string, updates: { location: string; taskDate: string }) => {
     setApprovedCatalogTasks(prev => prev.map(t => (t.id === taskId ? { ...t, ...updates } : t)));
-    setModifyTaskId(null);
+    setCatalogModifyTaskId(null);
     setToast("Task updated.");
   };
 
@@ -524,8 +508,6 @@ export default function IssuerApp() {
             proposedTasks={proposedTasks}
             onApproveProposed={handleApproveProposed}
             approvedCatalogTasks={approvedCatalogTasks}
-            onIssueTask={id => setIssueTaskId(id)}
-            onModifyTask={id => setModifyTaskId(id)}
             taskWriteStatus={taskWriteStatus}
           />
         )}
@@ -539,9 +521,15 @@ export default function IssuerApp() {
       {createSheet && (
         <CreateTaskSheet
           onClose={() => setCreateSheet(false)}
-          onCreate={handleCreateTask}
-          creditsCommitted={creditsCommitted}
           approvedCatalogTasks={approvedCatalogTasks}
+          onIssueTask={id => {
+            setIssueTaskId(id);
+            setCreateSheet(false);
+          }}
+          onModifyTask={id => {
+            setCatalogModifyTaskId(id);
+            setCreateSheet(false);
+          }}
         />
       )}
 
@@ -569,13 +557,13 @@ export default function IssuerApp() {
           ) : null;
         })()}
 
-      {modifyTaskId &&
+      {catalogModifyTaskId &&
         (() => {
-          const task = approvedCatalogTasks.find(t => t.id === modifyTaskId);
+          const task = approvedCatalogTasks.find(t => t.id === catalogModifyTaskId);
           return task ? (
             <ModifyTaskSheet
               task={task}
-              onClose={() => setModifyTaskId(null)}
+              onClose={() => setCatalogModifyTaskId(null)}
               onSave={updates => handleModifyApproved(task.id, updates)}
             />
           ) : null;
@@ -877,8 +865,6 @@ function TasksTab({
   proposedTasks,
   onApproveProposed,
   approvedCatalogTasks,
-  onIssueTask,
-  onModifyTask,
   taskWriteStatus,
 }: {
   creditsCommitted: number;
@@ -887,8 +873,6 @@ function TasksTab({
   proposedTasks: ProposedTask[];
   onApproveProposed: (task: ProposedTask) => void;
   approvedCatalogTasks: Task[];
-  onIssueTask: (id: string) => void;
-  onModifyTask: (id: string) => void;
   taskWriteStatus: TaskWriteStatus;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
@@ -1122,7 +1106,7 @@ function TasksTab({
               marginBottom: 10,
             }}
           >
-            <IconPlus /> Add Task from Catalog
+            <IconPlus /> Issue Task from Catalog
           </button>
 
           {/* Propose CTA */}
@@ -1149,99 +1133,15 @@ function TasksTab({
             <IconPlus /> Propose New Task for Approval
           </button>
 
-          {/* Approved catalog tasks (ready to issue) */}
-          {approvedCatalogTasks.length > 0 && (
-            <>
-              <SectionLabel text={`Approved Catalog (${approvedCatalogTasks.length})`} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-                {approvedCatalogTasks.map(t => (
-                  <div
-                    key={t.id}
-                    style={{
-                      background: "rgba(52,238,182,0.04)",
-                      border: "1px solid rgba(52,238,182,0.2)",
-                      borderRadius: 16,
-                      padding: 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-                        <div style={{ fontSize: 11, color: MUTED }}>
-                          {t.category} · {t.estimatedTime}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
-                        <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        display: "inline-block",
-                        fontSize: 10,
-                        fontWeight: 600,
-                        background: "rgba(52,238,182,0.12)",
-                        color: "#34eeb6",
-                        borderRadius: 6,
-                        padding: "2px 8px",
-                        marginBottom: 12,
-                      }}
-                    >
-                      ✓ Approved · Ready to Issue
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => onIssueTask(t.id)}
-                        style={{
-                          flex: 1,
-                          background: ACCENT,
-                          border: "none",
-                          borderRadius: 10,
-                          padding: "9px 0",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: BG,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Issue Task
-                      </button>
-                      <button
-                        onClick={() => onModifyTask(t.id)}
-                        style={{
-                          flex: 1,
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          borderRadius: 10,
-                          padding: "9px 0",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: MUTED,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Modify Task
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {onchainTasks.length === 0 && approvedCatalogTasks.length === 0 ? (
+          {onchainTasks.length === 0 ? (
             <EmptyState
               emoji="📭"
               title="No tasks yet"
-              desc="Post a task from the catalog to start receiving completions from participants."
+              desc={
+                approvedCatalogTasks.length > 0
+                  ? "Use Issue Task from Catalog to issue your approved tasks."
+                  : "Approve a proposed task first, then issue it from the catalog."
+              }
             />
           ) : onchainTasks.length > 0 ? (
             <>
@@ -1387,19 +1287,15 @@ function TasksTab({
 
 function CreateTaskSheet({
   onClose,
-  onCreate,
-  creditsCommitted,
   approvedCatalogTasks = [],
+  onIssueTask,
+  onModifyTask,
 }: {
   onClose: () => void;
-  onCreate: (task: Task) => void;
-  creditsCommitted: number;
   approvedCatalogTasks?: Task[];
+  onIssueTask: (taskId: string) => void;
+  onModifyTask: (taskId: string) => void;
 }) {
-  const [selected, setSelected] = useState<Task | null>(null);
-  const [step, setStep] = useState<"pick" | "review">("pick");
-  const allCatalogTasks = [...approvedCatalogTasks, ...CATALOG_TASKS];
-
   return (
     <div
       style={{
@@ -1436,139 +1332,82 @@ function CreateTaskSheet({
           }}
         />
 
-        {step === "pick" ? (
-          <>
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Task Catalog</div>
-            <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
-              Admin-approved tasks ready to post. Choose one to review.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {allCatalogTasks.map(task => (
-                <button
-                  key={task.id}
-                  onClick={() => {
-                    setSelected(task);
-                    setStep("review");
-                  }}
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Task Catalog</div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
+          Approved tasks available for issuance. Select a task, then choose quantity in the next step.
+        </div>
+
+        {approvedCatalogTasks.length === 0 ? (
+          <EmptyState emoji="📚" title="Catalog is empty" desc="Approve a task in Pending to add it to your catalog." />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {approvedCatalogTasks.map(task => (
+              <div
+                key={task.id}
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 14,
+                  padding: 14,
+                }}
+              >
+                <div
                   style={{
                     display: "flex",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
-                    width: "100%",
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 14,
-                    padding: 14,
-                    textAlign: "left",
-                    cursor: "pointer",
+                    marginBottom: 10,
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{task.title}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{task.title}</div>
                     <div style={{ fontSize: 11, color: MUTED }}>
                       {task.category} · {task.estimatedTime}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
-                    {task.credits} CITYx
+                  <div style={{ textAlign: "right", marginLeft: 12 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{task.credits} CITYx</div>
+                    <div style={{ fontSize: 11, color: DIMMED }}>+{task.voteTokens} VOTE</div>
                   </div>
-                </button>
-              ))}
-            </div>
-          </>
-        ) : selected ? (
-          <>
-            <button
-              onClick={() => setStep("pick")}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: MUTED,
-                fontSize: 12,
-                marginBottom: 16,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                padding: 0,
-              }}
-            >
-              ← Back to catalog
-            </button>
-
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{selected.title}</div>
-            <div style={{ fontSize: 12, color: ACCENT, marginBottom: 14 }}>{selected.category}</div>
-            <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, marginBottom: 20 }}>{selected.description}</p>
-
-            {/* Reward display */}
-            <div
-              style={{
-                background: "rgba(221,158,51,0.07)",
-                border: "1px solid rgba(221,158,51,0.2)",
-                borderRadius: 14,
-                padding: "16px 0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-around",
-                marginBottom: 20,
-              }}
-            >
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT }}>{selected.credits}</div>
-                <div style={{ fontSize: 11, color: MUTED }}>CITYx per completion</div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => onIssueTask(task.id)}
+                    style={{
+                      flex: 1,
+                      background: ACCENT,
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: BG,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Issue Task
+                  </button>
+                  <button
+                    onClick={() => onModifyTask(task.id)}
+                    style={{
+                      flex: 1,
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: MUTED,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Modify Task
+                  </button>
+                </div>
               </div>
-              <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.1)" }} />
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 26, fontWeight: 700, color: "#4169E1" }}>{selected.voteTokens}</div>
-                <div style={{ fontSize: 11, color: MUTED }}>VOTE per completion</div>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}>
-              <DetailItem icon="📍" label="Location" value={selected.location} />
-              <DetailItem icon="⏱" label="Duration" value={selected.estimatedTime} />
-              <DetailItem icon="👥" label="Slots" value={`${selected.slots} available`} />
-            </div>
-
-            {creditsCommitted + selected.credits > EPOCH1_CAP && (
-              <div
-                style={{
-                  background: "rgba(255,107,157,0.08)",
-                  border: "1px solid rgba(255,107,157,0.3)",
-                  borderRadius: 10,
-                  padding: "10px 14px",
-                  marginBottom: 12,
-                  fontSize: 12,
-                  color: "#ff6b9d",
-                }}
-              >
-                ⚠️ Posting this task ({selected.credits} CITYx) would exceed your epoch allocation. You have{" "}
-                {Math.max(0, EPOCH1_CAP - creditsCommitted)} CITYx remaining.
-              </div>
-            )}
-            <button
-              onClick={() =>
-                creditsCommitted + selected.credits <= EPOCH1_CAP
-                  ? onCreate({ ...selected, id: `task-issued-${Date.now()}` })
-                  : undefined
-              }
-              disabled={creditsCommitted + selected.credits > EPOCH1_CAP}
-              style={{
-                width: "100%",
-                background: creditsCommitted + selected.credits > EPOCH1_CAP ? "rgba(255,255,255,0.08)" : ACCENT,
-                border: "none",
-                borderRadius: 14,
-                padding: "14px 0",
-                fontSize: 14,
-                fontWeight: 700,
-                color: creditsCommitted + selected.credits > EPOCH1_CAP ? DIMMED : BG,
-                cursor: creditsCommitted + selected.credits > EPOCH1_CAP ? "not-allowed" : "pointer",
-              }}
-            >
-              Post This Task
-            </button>
-          </>
-        ) : null}
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3392,17 +3231,6 @@ function StatRow({
         {value.toLocaleString()}
         {suffix && <span style={{ fontSize: 11, color: DIMMED, marginLeft: 4 }}>{suffix}</span>}
       </span>
-    </div>
-  );
-}
-
-function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: 12 }}>
-      <div style={{ fontSize: 11, color: MUTED, marginBottom: 4 }}>
-        {icon} {label}
-      </div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{value}</div>
     </div>
   );
 }

@@ -97,6 +97,16 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Removed completion verification cards/actions from Issuer Tasks → Pending section; Pending now only represents simulated proposal-approval flow.
   - Verification/mint actions are now isolated to Issuer Verify → Completed section (onchain completion submitted, awaiting issuer verification).
   - Hardened right-panel onchain activity retrieval to scan recent blocks in backward chunks per role contract, improving reliability when RPC rejects large-range log queries.
+- Issuer Task Catalog workflow refactor:
+  - Removed simulated task catalog dependency from Issuer role (`MOCK_TASKS`-backed catalog options no longer appear in issuance flow).
+  - After proposal approval, tasks now live in Issuer Task Catalog only; My Tasks no longer shows inline “Approved Catalog” issue cards.
+  - Renamed CTA to `Issue Task from Catalog`.
+  - Catalog modal now lists only approved tasks and routes issuance through the slot-count popup, then writes onchain and updates Active Tasks from chain state.
+- Issuer activity panel decoding and labeling:
+  - Added issuer registry profile read ABI support (`getAllIssuers`, `getProfile`) to map wallet addresses to issuer org names in UI activity entries.
+  - Issuer right panel now labels entries as `Issuer Onchain Activity (Global)`.
+  - Activity rows now render as `Issuer Org Name · functionName` with explicit `View Tx` explorer links.
+  - Added recent-block transaction scan fallback for issuer contracts when log-based queries return sparse/empty results.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

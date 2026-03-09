@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { decodeFunctionData } from "viem";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 
@@ -9,6 +10,8 @@ type ActivityRole = "participant" | "issuer" | "redeemer";
 type ActivityItem = {
   hash: `0x${string}`;
   label: string;
+  actor?: string;
+  action?: string;
   blockNumber: bigint;
   timestamp?: bigint;
 };
@@ -124,6 +127,139 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         if (s.status === "fulfilled") next.push(...toItems(roleContracts[i].label, s.value || []));
       });
 
+      if (role === "issuer") {
+        const uniqueByHash = new Map<string, ActivityItem>();
+        next.forEach(item => {
+          if (!uniqueByHash.has(item.hash)) uniqueByHash.set(item.hash, item);
+        });
+
+        if (uniqueByHash.size === 0) {
+          for (let offset = 0n; offset < 160n; offset++) {
+            const bn = latestBlock - offset;
+            if (bn < 0n) break;
+            try {
+              const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn, includeTransactions: true });
+              for (const tx of block.transactions) {
+                const to = tx.to?.toLowerCase();
+                if (
+                  to === BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase() ||
+                  to === BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address.toLowerCase()
+                ) {
+                  uniqueByHash.set(tx.hash, {
+                    hash: tx.hash,
+                    label: "Issuer Activity",
+                    blockNumber: bn,
+                    timestamp: block.timestamp,
+                  });
+                }
+              }
+              if (uniqueByHash.size >= 24) break;
+            } catch {
+              // continue scanning
+            }
+          }
+        }
+
+        const issuerProfiles = new Map<string, string>();
+        try {
+          const issuers = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+            abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+            functionName: "getAllIssuers",
+            args: [],
+          })) as `0x${string}`[];
+          const profileEntries = await Promise.all(
+            issuers.map(async issuer => {
+              try {
+                const p = (await baseSepoliaPublicClient.readContract({
+                  address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+                  abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+                  functionName: "getProfile",
+                  args: [issuer],
+                })) as { orgName: string; active: boolean; registeredAt: bigint };
+                if (p.active && p.registeredAt > 0n && p.orgName) return [issuer.toLowerCase(), p.orgName] as const;
+              } catch {
+                // ignore profile read failures
+              }
+              return [issuer.toLowerCase(), `${issuer.slice(0, 6)}...${issuer.slice(-4)}`] as const;
+            }),
+          );
+          profileEntries.forEach(([k, v]) => issuerProfiles.set(k, v));
+        } catch {
+          // continue with address fallback
+        }
+
+        const decodeIssuerAction = (to: string | null, input: string) => {
+          if (!to || input === "0x") return "unknownCall";
+          try {
+            if (to.toLowerCase() === BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase()) {
+              const d = decodeFunctionData({
+                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
+                data: input as `0x${string}`,
+              });
+              return String(d.functionName);
+            }
+            if (to.toLowerCase() === BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address.toLowerCase()) {
+              const d = decodeFunctionData({
+                abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi as any,
+                data: input as `0x${string}`,
+              });
+              return String(d.functionName);
+            }
+          } catch {
+            // fallback below
+          }
+          return `${input.slice(0, 10)}...`;
+        };
+
+        const txDetails = await Promise.all(
+          Array.from(uniqueByHash.values()).map(async item => {
+            try {
+              const tx = await baseSepoliaPublicClient.getTransaction({ hash: item.hash });
+              const actorAddress = tx.from?.toLowerCase();
+              const actorName = actorAddress
+                ? (issuerProfiles.get(actorAddress) ?? `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`)
+                : "Unknown issuer";
+              const action = decodeIssuerAction(tx.to, tx.input);
+              return {
+                ...item,
+                actor: actorName,
+                action,
+                label: `${actorName} · ${action}`,
+              };
+            } catch {
+              return item;
+            }
+          }),
+        );
+
+        txDetails.sort((a, b) => Number(b.blockNumber - a.blockNumber));
+        const topIssuer = txDetails.slice(0, 12);
+
+        const uniqueBlocks = Array.from(new Set(topIssuer.map(item => item.blockNumber.toString()))).map(v =>
+          BigInt(v),
+        );
+        const blockPairs = await Promise.all(
+          uniqueBlocks.map(async bn => {
+            try {
+              const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn });
+              return [bn.toString(), block.timestamp] as const;
+            } catch {
+              return [bn.toString(), undefined] as const;
+            }
+          }),
+        );
+        const blockTimeMap = new Map<string, bigint | undefined>(blockPairs);
+
+        setItems(
+          topIssuer.map(item => ({
+            ...item,
+            timestamp: blockTimeMap.get(item.blockNumber.toString()),
+          })),
+        );
+        return;
+      }
+
       next.sort((a, b) => Number(b.blockNumber - a.blockNumber));
       const top = next.slice(0, 12);
 
@@ -170,7 +306,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
           marginBottom: 10,
         }}
       >
-        Recent Onchain Activity
+        {role === "issuer" ? "Issuer Onchain Activity (Global)" : "Recent Onchain Activity"}
       </div>
 
       {items.length === 0 ? (
@@ -205,7 +341,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                   Block {item.blockNumber.toString()} · {formatTimestamp(item.timestamp)}
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>Open ↗</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>View Tx ↗</div>
             </a>
           ))}
         </div>
