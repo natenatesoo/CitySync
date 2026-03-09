@@ -118,6 +118,7 @@ type Action =
   | { type: "ISSUER_VERIFY_COMPLETION"; taskId: string; citizenAddress: string }
   | { type: "REDEEMER_REGISTER"; orgName: string }
   | { type: "REDEEMER_TOGGLE_MCE" }
+  | { type: "REDEEMER_SET_MCE_OPT_IN"; value: boolean }
   | { type: "REDEEMER_ADD_OFFER"; offer: RedemptionOffer }
   | { type: "REDEEMER_REMOVE_OFFER"; offerId: string }
   | { type: "REDEEMER_PROCESS_REDEMPTION"; queueId: string }
@@ -506,6 +507,13 @@ function reducer(state: DemoState, action: Action): DemoState {
       return {
         ...state,
         redeemer: { ...state.redeemer, acceptsMCE: !state.redeemer.acceptsMCE },
+      };
+    }
+
+    case "REDEEMER_SET_MCE_OPT_IN": {
+      return {
+        ...state,
+        redeemer: { ...state.redeemer, acceptsMCE: action.value },
       };
     }
 
@@ -1137,6 +1145,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "REDEEMER_ADD_OFFER", offer });
 
       try {
+        if (offer.mceOnly && !state.redeemer.acceptsMCE) {
+          await writeContractAsync({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "setMCEOptIn",
+            args: [true],
+          });
+          dispatch({ type: "REDEEMER_SET_MCE_OPT_IN", value: true });
+        }
+
         const result = await writeContractAsync({
           address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
           abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
@@ -1154,7 +1172,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: message };
       }
     },
-    [getResultHash, writeContractAsync],
+    [getResultHash, state.redeemer.acceptsMCE, writeContractAsync],
   );
 
   const redeemerRemoveOffer = useCallback(

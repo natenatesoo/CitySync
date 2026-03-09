@@ -473,6 +473,71 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
           from = to + 1n;
         }
 
+        // Fallback for contract writes that may not emit indexable logs (e.g. some createOffer paths).
+        // Keep this bounded so initial catch-up remains fast.
+        const txScanStart = redeemerCursorRef.current + 1n;
+        const txScanSpan = latestBlock - txScanStart;
+        if (txScanSpan >= 0n && txScanSpan <= 120n) {
+          const watched = new Set(
+            contracts
+              .map(c => c.address.toLowerCase())
+              .concat(BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address.toLowerCase()),
+          );
+
+          for (let bn = txScanStart; bn <= latestBlock; bn++) {
+            let block: any;
+            try {
+              block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn, includeTransactions: true });
+            } catch {
+              continue;
+            }
+            const txs = (block?.transactions ?? []) as any[];
+            for (const tx of txs) {
+              const to = typeof tx.to === "string" ? tx.to.toLowerCase() : "";
+              if (!to || !watched.has(to)) continue;
+              const hash = tx.hash as `0x${string}` | undefined;
+              if (!hash) continue;
+
+              const contract = contracts.find(c => c.address.toLowerCase() === to);
+              let action = contract?.fallback ?? "contractCall";
+              let actorAddress: string | undefined = tx.from;
+
+              if (tx.input && tx.input !== "0x") {
+                try {
+                  const decoded = decodeFunctionData({
+                    abi: (contract?.abi ?? BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi) as any,
+                    data: tx.input,
+                  });
+                  if (decoded.functionName) action = String(decoded.functionName);
+                  if (decoded.functionName === "purchaseOffer" && Array.isArray(decoded.args)) {
+                    const redeemerArg = decoded.args[0];
+                    if (typeof redeemerArg === "string") actorAddress = redeemerArg;
+                  }
+                } catch {
+                  // Keep fallback action.
+                }
+              }
+
+              let actorLabel = "Redeemer Network";
+              if (actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR) {
+                actorLabel =
+                  redeemerProfilesRef.current.get(actorAddress.toLowerCase()) ??
+                  `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`;
+              }
+
+              const key = `${hash}:${action}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              newItems.push({
+                hash,
+                blockNumber: bn,
+                label: `${actorLabel} · ${action}`,
+              });
+            }
+          }
+        }
+
         redeemerCursorRef.current = latestBlock;
         if (newItems.length === 0) return;
 

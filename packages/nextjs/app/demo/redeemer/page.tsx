@@ -153,6 +153,8 @@ const STATUS_COLOR: Record<string, string> = {
 
 const REDEEMER_COMMITTED_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:committed-catalog:v1";
 const REDEEMER_MCE_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:mce-catalog:v1";
+const REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY = "citysync:demo:redeemer:active-committed:v1";
+const REDEEMER_ACTIVE_MCE_STORAGE_KEY = "citysync:demo:redeemer:active-mce:v1";
 
 type OfferWriteStatus = {
   state: "idle" | "pending" | "confirmed" | "failed";
@@ -418,6 +420,18 @@ export default function RedeemerApp() {
         const parsed = JSON.parse(rawMce) as MCECustomOffering[];
         if (Array.isArray(parsed)) setMceCatalog(parsed);
       }
+
+      const rawActiveCommitted = window.localStorage.getItem(REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY);
+      if (rawActiveCommitted) {
+        const parsed = JSON.parse(rawActiveCommitted) as CustomOffering[];
+        if (Array.isArray(parsed)) setCommittedOfferings(parsed);
+      }
+
+      const rawActiveMce = window.localStorage.getItem(REDEEMER_ACTIVE_MCE_STORAGE_KEY);
+      if (rawActiveMce) {
+        const parsed = JSON.parse(rawActiveMce) as MCECustomOffering[];
+        if (Array.isArray(parsed)) setMceOfferings(parsed);
+      }
     } catch {
       // Ignore hydration failures.
     }
@@ -440,6 +454,24 @@ export default function RedeemerApp() {
       // Ignore persistence failures.
     }
   }, [mceCatalog]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY, JSON.stringify(committedOfferings));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [committedOfferings]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(REDEEMER_ACTIVE_MCE_STORAGE_KEY, JSON.stringify(mceOfferings));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [mceOfferings]);
 
   const handleCreateCommittedOffering = async (data: { name: string; costCity: number; stipulations: string }) => {
     const catalogId = catalogEditor?.type === "committed" ? catalogEditor.editId : undefined;
@@ -1995,8 +2027,12 @@ function IssueOfferingFromCatalogSheet({
 
         {pendingCommitId && (
           <ConfirmDialog
-            title="Commit Offering Onchain?"
-            message="This commitment will be locked, and your organization must honor this offering until the end of the current Epoch."
+            title="Commit Offering?"
+            message={
+              isCommitted
+                ? "This commitment will be locked, and your organization agrees to honor this commitment until the end of the Epoch."
+                : "This MCE commitment will be locked, and your organization agrees to honor this commitment until the end of the MCE Event."
+            }
             confirmLabel="Confirm Commit"
             onConfirm={() => {
               if (isCommitted) onIssueCommitted(pendingCommitId);

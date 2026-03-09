@@ -548,3 +548,16 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - decodes function call names from tx input where possible
   - resolves actor labels via `DemoRedeemerRegistry` profiles when available
   - persists items + cursor under `citysync:demo:redeemer:activity:v1`
+
+## 2026-03-09 — MCE Offering Auto Opt-In
+
+- Updated `redeemerAddOffer` in `DemoContext` to auto-call `setMCEOptIn(true)` before `createOffer` when committing an MCE offering (`mceOnly=true`).
+- Added reducer action `REDEEMER_SET_MCE_OPT_IN` to keep local redeemer state aligned after automatic opt-in.
+- This removes the requirement for a separate UX toggle; creating an MCE offering now performs opt-in implicitly.
+
+## 2026-03-09 — Redeemer Active Offerings Persistence
+
+- Added persistence/hydration for active redeemer offerings lists in `redeemer/page.tsx`:
+  - `citysync:demo:redeemer:active-committed:v1`
+  - `citysync:demo:redeemer:active-mce:v1`
+- Active Committed Offerings and Active MCE Offerings now persist across tab/role switches and refreshes.
