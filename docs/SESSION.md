@@ -111,6 +111,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Issuer activity panel now uses direct recent-block transaction scanning (issuer contracts only) as the primary path, instead of relying on potentially flaky large-range log queries.
   - Issuer activity panel preserves last successful snapshot when a poll cycle returns empty/fails, preventing visible disappear/reappear behavior.
   - Issuer Active Tasks sync now keeps last good onchain task snapshot on transient read errors instead of clearing the list to empty.
+- Issuer issuance semantics update (per-slot onchain create):
+  - Issuing a task with `N` slots now performs `N` onchain `createOpportunity` writes (each with `maxCompletions = 1`) instead of a single write with `maxCompletions = N`.
+  - Issuer UI status now reports full success, partial success, or failure across the multi-write batch.
+  - Removed `Max completions` wording from Issuer Active Tasks cards to reduce confusion.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

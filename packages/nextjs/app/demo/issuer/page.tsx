@@ -455,17 +455,42 @@ export default function IssuerApp() {
   };
 
   const handleIssueTask = async (task: Task, slots: number) => {
-    const localId = `task-issued-${Date.now()}`;
     setTaskWriteStatus({ state: "pending" });
-    const result = await issuerCreateTask({ ...task, id: localId, slots, slotsRemaining: slots });
     setIssueTaskId(null);
-    if (result.ok) {
-      setTaskWriteStatus({ state: "confirmed", hash: result.hash });
-      setToast(`Task issued with ${slots} slot${slots > 1 ? "s" : ""} and recorded onchain.`);
-    } else {
-      setTaskWriteStatus({ state: "failed", error: result.error });
-      setToast(`Task issued in UI with ${slots} slot${slots > 1 ? "s" : ""}, but onchain write failed.`);
+
+    let okCount = 0;
+    let lastHash: `0x${string}` | undefined;
+    let firstError: string | undefined;
+
+    for (let i = 0; i < slots; i++) {
+      const localId = `task-issued-${Date.now()}-${i + 1}`;
+      const result = await issuerCreateTask({ ...task, id: localId, slots: 1, slotsRemaining: 1 });
+      if (result.ok) {
+        okCount += 1;
+        if (result.hash) lastHash = result.hash;
+      } else if (!firstError) {
+        firstError = result.error;
+      }
     }
+
+    if (okCount === slots) {
+      setTaskWriteStatus({ state: "confirmed", hash: lastHash });
+      setToast(`Issued ${okCount} onchain task instance${okCount === 1 ? "" : "s"}.`);
+      return;
+    }
+
+    if (okCount > 0) {
+      setTaskWriteStatus({
+        state: "failed",
+        hash: lastHash,
+        error: firstError ? `${firstError} (${okCount}/${slots} succeeded)` : `${okCount}/${slots} succeeded`,
+      });
+      setToast(`Partially issued: ${okCount}/${slots} task instances were created onchain.`);
+      return;
+    }
+
+    setTaskWriteStatus({ state: "failed", error: firstError ?? "Task issuance failed." });
+    setToast("Task issuance failed onchain.");
   };
 
   const handleModifyApproved = (taskId: string, updates: { location: string; taskDate: string }) => {
@@ -1170,7 +1195,7 @@ function TasksTab({
 
                       <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED, marginBottom: 10 }}>
                         <span>✓ {t.verifiedCount} verified</span>
-                        <span>👥 Max {t.slots > 0 ? t.slots : "∞"} completions</span>
+                        <span>Onchain Opportunity</span>
                       </div>
                     </div>
                   );
