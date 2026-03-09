@@ -556,10 +556,6 @@ export default function IssuerApp() {
     setSlotInstances(prev => prev.filter(s => s.instanceId !== instanceId));
   };
 
-  const handleMoveSlotToClaimed = (instanceId: string) => {
-    setSlotInstances(prev => prev.map(s => (s.instanceId === instanceId ? { ...s, status: "claimed" } : s)));
-  };
-
   const handleMoveSlotToCompleted = (instanceId: string) => {
     setSlotInstances(prev => prev.map(s => (s.instanceId === instanceId ? { ...s, status: "completed" } : s)));
   };
@@ -629,7 +625,6 @@ export default function IssuerApp() {
             issuerTasks={issuer.tasks}
             slotInstances={slotInstances}
             onRemoveInstance={handleRemoveSlotInstance}
-            onMoveToClaimed={handleMoveSlotToClaimed}
             onMoveToCompleted={handleMoveSlotToCompleted}
             onVerify={handleVerify}
           />
@@ -2242,14 +2237,12 @@ function VerifyTab({
   issuerTasks,
   slotInstances,
   onRemoveInstance,
-  onMoveToClaimed,
   onMoveToCompleted,
   onVerify,
 }: {
   issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
   slotInstances: SlotInstance[];
   onRemoveInstance: (instanceId: string) => void;
-  onMoveToClaimed: (instanceId: string) => void;
   onMoveToCompleted: (instanceId: string) => void;
   onVerify: (taskId: string, citizen: string) => void;
 }) {
@@ -2355,40 +2348,22 @@ function VerifyTab({
                       Open · Awaiting Claim
                     </div>
 
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => onRemoveInstance(inst.instanceId)}
-                        style={{
-                          flex: 1,
-                          background: "rgba(255,107,157,0.08)",
-                          border: "1px solid rgba(255,107,157,0.25)",
-                          borderRadius: 10,
-                          padding: "9px 0",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#ff6b9d",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Remove Task
-                      </button>
-                      <button
-                        onClick={() => onMoveToClaimed(inst.instanceId)}
-                        style={{
-                          flex: 1,
-                          background: "rgba(65,105,225,0.1)",
-                          border: "1px solid rgba(65,105,225,0.3)",
-                          borderRadius: 10,
-                          padding: "9px 0",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#4169E1",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Move to Claimed
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => onRemoveInstance(inst.instanceId)}
+                      style={{
+                        width: "100%",
+                        background: "rgba(255,107,157,0.08)",
+                        border: "1px solid rgba(255,107,157,0.25)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#ff6b9d",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remove Task
+                    </button>
                   </div>
                 );
               })}

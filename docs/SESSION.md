@@ -73,6 +73,8 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Reduced activity query window and narrowed fallback window in `OnchainActivityPanel` to avoid provider log-range failures that could silently produce empty issuer activity feeds.
 - Task persistence race fix:
   - Prevented `DemoContext` task-state persistence from writing initial reducer state before local hydration completes; this avoids wiping issued tasks during remount/role switches.
+- Issuer Verify UX alignment with shared-state flow:
+  - Removed `Move to Claimed` button from Issued instances in Issuer Verify tab; Issued section now only supports removal, as claim progression should be driven by participant-side activity.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
