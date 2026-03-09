@@ -6,7 +6,6 @@ import { Script, console2 } from "forge-std/Script.sol";
 // Pilot contracts (shared with demo)
 import { CityToken } from "../contracts/citysync/token/CityToken.sol";
 import { VoteToken } from "../contracts/citysync/token/VoteToken.sol";
-import { OpportunityManager } from "../contracts/citysync/opportunity/OpportunityManager.sol";
 import { RedeemerRegistry } from "../contracts/citysync/redeem/RedeemerRegistry.sol";
 import { RedemptionReceipt } from "../contracts/citysync/redeem/RedemptionReceipt.sol";
 import { Redemption } from "../contracts/citysync/redeem/Redemption.sol";
@@ -15,6 +14,7 @@ import { Redemption } from "../contracts/citysync/redeem/Redemption.sol";
 import { MCECredit } from "../contracts/demo/token/MCECredit.sol";
 import { IssuerRegistry } from "../contracts/demo/identity/IssuerRegistry.sol";
 import { DemoRedeemerRegistry } from "../contracts/demo/identity/DemoRedeemerRegistry.sol";
+import { DemoOpportunityManager } from "../contracts/demo/opportunity/DemoOpportunityManager.sol";
 import { MCERegistry } from "../contracts/demo/mce/MCERegistry.sol";
 import { MCETaskRegistry } from "../contracts/demo/mce/MCETaskRegistry.sol";
 import { MCERedemption } from "../contracts/demo/redeem/MCERedemption.sol";
@@ -42,7 +42,7 @@ contract DeployDemo is Script {
     // ---------- Deployed addresses (readable after run()) ----------
     CityToken        public city;
     VoteToken        public vote;
-    OpportunityManager public mgr;
+    DemoOpportunityManager public mgr;
     RedeemerRegistry public pilotRedeemerReg;
     RedemptionReceipt public receipt;
     Redemption       public redemption;
@@ -90,22 +90,22 @@ contract DeployDemo is Script {
         );
 
         // ============================================================
-        // 2. PILOT TASK & REDEMPTION LAYER
-        //    Regular civic tasks (non-MCE). Issuers approved by admin.
-        // ============================================================
-
-        mgr              = new OpportunityManager(admin, city, vote);
-        pilotRedeemerReg = new RedeemerRegistry(admin);
-        receipt          = new RedemptionReceipt(admin);
-        redemption       = new Redemption(admin, city, pilotRedeemerReg, receipt);
-
-        // ============================================================
-        // 3. DEMO IDENTITY LAYER
+        // 2. DEMO IDENTITY LAYER
         //    Self-service registration — no admin approval required.
         // ============================================================
 
         issuerReg      = new IssuerRegistry(admin);
         demoRedeemerReg = new DemoRedeemerRegistry(admin);
+
+        // ============================================================
+        // 3. PILOT TASK & REDEMPTION LAYER
+        //    Demo manager accepts any active issuer in IssuerRegistry.
+        // ============================================================
+
+        mgr              = new DemoOpportunityManager(admin, city, vote, issuerReg);
+        pilotRedeemerReg = new RedeemerRegistry(admin);
+        receipt          = new RedemptionReceipt(admin);
+        redemption       = new Redemption(admin, city, pilotRedeemerReg, receipt);
 
         // ============================================================
         // 4. DEMO MCE LAYER

@@ -153,7 +153,6 @@ const _randomAddress = () =>
   ).join("");
 
 const VERIFY_DURATION = 7; // seconds
-const CERTIFIED_ISSUER_ROLE = keccak256(stringToHex("CERTIFIED_ISSUER_ROLE"));
 
 const parseTaskOpportunityId = (taskId: string): bigint | null => {
   const m = taskId.match(/^task-(\d+)$/);
@@ -989,20 +988,19 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const isApproved = (await baseSepoliaPublicClient.readContract({
-          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-          functionName: "hasRole",
-          args: [CERTIFIED_ISSUER_ROLE, address],
+        const isActiveIssuer = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+          abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+          functionName: "isActiveIssuer",
+          args: [address],
         })) as boolean;
 
-        if (!isApproved) {
+        if (!isActiveIssuer) {
           dispatch({ type: "ISSUER_CREATE_TASK", task });
           return {
             ok: false,
             taskId: task.id,
-            error:
-              "Issuer is not approved in OpportunityManager. Admin must call setIssuerApproved(issuer, true) for this wallet.",
+            error: "Issuer account is not active in IssuerRegistry. Register issuer profile first.",
           };
         }
       } catch {

@@ -55,6 +55,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Issuer UI now tracks `Last Task Write` state (`pending | confirmed | failed`) with explorer link.
   - Issuing tasks from catalog now uses returned onchain task ID (`task-<opportunityId>`) when available so downstream claim/verify mapping aligns with contract IDs.
   - Added preflight role check for task issuance: frontend now checks `OpportunityManager.hasRole(CERTIFIED_ISSUER_ROLE, issuerAddress)` before write and surfaces a clear admin action message instead of opaque user-op revert.
+- Demo contract architecture update for smooth self-serve issuer UX:
+  - Added `contracts/demo/opportunity/DemoOpportunityManager.sol`, a demo-specific manager that keeps existing opportunity lifecycle/events but gates `createOpportunity` by `IssuerRegistry.isActiveIssuer(msg.sender)` instead of manual `CERTIFIED_ISSUER_ROLE` approval flow.
+  - Updated `script/DeployDemo.s.sol` to deploy `DemoOpportunityManager` and wire CITY/VOTE minter roles to it.
+  - Updated frontend issuer preflight in `DemoContext.tsx` to validate against `IssuerRegistry.isActiveIssuer` instead of `OpportunityManager.hasRole`.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
