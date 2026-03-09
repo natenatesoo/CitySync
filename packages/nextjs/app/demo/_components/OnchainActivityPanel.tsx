@@ -73,6 +73,36 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   }, []);
 
   useEffect(() => {
+    if (role !== "issuer") return;
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("citysync:demo:issuer:activity:v1");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { cursor?: string; items?: ActivityItem[] };
+      if (parsed.cursor) issuerCursorRef.current = BigInt(parsed.cursor);
+      if (Array.isArray(parsed.items)) setItems(parsed.items.slice(0, 12));
+    } catch {
+      // Ignore hydration failures.
+    }
+  }, [role]);
+
+  useEffect(() => {
+    if (role !== "issuer") return;
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        "citysync:demo:issuer:activity:v1",
+        JSON.stringify({
+          cursor: issuerCursorRef.current?.toString() ?? null,
+          items,
+        }),
+      );
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [items, role]);
+
+  useEffect(() => {
     const run = async () => {
       if (latestBlock === null) return;
 

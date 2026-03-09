@@ -123,6 +123,9 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Replaced issuer feed with incremental block-cursor event scanning focused on `OpportunityManager` task lifecycle events.
   - Feed now appends newly observed `OpportunityCreated` and `CompletionVerified` events, maps issuer org names where available, and keeps an in-memory deduped rolling window.
   - This removes dependence on expensive full-history rescans and improves consistency with Account Abstraction transaction paths.
+- Issuer persistence follow-up:
+  - Added local persistence for Issuer Task Catalog templates (`approvedCatalogTasks`) keyed by issuer wallet so approved tasks remain available after role switches/sign-out/sign-in.
+  - Added local persistence for Issuer activity feed snapshot + cursor so recent activity remains visible across role switches/re-auth while continuing to append new onchain events.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

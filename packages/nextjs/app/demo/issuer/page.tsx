@@ -405,6 +405,32 @@ export default function IssuerApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const catalogStorageKey = React.useMemo(
+    () => `citysync:demo:issuer:catalog:v1:${(address ?? FAKE_WALLETS.issuer).toLowerCase()}`,
+    [address],
+  );
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(catalogStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Task[];
+      if (Array.isArray(parsed)) setApprovedCatalogTasks(parsed);
+    } catch {
+      // Ignore catalog hydration failures.
+    }
+  }, [catalogStorageKey]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(catalogStorageKey, JSON.stringify(approvedCatalogTasks));
+    } catch {
+      // Ignore catalog persistence failures.
+    }
+  }, [approvedCatalogTasks, catalogStorageKey]);
+
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
   const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
