@@ -4,15 +4,15 @@ const localAbis = deployedContracts[31337];
 
 export const BASE_SEPOLIA_CONTRACTS = {
   CityToken: {
-    address: "0xA1526B32AF6aA6CE824F8734E967aD410192b05c" as const,
+    address: "0x64C31DC314b9c711e0ea3453593b7d052863dBd2" as const,
     abi: localAbis.CityToken.abi,
   },
   VoteToken: {
-    address: "0xEEa4fBc7a74504A3095AF042D487cFFf2ebff1eC" as const,
+    address: "0xEB1fd5daf0a9900759B35103a063d783662E8412" as const,
     abi: localAbis.VoteToken.abi,
   },
   MCECredit: {
-    address: "0x0f62c344264eDBCDFcDF55579191557259D6Ef0D" as const,
+    address: "0x92f1B2B61b59235e7530F5B9Ff5f57Bec1A76BEa" as const,
     // Minimal ABI needed for wallet balance sync.
     abi: [
       {
@@ -25,15 +25,15 @@ export const BASE_SEPOLIA_CONTRACTS = {
     ] as const,
   },
   OpportunityManager: {
-    address: "0x613b383907275871171A8cEBD8273D965582a2ac" as const,
+    address: "0x173d7Af66242F474634aF126e12bB0619C3Cfda3" as const,
     abi: localAbis.OpportunityManager.abi,
   },
   RedeemerRegistry: {
-    address: "0xc0DD5364670f25066f0ABEC353a9b84Bda6221d1" as const,
+    address: "0xD0aE57cf025d507907c3Fde280ADF3da73655F2e" as const,
     abi: localAbis.RedeemerRegistry.abi,
   },
   IssuerRegistryDemo: {
-    address: "0x513c1e9c303Ed184D7eed07e48555DAaCE5CEbD2" as const,
+    address: "0x01268481C3324b7759D6A82594428c9bDe5C3645" as const,
     abi: [
       {
         type: "function",
@@ -52,7 +52,7 @@ export const BASE_SEPOLIA_CONTRACTS = {
     ] as const,
   },
   DemoRedeemerRegistry: {
-    address: "0xB9d731DE9fbe753b707ACe82E9A6C4061522240E" as const,
+    address: "0x8dA2A729772d86BF102E52c78d0e2B94035971F5" as const,
     abi: [
       {
         type: "function",
@@ -153,7 +153,7 @@ export const BASE_SEPOLIA_CONTRACTS = {
     ] as const,
   },
   MCERedemption: {
-    address: "0xdf218F9963a53A26a75e7E78E6D657030cda71CD" as const,
+    address: "0x0046D2fFb701c728a24D90074F408dB87Bba2188" as const,
     abi: [
       {
         type: "function",
@@ -168,7 +168,7 @@ export const BASE_SEPOLIA_CONTRACTS = {
     ] as const,
   },
   Redemption: {
-    address: "0xc7C285d9454251896c4F11C075D7A0Bcc3910C6D" as const,
+    address: "0x65f3586c7FeB476812738BF9c76A9EE558624B65" as const,
     abi: [
       {
         type: "function",

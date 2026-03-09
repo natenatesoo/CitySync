@@ -59,6 +59,8 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Added `contracts/demo/opportunity/DemoOpportunityManager.sol`, a demo-specific manager that keeps existing opportunity lifecycle/events but gates `createOpportunity` by `IssuerRegistry.isActiveIssuer(msg.sender)` instead of manual `CERTIFIED_ISSUER_ROLE` approval flow.
   - Updated `script/DeployDemo.s.sol` to deploy `DemoOpportunityManager` and wire CITY/VOTE minter roles to it.
   - Updated frontend issuer preflight in `DemoContext.tsx` to validate against `IssuerRegistry.isActiveIssuer` instead of `OpportunityManager.hasRole`.
+- Deployment alignment:
+  - Updated `packages/nextjs/app/demo/_config/baseSepoliaContracts.ts` hardcoded addresses to match the latest Base Sepolia deployment set from `deployments/84532.json`.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
