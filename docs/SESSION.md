@@ -632,3 +632,10 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Confirmed contract behavior: `OpportunityManager.verifyCompletion` mints both CITY and VOTE onchain in one transaction.
 - Updated task issuance write path to pass explicit `rewardVote` from task `voteTokens` when calling `createOpportunity` (instead of relying on `0 => mirror CITY` fallback).
 - Updated issuer success toast to explicitly state CITY + VOTE minting onchain.
+
+## 2026-03-09 — Remove Scaffold Local Provider Popups
+
+- Disabled Scaffold faucet UI mounts in global shell:
+  - removed `<Faucet />` from footer
+  - removed `<FaucetButton />` from header
+- This prevents the recurring "Cannot connect to local provider" popup while preserving wallet/provider plumbing for the demo.
