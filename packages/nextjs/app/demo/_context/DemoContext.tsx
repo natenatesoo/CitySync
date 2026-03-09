@@ -153,6 +153,7 @@ const _randomAddress = () =>
   ).join("");
 
 const VERIFY_DURATION = 7; // seconds
+const CERTIFIED_ISSUER_ROLE = keccak256(stringToHex("CERTIFIED_ISSUER_ROLE"));
 
 const parseTaskOpportunityId = (taskId: string): bigint | null => {
   const m = taskId.match(/^task-(\d+)$/);
@@ -982,6 +983,32 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         category: task.category,
       });
 
+      if (!address) {
+        dispatch({ type: "ISSUER_CREATE_TASK", task });
+        return { ok: false, taskId: task.id, error: "No connected issuer wallet found." };
+      }
+
+      try {
+        const isApproved = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "hasRole",
+          args: [CERTIFIED_ISSUER_ROLE, address],
+        })) as boolean;
+
+        if (!isApproved) {
+          dispatch({ type: "ISSUER_CREATE_TASK", task });
+          return {
+            ok: false,
+            taskId: task.id,
+            error:
+              "Issuer is not approved in OpportunityManager. Admin must call setIssuerApproved(issuer, true) for this wallet.",
+          };
+        }
+      } catch {
+        // If preflight check fails, continue and let write path determine success.
+      }
+
       try {
         const result = await writeContractAsync({
           address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
@@ -1010,7 +1037,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         return { ok: false, taskId: task.id, error: message };
       }
     },
-    [getOpportunityIdFromReceipt, getResultHash, writeContractAsync],
+    [address, getOpportunityIdFromReceipt, getResultHash, writeContractAsync],
   );
 
   const issuerVerifyCompletion = useCallback(

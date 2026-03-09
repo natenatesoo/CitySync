@@ -54,6 +54,7 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - `issuerCreateTask(...)` now returns onchain write status and resolves the real `opportunityId` from `OpportunityCreated` logs when available.
   - Issuer UI now tracks `Last Task Write` state (`pending | confirmed | failed`) with explorer link.
   - Issuing tasks from catalog now uses returned onchain task ID (`task-<opportunityId>`) when available so downstream claim/verify mapping aligns with contract IDs.
+  - Added preflight role check for task issuance: frontend now checks `OpportunityManager.hasRole(CERTIFIED_ISSUER_ROLE, issuerAddress)` before write and surfaces a clear admin action message instead of opaque user-op revert.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
