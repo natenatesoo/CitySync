@@ -49,6 +49,7 @@ function toItems(
 export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; accent: string }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [latestBlock, setLatestBlock] = useState<bigint | null>(null);
+  const participantCursorRef = useRef<bigint | null>(null);
   const issuerCursorRef = useRef<bigint | null>(null);
   const issuerProfilesRef = useRef<Map<string, string>>(new Map());
   const issuerProfilesLoadedRef = useRef(false);
@@ -57,6 +58,8 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   const redeemerProfilesLoadedRef = useRef(false);
   const issuerHydratedRef = useRef(false);
   const issuerPersistenceReadyRef = useRef(false);
+  const participantHydratedRef = useRef(false);
+  const participantPersistenceReadyRef = useRef(false);
   const redeemerHydratedRef = useRef(false);
   const redeemerPersistenceReadyRef = useRef(false);
 
@@ -78,6 +81,36 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
       window.clearInterval(id);
     };
   }, []);
+
+  useEffect(() => {
+    if (role !== "participant") return;
+    if (typeof window === "undefined") return;
+    participantHydratedRef.current = false;
+    participantPersistenceReadyRef.current = false;
+    try {
+      const raw = window.localStorage.getItem("citysync:demo:participant:activity:v1");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        cursor?: string;
+        items?: Array<{ hash: `0x${string}`; label: string; blockNumber: string; timestamp?: string | null }>;
+      };
+      if (parsed.cursor) participantCursorRef.current = BigInt(parsed.cursor);
+      if (Array.isArray(parsed.items)) {
+        setItems(
+          parsed.items.slice(0, 12).map(item => ({
+            hash: item.hash,
+            label: item.label,
+            blockNumber: BigInt(item.blockNumber),
+            timestamp: item.timestamp ? BigInt(item.timestamp) : undefined,
+          })),
+        );
+      }
+    } catch {
+      // Ignore hydration failures.
+    } finally {
+      participantHydratedRef.current = true;
+    }
+  }, [role]);
 
   useEffect(() => {
     if (role !== "issuer") return;
@@ -166,6 +199,32 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   }, [items, role]);
 
   useEffect(() => {
+    if (role !== "participant") return;
+    if (typeof window === "undefined") return;
+    if (!participantHydratedRef.current) return;
+    if (!participantPersistenceReadyRef.current) {
+      participantPersistenceReadyRef.current = true;
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        "citysync:demo:participant:activity:v1",
+        JSON.stringify({
+          cursor: participantCursorRef.current?.toString() ?? null,
+          items: items.map(item => ({
+            hash: item.hash,
+            label: item.label,
+            blockNumber: item.blockNumber.toString(),
+            timestamp: item.timestamp ? item.timestamp.toString() : null,
+          })),
+        }),
+      );
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [items, role]);
+
+  useEffect(() => {
     if (role !== "redeemer") return;
     if (typeof window === "undefined") return;
     if (!redeemerHydratedRef.current) return;
@@ -194,6 +253,121 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   useEffect(() => {
     const run = async () => {
       if (latestBlock === null) return;
+
+      if (role === "participant") {
+        if (participantCursorRef.current === null) {
+          participantCursorRef.current = latestBlock > 4_000n ? latestBlock - 4_000n : 0n;
+        }
+
+        let from = participantCursorRef.current + 1n;
+        if (from > latestBlock) return;
+
+        const newItems: ActivityItem[] = [];
+        const seen = new Set<string>();
+        const chunk = 400n;
+
+        while (from <= latestBlock) {
+          const to = from + chunk > latestBlock ? latestBlock : from + chunk;
+          const logs = await baseSepoliaPublicClient
+            .getLogs({
+              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+              fromBlock: from,
+              toBlock: to,
+            } as any)
+            .catch(() => []);
+
+          for (const log of logs as any[]) {
+            const hash = log.transactionHash as `0x${string}` | undefined;
+            const bn = log.blockNumber as bigint | undefined;
+            if (!hash || bn === undefined) continue;
+
+            let eventName = "";
+            let actorAddress: string | undefined;
+            try {
+              const decoded = decodeEventLog({
+                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
+                topics: [...(log.topics as readonly `0x${string}`[])] as any,
+                data: log.data,
+              }) as { eventName: string; args: Record<string, unknown> };
+              eventName = decoded.eventName;
+              if (
+                (eventName === "OpportunityClaimed" || eventName === "OpportunityUnclaimed") &&
+                typeof decoded.args.claimer === "string"
+              ) {
+                actorAddress = decoded.args.claimer;
+              } else if (
+                (eventName === "CompletionSubmitted" || eventName === "CompletionVerified") &&
+                typeof decoded.args.citizen === "string"
+              ) {
+                actorAddress = decoded.args.citizen;
+              }
+            } catch {
+              continue;
+            }
+
+            const action =
+              eventName === "OpportunityClaimed"
+                ? "claimOpportunity"
+                : eventName === "OpportunityUnclaimed"
+                  ? "unclaimOpportunity"
+                  : eventName === "CompletionSubmitted"
+                    ? "submitCompletion"
+                    : eventName === "CompletionVerified"
+                      ? "verifyCompletion"
+                      : null;
+
+            if (!action) continue;
+
+            const actorLabel =
+              actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR
+                ? `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`
+                : "Participant Network";
+
+            const key = `${hash}:${action}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            newItems.push({
+              hash,
+              blockNumber: bn,
+              label: `${actorLabel} · ${action}`,
+            });
+          }
+          from = to + 1n;
+        }
+
+        participantCursorRef.current = latestBlock;
+        if (newItems.length === 0) return;
+
+        const uniqueBlocks = Array.from(new Set(newItems.map(item => item.blockNumber.toString()))).map(v => BigInt(v));
+        const blockPairs = await Promise.all(
+          uniqueBlocks.map(async bn => {
+            try {
+              const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn });
+              return [bn.toString(), block.timestamp] as const;
+            } catch {
+              return [bn.toString(), undefined] as const;
+            }
+          }),
+        );
+        const blockTimeMap = new Map<string, bigint | undefined>(blockPairs);
+
+        setItems(prev => {
+          const merged = [
+            ...newItems.map(item => ({ ...item, timestamp: blockTimeMap.get(item.blockNumber.toString()) })),
+            ...prev,
+          ];
+          const dedup = new Map<string, ActivityItem>();
+          merged.forEach(item => {
+            const key = `${item.hash}:${item.label}`;
+            if (!dedup.has(key)) dedup.set(key, item);
+          });
+          return Array.from(dedup.values())
+            .sort((a, b) => Number(b.blockNumber - a.blockNumber))
+            .slice(0, 12);
+        });
+        return;
+      }
 
       if (role === "issuer") {
         if (!issuerProfilesLoadedRef.current) {
@@ -661,7 +835,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
           ? "Issuer Onchain Activity (Global)"
           : role === "redeemer"
             ? "Redeemer Onchain Activity (Global)"
-            : "Recent Onchain Activity"}
+            : "Participant Task Onchain Activity (Global)"}
       </div>
 
       {items.length === 0 ? (

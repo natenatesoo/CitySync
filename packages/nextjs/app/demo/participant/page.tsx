@@ -1880,6 +1880,7 @@ function ExploreTab() {
       }
 
       const next = prev.filter(id => claimedIds.has(id));
+      if (next.length === prev.length && next.every((id, idx) => id === prev[idx])) return prev;
       return next;
     });
   }, [myTasks, pendingTaskSnapshots]);

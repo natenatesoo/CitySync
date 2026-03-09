@@ -601,3 +601,12 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - `Submitted` tasks remain pending and cannot be unclaimed
   - unclaim action is shown only for statuses that contract permits (`None` / `Invalidated`)
 - Added clearer unclaim error toast for `pending/verified` revert case.
+
+## 2026-03-09 — Participant Role Switching + Activity Feed Improvements
+
+- Fixed participant pending-verification effect to avoid redundant state writes when IDs are unchanged, reducing UI churn during/after role switches.
+- Upgraded participant right-side activity panel to task-action specific onchain feed:
+  - incremental cursor-based ingestion from `OpportunityManager`
+  - tracks: `claimOpportunity`, `unclaimOpportunity`, `submitCompletion`, `verifyCompletion`
+  - global participant task activity labels with tx links
+  - local persistence under `citysync:demo:participant:activity:v1` (items + cursor)
