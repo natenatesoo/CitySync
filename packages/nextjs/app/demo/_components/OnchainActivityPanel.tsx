@@ -52,6 +52,8 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   const issuerCursorRef = useRef<bigint | null>(null);
   const issuerProfilesRef = useRef<Map<string, string>>(new Map());
   const issuerProfilesLoadedRef = useRef(false);
+  const issuerHydratedRef = useRef(false);
+  const issuerPersistenceReadyRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,26 +77,52 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   useEffect(() => {
     if (role !== "issuer") return;
     if (typeof window === "undefined") return;
+    issuerHydratedRef.current = false;
+    issuerPersistenceReadyRef.current = false;
     try {
       const raw = window.localStorage.getItem("citysync:demo:issuer:activity:v1");
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { cursor?: string; items?: ActivityItem[] };
+      const parsed = JSON.parse(raw) as {
+        cursor?: string;
+        items?: Array<{ hash: `0x${string}`; label: string; blockNumber: string; timestamp?: string | null }>;
+      };
       if (parsed.cursor) issuerCursorRef.current = BigInt(parsed.cursor);
-      if (Array.isArray(parsed.items)) setItems(parsed.items.slice(0, 12));
+      if (Array.isArray(parsed.items)) {
+        setItems(
+          parsed.items.slice(0, 12).map(item => ({
+            hash: item.hash,
+            label: item.label,
+            blockNumber: BigInt(item.blockNumber),
+            timestamp: item.timestamp ? BigInt(item.timestamp) : undefined,
+          })),
+        );
+      }
     } catch {
       // Ignore hydration failures.
+    } finally {
+      issuerHydratedRef.current = true;
     }
   }, [role]);
 
   useEffect(() => {
     if (role !== "issuer") return;
     if (typeof window === "undefined") return;
+    if (!issuerHydratedRef.current) return;
+    if (!issuerPersistenceReadyRef.current) {
+      issuerPersistenceReadyRef.current = true;
+      return;
+    }
     try {
       window.localStorage.setItem(
         "citysync:demo:issuer:activity:v1",
         JSON.stringify({
           cursor: issuerCursorRef.current?.toString() ?? null,
-          items,
+          items: items.map(item => ({
+            hash: item.hash,
+            label: item.label,
+            blockNumber: item.blockNumber.toString(),
+            timestamp: item.timestamp ? item.timestamp.toString() : null,
+          })),
         }),
       );
     } catch {
