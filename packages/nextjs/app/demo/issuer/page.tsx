@@ -1047,49 +1047,51 @@ function TasksTab({
       </div>
       {loadingOnchain && <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Syncing onchain tasks...</div>}
 
-      {taskWriteStatus.state !== "idle" && (
-        <div
-          style={{
-            ...surfaceCard,
-            marginBottom: 16,
-            border:
-              taskWriteStatus.state === "confirmed"
-                ? "1px solid rgba(221,158,51,0.35)"
-                : taskWriteStatus.state === "failed"
-                  ? "1px solid rgba(255,107,157,0.35)"
-                  : "1px solid rgba(65,105,225,0.35)",
-            background:
-              taskWriteStatus.state === "confirmed"
-                ? "rgba(221,158,51,0.08)"
-                : taskWriteStatus.state === "failed"
-                  ? "rgba(255,107,157,0.08)"
-                  : "rgba(65,105,225,0.08)",
-          }}
-        >
-          <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Last Task Write</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-            {taskWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
-            {taskWriteStatus.state === "confirmed" && "Confirmed onchain"}
-            {taskWriteStatus.state === "failed" && "Failed onchain (UI-only for this attempt)"}
-          </div>
-          {taskWriteStatus.error && (
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>{taskWriteStatus.error}</div>
-          )}
-          {explorerHref && (
-            <a
-              href={explorerHref}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
-            >
-              View on Base Sepolia Explorer ↗
-            </a>
-          )}
-        </div>
-      )}
-
       {view === "my" && (
         <>
+          {taskWriteStatus.state !== "idle" && (
+            <div
+              style={{
+                ...surfaceCard,
+                marginBottom: 16,
+                border:
+                  taskWriteStatus.state === "confirmed"
+                    ? "1px solid rgba(221,158,51,0.35)"
+                    : taskWriteStatus.state === "failed"
+                      ? "1px solid rgba(255,107,157,0.35)"
+                      : "1px solid rgba(65,105,225,0.35)",
+                background:
+                  taskWriteStatus.state === "confirmed"
+                    ? "rgba(221,158,51,0.08)"
+                    : taskWriteStatus.state === "failed"
+                      ? "rgba(255,107,157,0.08)"
+                      : "rgba(65,105,225,0.08)",
+              }}
+            >
+              <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Last Task Write</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+                {taskWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+                {taskWriteStatus.state === "confirmed" && "Confirmed onchain"}
+                {taskWriteStatus.state === "failed" && "Failed onchain (UI-only for this attempt)"}
+              </div>
+              {taskWriteStatus.error && (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>
+                  {taskWriteStatus.error}
+                </div>
+              )}
+              {explorerHref && (
+                <a
+                  href={explorerHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
+                >
+                  View on Base Sepolia Explorer ↗
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Budget bar */}
           {atCap && (
             <div

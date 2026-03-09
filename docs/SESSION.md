@@ -115,6 +115,14 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Issuing a task with `N` slots now performs `N` onchain `createOpportunity` writes (each with `maxCompletions = 1`) instead of a single write with `maxCompletions = N`.
   - Issuer UI status now reports full success, partial success, or failure across the multi-write batch.
   - Removed `Max completions` wording from Issuer Active Tasks cards to reduce confusion.
+- Issuer task/write panel visibility and activity-feed reliability follow-up:
+  - `Last Task Write` status box is now shown only in Tasks → My Tasks (removed from Pending view).
+  - Issuer activity feed now uses chunked contract log reads from IssuerRegistry + OpportunityManager, then decodes event names to function labels, rather than relying on transaction-shape assumptions.
+  - Activity and Active Tasks panels both preserve last good snapshot on transient read failures to avoid disappear/reappear flicker.
+- Issuer activity listener simplification:
+  - Replaced issuer feed with incremental block-cursor event scanning focused on `OpportunityManager` task lifecycle events.
+  - Feed now appends newly observed `OpportunityCreated` and `CompletionVerified` events, maps issuer org names where available, and keeps an in-memory deduped rolling window.
+  - This removes dependence on expensive full-history rescans and improves consistency with Account Abstraction transaction paths.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
