@@ -531,3 +531,20 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - MCE catalog key: `citysync:demo:redeemer:mce-catalog:v1`
 - Added bottom-sheet picker to issue from the relevant catalog:
   - selecting a template issues an onchain write and creates an active offering instance.
+
+## 2026-03-09 — Redeemer Catalog UX + Commit Flow + Activity Feed Stability
+
+- `Add Offering` sheet is now strictly catalog-focused:
+  - title updated to `Add Offering to your Catalog`
+  - submit button updated to `Add To Catalog`
+  - removed lock/epoch warning copy from catalog add/edit flow
+- `Issue Offering From Catalog` sheet now supports:
+  - `Modify Offering` (opens prefilled editor and updates catalog in place)
+  - `Commit Offering` (replaces prior `Issue Onchain` label)
+  - commit confirmation popup with lock/commitment warning before onchain write
+- Added catalog edit wiring for both committed and MCE catalogs with persistence retained.
+- Redeemer activity panel engine upgraded from generic backward polling to incremental cursor-based ingestion:
+  - tracks `DemoRedeemerRegistry`, `Redemption`, and `MCERedemption` logs by new blocks
+  - decodes function call names from tx input where possible
+  - resolves actor labels via `DemoRedeemerRegistry` profiles when available
+  - persists items + cursor under `citysync:demo:redeemer:activity:v1`

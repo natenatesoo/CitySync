@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
+import { useSmartAccountClient } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
@@ -185,6 +186,8 @@ type QROfferingData = {
   costCity: number;
   orgName: string;
 };
+
+type CatalogEditorState = { type: "committed"; editId?: string } | { type: "mce"; editId?: string } | null;
 
 // ─── Success Toast ────────────────────────────────────────────────────────────
 
@@ -376,8 +379,9 @@ function getRedeemerPanels(
 export default function RedeemerApp() {
   const { state, setRole, redeemerProcessRedemption, redeemerAddOffer, dispatch } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
+  const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
-  const [offeringSheet, setOfferingSheet] = useState<"committed" | "mce" | null>(null);
+  const [catalogEditor, setCatalogEditor] = useState<CatalogEditorState>(null);
   const [qrTarget, setQrTarget] = useState<QROfferingData | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [localPosts, setLocalPosts] = useState<Post[]>([]);
@@ -391,6 +395,7 @@ export default function RedeemerApp() {
   const [offerWriteStatus, setOfferWriteStatus] = useState<OfferWriteStatus>({ state: "idle" });
 
   const { redeemer, mces } = state;
+  const canCommitOnchain = Boolean(address && client);
   const allPosts = [...localPosts, ...state.posts];
   const { left: leftPanel, right: rightPanel } = getRedeemerPanels(activeTab, state, committedOfferings, mceOfferings);
 
@@ -437,19 +442,29 @@ export default function RedeemerApp() {
   }, [mceCatalog]);
 
   const handleCreateCommittedOffering = async (data: { name: string; costCity: number; stipulations: string }) => {
+    const catalogId = catalogEditor?.type === "committed" ? catalogEditor.editId : undefined;
     const catalogItem: CustomOffering = {
-      id: `committed-catalog-${Date.now()}`,
+      id: catalogId ?? `committed-catalog-${Date.now()}`,
       name: data.name,
       costCity: data.costCity,
       stipulations: data.stipulations,
       createdAt: new Date().toISOString(),
     };
-    setCommittedCatalog(prev => [catalogItem, ...prev]);
-    setOfferingSheet(null);
-    setToast("Committed offering added to catalog.");
+    setCommittedCatalog(prev => {
+      if (!catalogId) return [catalogItem, ...prev];
+      return prev.map(item => (item.id === catalogId ? { ...item, ...catalogItem } : item));
+    });
+    setCatalogEditor(null);
+    setToast(catalogId ? "Committed offering updated in catalog." : "Committed offering added to catalog.");
   };
 
   const handleIssueCommittedFromCatalog = async (catalogId: string) => {
+    if (!canCommitOnchain) {
+      setOfferWriteStatus({ state: "failed", error: "Wallet session not ready. Please wait and try again." });
+      setToast("Wallet not ready yet. Wait 2-3 seconds and try Commit again.");
+      return;
+    }
+
     const template = committedCatalog.find(item => item.id === catalogId);
     if (!template) return;
 
@@ -493,8 +508,9 @@ export default function RedeemerApp() {
     mceIds: string[];
     mceNames: string[];
   }) => {
+    const catalogId = catalogEditor?.type === "mce" ? catalogEditor.editId : undefined;
     const catalogItem: MCECustomOffering = {
-      id: `mce-catalog-${Date.now()}`,
+      id: catalogId ?? `mce-catalog-${Date.now()}`,
       name: data.name,
       costCity: data.costCity,
       stipulations: data.stipulations,
@@ -502,12 +518,21 @@ export default function RedeemerApp() {
       mceNames: data.mceNames,
       createdAt: new Date().toISOString(),
     };
-    setMceCatalog(prev => [catalogItem, ...prev]);
-    setOfferingSheet(null);
-    setToast("MCE offering added to catalog.");
+    setMceCatalog(prev => {
+      if (!catalogId) return [catalogItem, ...prev];
+      return prev.map(item => (item.id === catalogId ? { ...item, ...catalogItem } : item));
+    });
+    setCatalogEditor(null);
+    setToast(catalogId ? "MCE offering updated in catalog." : "MCE offering added to catalog.");
   };
 
   const handleIssueMceFromCatalog = async (catalogId: string) => {
+    if (!canCommitOnchain) {
+      setOfferWriteStatus({ state: "failed", error: "Wallet session not ready. Please wait and try again." });
+      setToast("Wallet not ready yet. Wait 2-3 seconds and try Commit again.");
+      return;
+    }
+
     const template = mceCatalog.find(item => item.id === catalogId);
     if (!template) return;
 
@@ -584,8 +609,8 @@ export default function RedeemerApp() {
             mceCatalog={mceCatalog}
             onIssueFromCatalogCommitted={() => setCatalogIssueSheet("committed")}
             onIssueFromCatalogMCE={() => setCatalogIssueSheet("mce")}
-            onAddCommitted={() => setOfferingSheet("committed")}
-            onAddMCE={() => setOfferingSheet("mce")}
+            onAddCommitted={() => setCatalogEditor({ type: "committed" })}
+            onAddMCE={() => setCatalogEditor({ type: "mce" })}
             onShowQR={setQrTarget}
             onRemoveAttempt={id => setRemoveTarget(id)}
             onProcess={handleProcess}
@@ -602,22 +627,26 @@ export default function RedeemerApp() {
         {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} />}
       </AppShell>
 
-      {offeringSheet === "committed" && (
+      {catalogEditor?.type === "committed" && (
         <AddOfferingSheet
           type="committed"
           mces={mces}
-          onClose={() => setOfferingSheet(null)}
+          onClose={() => setCatalogEditor(null)}
           onSubmitCommitted={handleCreateCommittedOffering}
           onSubmitMCE={handleCreateMCEOffering}
+          initialCommitted={
+            catalogEditor.editId ? (committedCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
+          }
         />
       )}
-      {offeringSheet === "mce" && (
+      {catalogEditor?.type === "mce" && (
         <AddOfferingSheet
           type="mce"
           mces={mces}
-          onClose={() => setOfferingSheet(null)}
+          onClose={() => setCatalogEditor(null)}
           onSubmitCommitted={handleCreateCommittedOffering}
           onSubmitMCE={handleCreateMCEOffering}
+          initialMCE={catalogEditor.editId ? (mceCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null}
         />
       )}
 
@@ -626,8 +655,11 @@ export default function RedeemerApp() {
           type="committed"
           committedCatalog={committedCatalog}
           mceCatalog={mceCatalog}
+          canCommitOnchain={canCommitOnchain}
           onIssueCommitted={handleIssueCommittedFromCatalog}
           onIssueMCE={handleIssueMceFromCatalog}
+          onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+          onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
           onClose={() => setCatalogIssueSheet(null)}
         />
       )}
@@ -636,8 +668,11 @@ export default function RedeemerApp() {
           type="mce"
           committedCatalog={committedCatalog}
           mceCatalog={mceCatalog}
+          canCommitOnchain={canCommitOnchain}
           onIssueCommitted={handleIssueCommittedFromCatalog}
           onIssueMCE={handleIssueMceFromCatalog}
+          onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+          onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
           onClose={() => setCatalogIssueSheet(null)}
         />
       )}
@@ -1533,6 +1568,8 @@ function AddOfferingSheet({
   onClose,
   onSubmitCommitted,
   onSubmitMCE,
+  initialCommitted,
+  initialMCE,
 }: {
   type: "committed" | "mce";
   mces: ReturnType<typeof useDemo>["state"]["mces"];
@@ -1545,12 +1582,23 @@ function AddOfferingSheet({
     mceIds: string[];
     mceNames: string[];
   }) => void;
+  initialCommitted?: CustomOffering | null;
+  initialMCE?: MCECustomOffering | null;
 }) {
-  const [name, setName] = useState("");
-  const [costCity, setCostCity] = useState("");
-  const [stipulations, setStipulations] = useState("");
-  const [selectedMceIds, setSelectedMceIds] = useState<string[]>([]);
-  const [showEpochConfirm, setShowEpochConfirm] = useState(false);
+  const [name, setName] = useState(type === "committed" ? (initialCommitted?.name ?? "") : (initialMCE?.name ?? ""));
+  const [costCity, setCostCity] = useState(
+    type === "committed"
+      ? initialCommitted?.costCity
+        ? String(initialCommitted.costCity)
+        : ""
+      : initialMCE?.costCity
+        ? String(initialMCE.costCity)
+        : "",
+  );
+  const [stipulations, setStipulations] = useState(
+    type === "committed" ? (initialCommitted?.stipulations ?? "") : (initialMCE?.stipulations ?? ""),
+  );
+  const [selectedMceIds, setSelectedMceIds] = useState(type === "mce" ? (initialMCE?.mceIds ?? []) : []);
 
   const activeMces = mces.filter(m => m.status === "Active" || m.status === "Voting");
 
@@ -1577,14 +1625,7 @@ function AddOfferingSheet({
     }
   };
 
-  const handleSubmit = () => {
-    if (type === "committed") {
-      if (!canSubmitCommitted) return;
-      setShowEpochConfirm(true);
-    } else {
-      doSubmit();
-    }
-  };
+  const handleSubmit = () => doSubmit();
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
@@ -1647,33 +1688,12 @@ function AddOfferingSheet({
         />
 
         <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
-          {type === "committed" ? "New Committed Offering" : "New MCE Offering"}
+          Add Offering to your Catalog
         </div>
         <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
           {type === "committed"
-            ? "This offering will be locked for the duration of the current Epoch. Set your terms carefully — changes are not permitted until the Epoch ends."
-            : "This offering is linked to one or more MCE events. Once created, it cannot be modified. It is locked until the MCE ends."}
-        </div>
-
-        {/* Epoch lock notice */}
-        <div
-          style={{
-            background: type === "committed" ? "rgba(52,238,182,0.05)" : "rgba(221,158,51,0.06)",
-            border: `1px solid ${type === "committed" ? "rgba(52,238,182,0.2)" : "rgba(221,158,51,0.2)"}`,
-            borderRadius: 10,
-            padding: "10px 14px",
-            marginBottom: 20,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <IconLock />
-          <span style={{ fontSize: 12, color: type === "committed" ? ACCENT : "#DD9E33", lineHeight: 1.5 }}>
-            {type === "committed"
-              ? "Committed Offerings are locked until the Epoch ends or the offer expires."
-              : "MCE Offerings are locked immediately upon creation and cannot be changed."}
-          </span>
+            ? "Create or update your committed offering template."
+            : "Create or update your MCE offering template."}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1808,91 +1828,8 @@ function AddOfferingSheet({
             marginTop: 20,
           }}
         >
-          {type === "committed" ? "Lock Committed Offering" : "Lock MCE Offering"}
+          Add To Catalog
         </button>
-
-        {/* Epoch confirmation popup (committed type only) */}
-        {showEpochConfirm && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 60,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0,0,0,0.7)",
-              backdropFilter: "blur(4px)",
-              padding: 20,
-            }}
-            onClick={() => setShowEpochConfirm(false)}
-          >
-            <div
-              style={{
-                width: "100%",
-                maxWidth: 360,
-                background: "#1a1f2e",
-                borderRadius: 20,
-                padding: "28px 24px",
-                border: "1px solid rgba(52,238,182,0.25)",
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div style={{ fontSize: 28, textAlign: "center", marginBottom: 12 }}>🔒</div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", textAlign: "center", marginBottom: 10 }}>
-                Lock Offering?
-              </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: MUTED,
-                  textAlign: "center",
-                  lineHeight: 1.6,
-                  marginBottom: 24,
-                }}
-              >
-                This Offering will remain Valid until the end of the current Epoch. Are you sure?
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <button
-                  onClick={() => {
-                    setShowEpochConfirm(false);
-                    doSubmit();
-                  }}
-                  style={{
-                    width: "100%",
-                    background: ACCENT,
-                    border: "none",
-                    borderRadius: 12,
-                    padding: "13px 0",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: BG,
-                    cursor: "pointer",
-                  }}
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setShowEpochConfirm(false)}
-                  style={{
-                    width: "100%",
-                    background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 12,
-                    padding: "12px 0",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: MUTED,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1902,20 +1839,27 @@ function IssueOfferingFromCatalogSheet({
   type,
   committedCatalog,
   mceCatalog,
+  canCommitOnchain,
   onIssueCommitted,
   onIssueMCE,
+  onModifyCommitted,
+  onModifyMCE,
   onClose,
 }: {
   type: "committed" | "mce";
   committedCatalog: CustomOffering[];
   mceCatalog: MCECustomOffering[];
+  canCommitOnchain: boolean;
   onIssueCommitted: (catalogId: string) => void;
   onIssueMCE: (catalogId: string) => void;
+  onModifyCommitted: (catalogId: string) => void;
+  onModifyMCE: (catalogId: string) => void;
   onClose: () => void;
 }) {
   const isCommitted = type === "committed";
   const accent = isCommitted ? ACCENT : "#DD9E33";
   const list = isCommitted ? committedCatalog : mceCatalog;
+  const [pendingCommitId, setPendingCommitId] = useState<string | null>(null);
 
   return (
     <div
@@ -1957,8 +1901,23 @@ function IssueOfferingFromCatalogSheet({
           {isCommitted ? "Committed Offerings Catalog" : "MCE Offerings Catalog"}
         </div>
         <div style={{ fontSize: 13, color: MUTED, marginBottom: 18 }}>
-          Select a catalog offering to issue onchain as an active offering.
+          Select an offering to modify, or commit it onchain as an active offering.
         </div>
+        {!canCommitOnchain && (
+          <div
+            style={{
+              background: "rgba(255,107,157,0.08)",
+              border: "1px solid rgba(255,107,157,0.25)",
+              borderRadius: 10,
+              padding: "10px 12px",
+              fontSize: 12,
+              color: "rgba(255,255,255,0.8)",
+              marginBottom: 14,
+            }}
+          >
+            Wallet session is still initializing. Commit Offering will enable once ready.
+          </div>
+        )}
 
         {list.length === 0 ? (
           <EmptyState
@@ -1989,31 +1948,64 @@ function IssueOfferingFromCatalogSheet({
                     {item.stipulations}
                   </div>
                 )}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: accent }}>{item.costCity} CITYx</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: accent, marginBottom: 8 }}>
+                  {item.costCity} CITYx
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
                   <button
                     onClick={() => {
-                      if (isCommitted) onIssueCommitted(item.id);
-                      else onIssueMCE(item.id);
+                      if (isCommitted) onModifyCommitted(item.id);
+                      else onModifyMCE(item.id);
                       onClose();
                     }}
                     style={{
-                      background: accent,
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      borderRadius: 10,
+                      padding: "8px 12px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Modify Offering
+                  </button>
+                  <button
+                    onClick={() => setPendingCommitId(item.id)}
+                    disabled={!canCommitOnchain}
+                    style={{
+                      background: canCommitOnchain ? accent : "rgba(255,255,255,0.08)",
                       border: "none",
                       borderRadius: 10,
                       padding: "8px 12px",
                       fontSize: 12,
                       fontWeight: 700,
-                      color: BG,
-                      cursor: "pointer",
+                      color: canCommitOnchain ? BG : MUTED,
+                      cursor: canCommitOnchain ? "pointer" : "not-allowed",
                     }}
                   >
-                    Issue Onchain
+                    Commit Offering
                   </button>
                 </div>
               </div>
             ))}
           </div>
+        )}
+
+        {pendingCommitId && (
+          <ConfirmDialog
+            title="Commit Offering Onchain?"
+            message="This commitment will be locked, and your organization must honor this offering until the end of the current Epoch."
+            confirmLabel="Confirm Commit"
+            onConfirm={() => {
+              if (isCommitted) onIssueCommitted(pendingCommitId);
+              else onIssueMCE(pendingCommitId);
+              setPendingCommitId(null);
+              onClose();
+            }}
+            onCancel={() => setPendingCommitId(null)}
+          />
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { decodeEventLog } from "viem";
+import { decodeEventLog, decodeFunctionData } from "viem";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 
@@ -52,6 +52,9 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   const issuerCursorRef = useRef<bigint | null>(null);
   const issuerProfilesRef = useRef<Map<string, string>>(new Map());
   const issuerProfilesLoadedRef = useRef(false);
+  const redeemerCursorRef = useRef<bigint | null>(null);
+  const redeemerProfilesRef = useRef<Map<string, string>>(new Map());
+  const redeemerProfilesLoadedRef = useRef(false);
   const issuerHydratedRef = useRef(false);
   const issuerPersistenceReadyRef = useRef(false);
   const redeemerHydratedRef = useRef(false);
@@ -115,8 +118,10 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
       const raw = window.localStorage.getItem("citysync:demo:redeemer:activity:v1");
       if (!raw) return;
       const parsed = JSON.parse(raw) as {
+        cursor?: string;
         items?: Array<{ hash: `0x${string}`; label: string; blockNumber: string; timestamp?: string | null }>;
       };
+      if (parsed.cursor) redeemerCursorRef.current = BigInt(parsed.cursor);
       if (Array.isArray(parsed.items)) {
         setItems(
           parsed.items.slice(0, 12).map(item => ({
@@ -172,6 +177,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
       window.localStorage.setItem(
         "citysync:demo:redeemer:activity:v1",
         JSON.stringify({
+          cursor: redeemerCursorRef.current?.toString() ?? null,
           items: items.map(item => ({
             hash: item.hash,
             label: item.label,
@@ -334,18 +340,178 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         return;
       }
 
-      const roleContracts =
-        role === "participant"
-          ? [
-              { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, label: "Participant Task Activity" },
-              { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Participant Redemption Activity" },
-              { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Participant MCE Activity" },
-            ]
-          : [
-              { address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address, label: "Redeemer Registry Activity" },
-              { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Redeemer Redemption Activity" },
-              { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Redeemer MCE Activity" },
-            ];
+      if (role === "redeemer") {
+        if (!redeemerProfilesLoadedRef.current) {
+          try {
+            const redeemers = (await baseSepoliaPublicClient.readContract({
+              address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+              abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+              functionName: "getAllRedeemers",
+              args: [],
+            })) as `0x${string}`[];
+
+            const profiles = await Promise.all(
+              redeemers.map(async redeemer => {
+                try {
+                  const p = (await baseSepoliaPublicClient.readContract({
+                    address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+                    abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+                    functionName: "getProfile",
+                    args: [redeemer],
+                  })) as { orgName: string; active: boolean; registeredAt: bigint };
+                  if (p.active && p.registeredAt > 0n && p.orgName) {
+                    return [redeemer.toLowerCase(), p.orgName] as const;
+                  }
+                } catch {
+                  // fallback below
+                }
+                return [redeemer.toLowerCase(), `${redeemer.slice(0, 6)}...${redeemer.slice(-4)}`] as const;
+              }),
+            );
+
+            profiles.forEach(([addr, name]) => redeemerProfilesRef.current.set(addr, name));
+          } catch {
+            // Non-fatal.
+          } finally {
+            redeemerProfilesLoadedRef.current = true;
+          }
+        }
+
+        if (redeemerCursorRef.current === null) {
+          redeemerCursorRef.current = latestBlock > 4_000n ? latestBlock - 4_000n : 0n;
+        }
+
+        let from = redeemerCursorRef.current + 1n;
+        if (from > latestBlock) return;
+
+        const contracts = [
+          {
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            fallback: "createOffer",
+          },
+          {
+            address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
+            abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+            fallback: "purchaseOffer",
+          },
+          {
+            address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
+            abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
+            fallback: "purchaseOffer",
+          },
+        ] as const;
+
+        const newItems: ActivityItem[] = [];
+        const seen = new Set<string>();
+        const txCache = new Map<string, Awaited<ReturnType<typeof baseSepoliaPublicClient.getTransaction>> | null>();
+        const chunk = 400n;
+
+        while (from <= latestBlock) {
+          const to = from + chunk > latestBlock ? latestBlock : from + chunk;
+          for (const contract of contracts) {
+            const logs = await baseSepoliaPublicClient
+              .getLogs({
+                address: contract.address,
+                fromBlock: from,
+                toBlock: to,
+              } as any)
+              .catch(() => []);
+
+            for (const log of logs as any[]) {
+              const hash = log.transactionHash as `0x${string}` | undefined;
+              const bn = log.blockNumber as bigint | undefined;
+              if (!hash || bn === undefined) continue;
+
+              let tx = txCache.get(hash);
+              if (tx === undefined) {
+                try {
+                  tx = await baseSepoliaPublicClient.getTransaction({ hash });
+                } catch {
+                  tx = null;
+                }
+                txCache.set(hash, tx);
+              }
+
+              let action: string = contract.fallback;
+              let actorAddress: string | undefined = tx?.from;
+
+              if (tx?.input && tx.input !== "0x") {
+                try {
+                  const decoded = decodeFunctionData({
+                    abi: contract.abi as any,
+                    data: tx.input,
+                  });
+                  if (decoded.functionName) action = String(decoded.functionName);
+                  if (decoded.functionName === "purchaseOffer" && Array.isArray(decoded.args)) {
+                    const redeemerArg = decoded.args[0];
+                    if (typeof redeemerArg === "string") actorAddress = redeemerArg;
+                  }
+                } catch {
+                  // Keep fallback action.
+                }
+              }
+
+              let actorLabel = "Redeemer Network";
+              if (actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR) {
+                actorLabel =
+                  redeemerProfilesRef.current.get(actorAddress.toLowerCase()) ??
+                  `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`;
+              }
+
+              const key = `${hash}:${action}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              newItems.push({
+                hash,
+                blockNumber: bn,
+                label: `${actorLabel} · ${action}`,
+              });
+            }
+          }
+          from = to + 1n;
+        }
+
+        redeemerCursorRef.current = latestBlock;
+        if (newItems.length === 0) return;
+
+        const uniqueBlocks = Array.from(new Set(newItems.map(item => item.blockNumber.toString()))).map(v => BigInt(v));
+        const blockPairs = await Promise.all(
+          uniqueBlocks.map(async bn => {
+            try {
+              const block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn });
+              return [bn.toString(), block.timestamp] as const;
+            } catch {
+              return [bn.toString(), undefined] as const;
+            }
+          }),
+        );
+        const blockTimeMap = new Map<string, bigint | undefined>(blockPairs);
+
+        setItems(prev => {
+          const merged = [
+            ...newItems.map(item => ({ ...item, timestamp: blockTimeMap.get(item.blockNumber.toString()) })),
+            ...prev,
+          ];
+          const dedup = new Map<string, ActivityItem>();
+          merged.forEach(item => {
+            const key = `${item.hash}:${item.label}`;
+            if (!dedup.has(key)) dedup.set(key, item);
+          });
+          return Array.from(dedup.values())
+            .sort((a, b) => Number(b.blockNumber - a.blockNumber))
+            .slice(0, 12);
+        });
+
+        return;
+      }
+
+      const roleContracts = [
+        { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, label: "Participant Task Activity" },
+        { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Participant Redemption Activity" },
+        { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Participant MCE Activity" },
+      ];
 
       const fetchLogsBackwards = async (address: `0x${string}`) => {
         const collected: Array<{ transactionHash?: `0x${string}`; blockNumber?: bigint }> = [];
