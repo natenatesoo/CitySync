@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 
@@ -48,11 +48,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [latestBlock, setLatestBlock] = useState<bigint | null>(null);
 
-  const fromBlock = useMemo(() => {
-    if (!latestBlock) return 0n;
-    return latestBlock > 80_000n ? latestBlock - 80_000n : 0n;
-  }, [latestBlock]);
-
   useEffect(() => {
     let cancelled = false;
     const refreshBlock = async () => {
@@ -94,28 +89,35 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Redeemer MCE Activity" },
               ];
 
-      const fetchLogs = async (address: `0x${string}`, startBlock: bigint) => {
-        try {
-          return await baseSepoliaPublicClient.getLogs({
-            address,
-            fromBlock: startBlock,
-            toBlock: latestBlock,
-          } as any);
-        } catch {
-          const tighterStart = latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
+      const fetchLogsBackwards = async (address: `0x${string}`) => {
+        const collected: Array<{ transactionHash?: `0x${string}`; blockNumber?: bigint }> = [];
+        let cursor = latestBlock;
+        let step = 2_000n;
+
+        for (let i = 0; i < 12 && cursor >= 0n && collected.length < 24; i++) {
+          const fromBlock = cursor > step ? cursor - step : 0n;
           try {
-            return await baseSepoliaPublicClient.getLogs({
+            const logs = await baseSepoliaPublicClient.getLogs({
               address,
-              fromBlock: tighterStart,
-              toBlock: latestBlock,
+              fromBlock,
+              toBlock: cursor,
             } as any);
+            collected.push(...logs);
+            if (fromBlock === 0n) break;
+            cursor = fromBlock - 1n;
           } catch {
-            return [];
+            if (step > 250n) {
+              step = step / 2n;
+              continue;
+            }
+            break;
           }
         }
+
+        return collected;
       };
 
-      const settled = await Promise.allSettled(roleContracts.map(c => fetchLogs(c.address, fromBlock)));
+      const settled = await Promise.allSettled(roleContracts.map(c => fetchLogsBackwards(c.address)));
 
       const next: ActivityItem[] = [];
       settled.forEach((s, i) => {
@@ -147,7 +149,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     };
 
     void run();
-  }, [fromBlock, latestBlock, role]);
+  }, [latestBlock, role]);
 
   return (
     <div

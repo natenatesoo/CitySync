@@ -521,7 +521,6 @@ export default function IssuerApp() {
             creditsCommitted={creditsCommitted}
             onCreateOpen={() => setCreateSheet(true)}
             onProposeOpen={() => setProposeSheet(true)}
-            onVerify={handleVerify}
             proposedTasks={proposedTasks}
             onApproveProposed={handleApproveProposed}
             approvedCatalogTasks={approvedCatalogTasks}
@@ -875,7 +874,6 @@ function TasksTab({
   creditsCommitted,
   onCreateOpen,
   onProposeOpen,
-  onVerify,
   proposedTasks,
   onApproveProposed,
   approvedCatalogTasks,
@@ -886,7 +884,6 @@ function TasksTab({
   creditsCommitted: number;
   onCreateOpen: () => void;
   onProposeOpen: () => void;
-  onVerify: (taskId: string, citizen: string) => void;
   proposedTasks: ProposedTask[];
   onApproveProposed: (task: ProposedTask) => void;
   approvedCatalogTasks: Task[];
@@ -908,9 +905,6 @@ function TasksTab({
       verifiedCount: number;
     }>
   >([]);
-  const [pendingAll, setPendingAll] = useState<
-    Array<{ task: { id: string; title: string; credits: number; voteTokens: number }; citizen: string }>
-  >([]);
   const [loadingOnchain, setLoadingOnchain] = useState(false);
   const explorerHref = taskWriteStatus.hash ? `https://sepolia.basescan.org/tx/${taskWriteStatus.hash}` : null;
   const creditsRemaining = EPOCH1_CAP - creditsCommitted;
@@ -919,7 +913,6 @@ function TasksTab({
   useEffect(() => {
     if (!address) {
       setOnchainTasks([]);
-      setPendingAll([]);
       return;
     }
 
@@ -952,11 +945,6 @@ function TasksTab({
           slots: number;
           verifiedCount: number;
         }> = [];
-        const pending: Array<{
-          task: { id: string; title: string; credits: number; voteTokens: number };
-          citizen: string;
-        }> = [];
-
         for (let id = 0n; id < nextId; id++) {
           let opp:
             | readonly [
@@ -1000,43 +988,15 @@ function TasksTab({
             verifiedCount: Number(opp[10]),
           };
           tasks.push(task);
-
-          const claimant = (await baseSepoliaPublicClient.readContract({
-            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-            functionName: "claimedBy",
-            args: [id],
-          })) as `0x${string}`;
-
-          if (claimant === "0x0000000000000000000000000000000000000000") continue;
-
-          const completionRaw = (await baseSepoliaPublicClient.readContract({
-            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-            functionName: "completions",
-            args: [id, claimant],
-          })) as readonly [proofHash: `0x${string}`, submittedAt: bigint, verifiedAt: bigint, status: number];
-          const submittedAt = completionRaw[1];
-          const verifiedAt = completionRaw[2];
-          const status = completionRaw[3];
-          if (verifiedAt > 0n || status === 2) continue;
-          if (submittedAt > 0n || status === 1) {
-            pending.push({
-              task: { id: task.id, title: task.title, credits: task.credits, voteTokens: task.voteTokens },
-              citizen: claimant,
-            });
-          }
         }
 
         tasks.sort((a, b) => Number(b.id.match(/(\d+)$/)?.[1] ?? "0") - Number(a.id.match(/(\d+)$/)?.[1] ?? "0"));
         if (!cancelled) {
           setOnchainTasks(tasks);
-          setPendingAll(pending);
         }
       } catch {
         if (!cancelled) {
           setOnchainTasks([]);
-          setPendingAll([]);
         }
       } finally {
         if (!cancelled) setLoadingOnchain(false);
@@ -1074,7 +1034,7 @@ function TasksTab({
           >
             {v === "my"
               ? `My Tasks (${onchainTasks.length + approvedCatalogTasks.length})`
-              : `Pending (${pendingAll.length + proposedTasks.length})`}
+              : `Pending (${proposedTasks.length})`}
           </button>
         ))}
       </div>
@@ -1414,72 +1374,9 @@ function TasksTab({
             </>
           )}
 
-          {/* Citizen completion verifications */}
-          {pendingAll.length > 0 && <SectionLabel text={`Completion Verifications (${pendingAll.length})`} />}
-          {pendingAll.length === 0 && proposedTasks.length === 0 ? (
-            <EmptyState
-              emoji="🎉"
-              title="All clear!"
-              desc="No pending verifications. Create tasks and participants will start claiming them."
-            />
-          ) : pendingAll.length === 0 ? null : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {pendingAll.map(({ task, citizen }) => (
-                <div
-                  key={`${task.id}-${citizen}`}
-                  style={{
-                    background: SURFACE,
-                    border: "1px solid rgba(221,158,51,0.2)",
-                    borderRadius: 16,
-                    padding: 16,
-                  }}
-                >
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{task.title}</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 11, color: MUTED }}>Citizen: {citizen}</div>
-                  </div>
-
-                  <div
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      borderRadius: 10,
-                      padding: "8px 12px",
-                      marginBottom: 12,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      fontSize: 12,
-                      color: MUTED,
-                    }}
-                  >
-                    <span>Reward on verification</span>
-                    <span>
-                      <span style={{ color: ACCENT }}>{task.credits} CITYx</span>
-                      {" + "}
-                      <span style={{ color: "#4169E1" }}>{task.voteTokens} VOTE</span>
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => onVerify(task.id, citizen)}
-                    style={{
-                      width: "100%",
-                      background: ACCENT,
-                      border: "none",
-                      borderRadius: 12,
-                      padding: "11px 0",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: BG,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Verify & Mint Credits
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          {proposedTasks.length === 0 ? (
+            <EmptyState emoji="🎉" title="All clear!" desc="No pending proposals right now." />
+          ) : null}
         </>
       )}
     </div>

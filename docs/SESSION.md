@@ -93,6 +93,10 @@ When major product, contract-integration, or deployment-impacting changes are ma
   - Removed local `slotInstances` state, localStorage persistence, and reissue-slot simulation handlers from Issuer app state.
   - Tasks tab now builds Active Tasks and Pending Verifications from live `OpportunityManager` reads for the connected issuer.
   - Active Tasks now show onchain completion cap (`maxCompletions`) and verified counts; slot-based simulated counters/actions were removed.
+- Issuer Pending tab and activity feed follow-up:
+  - Removed completion verification cards/actions from Issuer Tasks → Pending section; Pending now only represents simulated proposal-approval flow.
+  - Verification/mint actions are now isolated to Issuer Verify → Completed section (onchain completion submitted, awaiting issuer verification).
+  - Hardened right-panel onchain activity retrieval to scan recent blocks in backward chunks per role contract, improving reliability when RPC rejects large-range log queries.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.
