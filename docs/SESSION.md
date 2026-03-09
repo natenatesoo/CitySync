@@ -592,3 +592,12 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - when task is no longer claimed onchain, pending entry resolves
   - resolved executed tasks are added to local `Completed Tasks` list (persisted per wallet)
   - unclaimed/no-show tasks that were never executed do not move to completed
+
+## 2026-03-09 — Participant Unclaim Failure Root-Cause Alignment
+
+- Root cause: `OpportunityManager.unclaimOpportunity` reverts with `pending/verified` if completion status is `Submitted` or `Verified`.
+- Participant Explore now reads onchain `completions(opportunityId, claimedBy)` status and classifies tasks accordingly:
+  - `Verified` tasks move to `Completed Tasks` (not shown under Claimed)
+  - `Submitted` tasks remain pending and cannot be unclaimed
+  - unclaim action is shown only for statuses that contract permits (`None` / `Invalidated`)
+- Added clearer unclaim error toast for `pending/verified` revert case.

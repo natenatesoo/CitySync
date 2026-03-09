@@ -1323,6 +1323,7 @@ function TaskCard({
   isClaimed,
   locked,
   pendingVerification,
+  canUnclaim,
   showClaimButton,
   showUnclaimButton,
   onClaim,
@@ -1333,6 +1334,7 @@ function TaskCard({
   isClaimed: boolean;
   locked: boolean;
   pendingVerification?: boolean;
+  canUnclaim?: boolean;
   showClaimButton?: boolean;
   showUnclaimButton?: boolean;
   onClaim?: () => void;
@@ -1528,7 +1530,7 @@ function TaskCard({
             ✓ Claimed — go to My Tasks
           </div>
         )}
-        {showUnclaimButton && !pendingVerification && (
+        {showUnclaimButton && !pendingVerification && canUnclaim !== false && (
           <>
             <button
               onClick={onUnclaim}
@@ -1563,19 +1565,37 @@ function TaskCard({
             </button>
           </>
         )}
+        {showUnclaimButton && canUnclaim === false && (
+          <div
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              background: "rgba(255,255,255,0.04)",
+              color: "rgba(255,255,255,0.45)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: "center",
+            }}
+          >
+            Awaiting issuer review
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 function ExploreTab() {
+  type OnchainTask = Task & { claimedBy?: `0x${string}`; completionStatus?: number };
   const { claimTask, unclaimTask, startVerify } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"open" | "claimed" | "completed">("open");
   const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
   const [executeTask, setExecuteTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [onchainTasks, setOnchainTasks] = useState<Array<Task & { claimedBy?: `0x${string}` }>>([]);
+  const [onchainTasks, setOnchainTasks] = useState<OnchainTask[]>([]);
   const [search, setSearch] = useState("");
   const [sortOpen, setSortOpen] = useState(false);
   const [sortBy, setSortBy] = useState<{
@@ -1662,7 +1682,7 @@ function ExploreTab() {
           return;
         }
 
-        const taskPromises: Promise<(Task & { claimedBy?: `0x${string}` }) | null>[] = [];
+        const taskPromises: Promise<OnchainTask | null>[] = [];
         for (let id = 0n; id < nextId; id++) {
           taskPromises.push(
             (async () => {
@@ -1711,6 +1731,20 @@ function ExploreTab() {
                 functionName: "claimedBy",
                 args: [id],
               })) as `0x${string}`;
+              let completionStatus = 0;
+              if (claimedBy && claimedBy !== "0x0000000000000000000000000000000000000000") {
+                try {
+                  const completion = (await baseSepoliaPublicClient.readContract({
+                    address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+                    abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+                    functionName: "completions",
+                    args: [id, claimedBy],
+                  })) as readonly [proofHash: `0x${string}`, submittedAt: bigint, verifiedAt: bigint, status: number];
+                  completionStatus = Number(completion[3] ?? 0);
+                } catch {
+                  completionStatus = 0;
+                }
+              }
 
               const metadata = parseMetadata(opp.metadataURI);
               const slots = opp.maxCompletions === 0n ? 9_999 : Number(opp.maxCompletions);
@@ -1739,12 +1773,13 @@ function ExploreTab() {
                 creditRatePerHr: metadata.creditRatePerHr || 0,
                 credentials: metadata.credentials || "None",
                 claimedBy,
+                completionStatus,
               };
             })(),
           );
         }
 
-        const all = (await Promise.all(taskPromises)).filter(Boolean) as Array<Task & { claimedBy?: `0x${string}` }>;
+        const all = (await Promise.all(taskPromises)).filter(Boolean) as OnchainTask[];
         all.sort((a, b) => {
           const aId = Number((a.id.match(/(\d+)$/)?.[1] ?? "0").toString());
           const bId = Number((b.id.match(/(\d+)$/)?.[1] ?? "0").toString());
@@ -1795,14 +1830,27 @@ function ExploreTab() {
     }
     return 0;
   });
-  const myTasks = onchainTasks.filter(
+  const myTasksRaw = onchainTasks.filter(
     t =>
       !!addressLower &&
       !!t.claimedBy &&
       t.claimedBy.toLowerCase() === addressLower &&
       !optimisticUnclaimIds.includes(t.id),
-  ) as Task[];
+  );
+  const myTasks = myTasksRaw.filter(t => t.completionStatus !== 2);
+  const onchainCompletedTasks = myTasksRaw.filter(t => t.completionStatus === 2);
   const myTaskIds = new Set(myTasks.map(t => t.id));
+
+  useEffect(() => {
+    if (onchainCompletedTasks.length === 0) return;
+    setCompletedTasks(prev => {
+      const existing = new Set(prev.map(t => t.id));
+      const additions = onchainCompletedTasks
+        .filter(t => !existing.has(t.id))
+        .map(t => ({ ...t, completedAt: new Date().toISOString() }));
+      return additions.length > 0 ? [...additions, ...prev] : prev;
+    });
+  }, [onchainCompletedTasks]);
 
   useEffect(() => {
     const claimedIds = new Set(myTasks.map(t => t.id));
@@ -1869,7 +1917,11 @@ function ExploreTab() {
       });
       setToast("Task returned to Open Tasks");
     } else {
-      setToast("Unclaim failed");
+      if ((result.error ?? "").toLowerCase().includes("pending/verified")) {
+        setToast("Cannot unclaim after submission. Await issuer verify/invalidate.");
+      } else {
+        setToast("Unclaim failed");
+      }
     }
   };
 
@@ -2088,7 +2140,8 @@ function ExploreTab() {
               task={task}
               isClaimed
               locked={false}
-              pendingVerification={pendingVerificationIds.includes(task.id)}
+              pendingVerification={pendingVerificationIds.includes(task.id) || task.completionStatus === 1}
+              canUnclaim={task.completionStatus === 0 || task.completionStatus === 3}
               showUnclaimButton
               onUnclaim={() => handleUnclaim(task)}
               onExecute={() => setExecuteTask(task)}
