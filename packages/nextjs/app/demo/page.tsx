@@ -276,7 +276,7 @@ export default function DemoHome() {
         style={{ background: "linear-gradient(180deg, #0D0D14 0%, #111128 50%, #0D0D14 100%)" }}
       >
         <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-          <div className="mb-6">
+          <div className="mb-6" style={{ transform: "translateX(clamp(56px, 8vw, 120px))" }}>
             <HeroLogo />
           </div>
           <p className="mb-2 text-sm font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
