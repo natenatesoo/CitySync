@@ -1030,6 +1030,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const issuerCreateTask = useCallback(
     async (task: Task) => {
       const rewardCity = parseUnits(String(Math.max(0, task.credits)), 18);
+      const rewardVote = parseUnits(String(Math.max(0, task.voteTokens)), 18);
       const metadataURI = JSON.stringify({
         title: task.title,
         description: task.description,
@@ -1069,7 +1070,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           args: [
             metadataURI,
             rewardCity,
-            0n,
+            rewardVote,
             "0x0000000000000000000000000000000000000000",
             0,
             BigInt(task.slots),

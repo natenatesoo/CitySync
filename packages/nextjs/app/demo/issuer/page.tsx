@@ -441,7 +441,7 @@ export default function IssuerApp() {
     const result = await issuerVerifyCompletion(taskId, citizen);
     if (result.ok) {
       setVerifyWriteStatus({ state: "confirmed", hash: result.hash });
-      setToast("Verification complete — credits minted!");
+      setToast("Verification complete — CITY and VOTE minted onchain.");
       return;
     }
     setVerifyWriteStatus({ state: "failed", error: result.error });

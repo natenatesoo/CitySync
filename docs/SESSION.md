@@ -626,3 +626,9 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Issuer task issuance no longer creates local task entries on failed/no-wallet/non-active-issuer paths; tasks are only added when onchain create succeeds.
 - Redeemer offer creation no longer pre-adds local offers before onchain commit.
 - Bumped redeemer catalog/active-offering storage keys to `v2` to clear legacy simulated offering data.
+
+## 2026-03-09 — Explicit VOTE Distribution on Verify & Mint
+
+- Confirmed contract behavior: `OpportunityManager.verifyCompletion` mints both CITY and VOTE onchain in one transaction.
+- Updated task issuance write path to pass explicit `rewardVote` from task `voteTokens` when calling `createOpportunity` (instead of relying on `0 => mirror CITY` fallback).
+- Updated issuer success toast to explicitly state CITY + VOTE minting onchain.
