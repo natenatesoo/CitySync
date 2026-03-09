@@ -1323,10 +1323,12 @@ function TaskCard({
   isClaimed,
   locked,
   pendingVerification,
+  showOnboardButton,
   canUnclaim,
   showClaimButton,
   showUnclaimButton,
   onClaim,
+  onOnboard,
   onUnclaim,
   onExecute,
 }: {
@@ -1334,10 +1336,12 @@ function TaskCard({
   isClaimed: boolean;
   locked: boolean;
   pendingVerification?: boolean;
+  showOnboardButton?: boolean;
   canUnclaim?: boolean;
   showClaimButton?: boolean;
   showUnclaimButton?: boolean;
   onClaim?: () => void;
+  onOnboard?: () => void;
   onUnclaim?: () => void;
   onExecute?: () => void;
 }) {
@@ -1530,7 +1534,42 @@ function TaskCard({
             ✓ Claimed — go to My Tasks
           </div>
         )}
-        {showUnclaimButton && !pendingVerification && canUnclaim !== false && (
+        {showOnboardButton && (
+          <>
+            <button
+              onClick={onUnclaim}
+              style={{
+                padding: "10px 18px",
+                background: "rgba(255,255,255,0.05)",
+                color: "rgba(255,255,255,0.55)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Unclaim
+            </button>
+            <button
+              onClick={onOnboard}
+              style={{
+                flex: 1,
+                padding: "10px 0",
+                background: TEAL,
+                color: "#0f141f",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Onboard Account
+            </button>
+          </>
+        )}
+        {showUnclaimButton && !showOnboardButton && !pendingVerification && canUnclaim !== false && (
           <>
             <button
               onClick={onUnclaim}
@@ -1565,7 +1604,7 @@ function TaskCard({
             </button>
           </>
         )}
-        {showUnclaimButton && canUnclaim === false && (
+        {showUnclaimButton && !showOnboardButton && canUnclaim === false && (
           <div
             style={{
               flex: 1,
@@ -1589,7 +1628,7 @@ function TaskCard({
 
 function ExploreTab() {
   type OnchainTask = Task & { claimedBy?: `0x${string}`; completionStatus?: number };
-  const { claimTask, unclaimTask, startVerify } = useDemo();
+  const { state, claimTask, unclaimTask, startVerify } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"open" | "claimed" | "completed">("open");
   const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
@@ -1610,6 +1649,8 @@ function ExploreTab() {
     organization: false,
   });
   const [pendingVerificationIds, setPendingVerificationIds] = useState<string[]>([]);
+  const [onboardingReadyIds, setOnboardingReadyIds] = useState<string[]>([]);
+  const [isOnboarded, setIsOnboarded] = useState(false);
   const [pendingTaskSnapshots, setPendingTaskSnapshots] = useState<Record<string, Task>>({});
   const [completedTasks, setCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
   const [optimisticUnclaimIds, setOptimisticUnclaimIds] = useState<string[]>([]);
@@ -1618,6 +1659,8 @@ function ExploreTab() {
     if (typeof window === "undefined") return;
     const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
     const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
+    const onboardingReadyKey = `citysync:demo:participant:onboarding-ready:${walletKey}`;
+    const onboardedKey = `citysync:demo:participant:onboarded:${walletKey}`;
     const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
     const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
     try {
@@ -1625,6 +1668,16 @@ function ExploreTab() {
       if (raw) {
         const parsed = JSON.parse(raw) as string[];
         if (Array.isArray(parsed)) setPendingVerificationIds(parsed);
+      }
+      const rawOnboardingReady = window.localStorage.getItem(onboardingReadyKey);
+      if (rawOnboardingReady) {
+        const parsed = JSON.parse(rawOnboardingReady) as string[];
+        if (Array.isArray(parsed)) setOnboardingReadyIds(parsed);
+      }
+      const rawOnboarded = window.localStorage.getItem(onboardedKey);
+      if (rawOnboarded) {
+        const parsed = JSON.parse(rawOnboarded) as boolean;
+        setIsOnboarded(Boolean(parsed));
       }
       const rawSnapshots = window.localStorage.getItem(pendingSnapshotsKey);
       if (rawSnapshots) {
@@ -1645,16 +1698,27 @@ function ExploreTab() {
     if (typeof window === "undefined") return;
     const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
     const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
+    const onboardingReadyKey = `citysync:demo:participant:onboarding-ready:${walletKey}`;
+    const onboardedKey = `citysync:demo:participant:onboarded:${walletKey}`;
     const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
     const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
     try {
       window.localStorage.setItem(pendingKey, JSON.stringify(pendingVerificationIds));
+      window.localStorage.setItem(onboardingReadyKey, JSON.stringify(onboardingReadyIds));
+      window.localStorage.setItem(onboardedKey, JSON.stringify(isOnboarded));
       window.localStorage.setItem(pendingSnapshotsKey, JSON.stringify(pendingTaskSnapshots));
       window.localStorage.setItem(completedKey, JSON.stringify(completedTasks));
     } catch {
       // Ignore persistence failures.
     }
-  }, [address, pendingVerificationIds, pendingTaskSnapshots, completedTasks]);
+  }, [address, pendingVerificationIds, onboardingReadyIds, isOnboarded, pendingTaskSnapshots, completedTasks]);
+
+  useEffect(() => {
+    // Keep legacy participants with existing CITY balances unlocked.
+    if (state.participant.cityBalance > 0 && !isOnboarded) {
+      setIsOnboarded(true);
+    }
+  }, [isOnboarded, state.participant.cityBalance]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1767,7 +1831,10 @@ function ExploreTab() {
                 issuerId: opp.issuer,
                 tags: metadata.tags || ["onchain"],
                 isMCE: false,
-                isOnboarding: false,
+                isOnboarding:
+                  typeof metadata.isOnboarding === "boolean"
+                    ? metadata.isOnboarding
+                    : (metadata.category as TaskCategory) === "Onboarding" || opp.rewardCity === 0n,
                 taskDate: metadata.taskDate || "TBD",
                 successCriteria: metadata.successCriteria || "Complete and submit proof for verification.",
                 creditRatePerHr: metadata.creditRatePerHr || 0,
@@ -1926,10 +1993,32 @@ function ExploreTab() {
     }
   };
 
+  const handleOnboardAccount = async (task: Task) => {
+    const result = await unclaimTask(task.id);
+    if (result.ok) {
+      setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+    }
+    setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
+    setPendingVerificationIds(prev => prev.filter(id => id !== task.id));
+    setPendingTaskSnapshots(prev => {
+      const next = { ...prev };
+      delete next[task.id];
+      return next;
+    });
+    setIsOnboarded(true);
+    setToast("Now that you are onboarded your account can now interact with all City/Sync contracts.");
+  };
+
   const handleExecuteConfirm = () => {
     if (!executeTask) return;
     const task = executeTask;
     setExecuteTask(null);
+    if (task.isOnboarding) {
+      setOnboardingReadyIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+      setPendingTaskSnapshots(prev => ({ ...prev, [task.id]: task }));
+      setToast("Onboarding execution complete. Click Onboard Account to activate access.");
+      return;
+    }
     setPendingVerificationIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
     setPendingTaskSnapshots(prev => ({ ...prev, [task.id]: task }));
     setToast("Submitted. Pending verification by issuer.");
@@ -1973,6 +2062,24 @@ function ExploreTab() {
           </button>
         ))}
       </div>
+
+      {!isOnboarded && view === "open" && (
+        <div
+          style={{
+            background: "rgba(52,238,182,0.1)",
+            border: "1px solid rgba(52,238,182,0.35)",
+            borderRadius: 12,
+            padding: "12px 14px",
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 800, color: TEAL, marginBottom: 5 }}>ONBOARDING REQUIRED</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", lineHeight: 1.55 }}>
+            Complete and execute one in-person onboarding task (0 CITY) to activate your account. Once activated, your
+            account can claim and execute all City/Sync tasks.
+          </div>
+        </div>
+      )}
 
       {/* Category filter — Open Tasks only */}
       {view === "open" && (
@@ -2121,7 +2228,7 @@ function ExploreTab() {
               key={task.id}
               task={task}
               isClaimed={myTaskIds.has(task.id)}
-              locked={false}
+              locked={!isOnboarded && !task.isOnboarding}
               showClaimButton
               onClaim={() => handleClaim(task)}
               onExecute={() => setExecuteTask(task)}
@@ -2141,9 +2248,11 @@ function ExploreTab() {
               task={task}
               isClaimed
               locked={false}
+              showOnboardButton={!isOnboarded && task.isOnboarding && onboardingReadyIds.includes(task.id)}
               pendingVerification={pendingVerificationIds.includes(task.id) || task.completionStatus === 1}
               canUnclaim={task.completionStatus === 0 || task.completionStatus === 3}
               showUnclaimButton
+              onOnboard={() => handleOnboardAccount(task)}
               onUnclaim={() => handleUnclaim(task)}
               onExecute={() => setExecuteTask(task)}
             />

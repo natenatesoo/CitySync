@@ -639,3 +639,16 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - removed `<Faucet />` from footer
   - removed `<FaucetButton />` from header
 - This prevents the recurring "Cannot connect to local provider" popup while preserving wallet/provider plumbing for the demo.
+
+## 2026-03-09 — Participant Onboarding (Low-Friction Activation)
+
+- Added a lightweight onboarding activation path in Participant Explore:
+  - users must execute one onboarding task to activate access
+  - onboarding tasks are identified from onchain metadata/category or `rewardCity == 0`
+  - after execute, a new `Onboard Account` action appears (no issuer role switch required)
+- Onboarding activation now unlocks full task access and displays:
+  - "Now that you are onboarded your account can now interact with all City/Sync contracts."
+- Added per-wallet persistence keys:
+  - `citysync:demo:participant:onboarding-ready:<wallet>`
+  - `citysync:demo:participant:onboarded:<wallet>`
+- Added onboarding-required banner in Explore open view and locked non-onboarding tasks until activation.
