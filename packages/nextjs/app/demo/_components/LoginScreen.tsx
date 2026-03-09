@@ -28,6 +28,7 @@ export function LoginScreen() {
             alignItems: "center",
             gap: 10,
             marginBottom: 16,
+            transform: "translateX(-2px)",
           }}
         >
           <div
