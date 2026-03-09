@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
+import { formatUnits } from "viem";
 import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
+import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
+import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, MOCK_TASKS, Post, PostCategory, Task } from "../_data/mockData";
 
@@ -259,9 +262,8 @@ function getIssuerPanels(
             </PanelCard>
             <PanelCard label="Completed Tasks" title="Awaiting Verification" accent={ACCENT}>
               <p style={{ margin: 0 }}>
-                When a participant marks a task complete, it enters your verification queue. Review the submission and
-                click Verify to trigger on-chain minting — CITYx and VOTE tokens are issued to the participant
-                immediately upon your approval.
+                When a participant submits completion proof onchain, it enters your verification queue automatically.
+                Review and click Verify to mint CITYx and VOTE to the participant.
               </p>
             </PanelCard>
           </>
@@ -375,13 +377,6 @@ interface ProposedTask {
   tags: string[];
 }
 
-type SlotInstance = {
-  instanceId: string;
-  taskId: string;
-  slotIndex: number;
-  status: "issued" | "claimed" | "completed";
-};
-
 type TaskWriteStatus = {
   state: "idle" | "pending" | "confirmed" | "failed";
   hash?: `0x${string}`;
@@ -400,7 +395,6 @@ export default function IssuerApp() {
   const [approvedCatalogTasks, setApprovedCatalogTasks] = useState<Task[]>([]);
   const [issueTaskId, setIssueTaskId] = useState<string | null>(null);
   const [modifyTaskId, setModifyTaskId] = useState<string | null>(null);
-  const [slotInstances, setSlotInstances] = useState<SlotInstance[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
 
@@ -412,53 +406,6 @@ export default function IssuerApp() {
     // Intentional mount-only role selection; avoids reruns when callback identity updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const slotStorageKey = React.useMemo(
-    () => `citysync:demo:issuer:slotInstances:${(address ?? FAKE_WALLETS.issuer).toLowerCase()}`,
-    [address],
-  );
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(slotStorageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw) as SlotInstance[];
-        if (Array.isArray(parsed)) {
-          setSlotInstances(parsed);
-          return;
-        }
-      }
-    } catch {
-      // ignore parse/storage errors
-    }
-
-    // Bootstrap once for previously-issued tasks when no persisted slot state exists.
-    if (issuer.tasks.length > 0) {
-      const bootstrapped = issuer.tasks.flatMap(task =>
-        Array.from({ length: Math.max(0, task.slots) }, (_, i) => ({
-          instanceId: `${task.id}-slot-${i + 1}`,
-          taskId: task.id,
-          slotIndex: i + 1,
-          status: "issued" as const,
-        })),
-      );
-      setSlotInstances(bootstrapped);
-    } else {
-      setSlotInstances([]);
-    }
-    // Intentionally keyed to wallet switch only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slotStorageKey]);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(slotStorageKey, JSON.stringify(slotInstances));
-    } catch {
-      // ignore storage errors
-    }
-  }, [slotInstances, slotStorageKey]);
 
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
@@ -526,15 +473,6 @@ export default function IssuerApp() {
     const localId = `task-issued-${Date.now()}`;
     setTaskWriteStatus({ state: "pending" });
     const result = await issuerCreateTask({ ...task, id: localId, slots, slotsRemaining: slots });
-    const issuedTaskId = result.taskId;
-
-    const instances: SlotInstance[] = Array.from({ length: slots }, (_, i) => ({
-      instanceId: `${issuedTaskId}-slot-${i + 1}`,
-      taskId: issuedTaskId,
-      slotIndex: i + 1,
-      status: "issued",
-    }));
-    setSlotInstances(prev => [...prev, ...instances]);
     setApprovedCatalogTasks(prev => prev.filter(t => t.id !== task.id));
     setIssueTaskId(null);
     if (result.ok) {
@@ -550,27 +488,6 @@ export default function IssuerApp() {
     setApprovedCatalogTasks(prev => prev.map(t => (t.id === taskId ? { ...t, ...updates } : t)));
     setModifyTaskId(null);
     setToast("Task updated.");
-  };
-
-  const handleRemoveSlotInstance = (instanceId: string) => {
-    setSlotInstances(prev => prev.filter(s => s.instanceId !== instanceId));
-  };
-
-  const handleMoveSlotToCompleted = (instanceId: string) => {
-    setSlotInstances(prev => prev.map(s => (s.instanceId === instanceId ? { ...s, status: "completed" } : s)));
-  };
-
-  const handleReissueSlots = (taskId: string, count: number) => {
-    const existing = slotInstances.filter(s => s.taskId === taskId);
-    const maxIndex = existing.reduce((m, s) => Math.max(m, s.slotIndex), 0);
-    const newInstances: SlotInstance[] = Array.from({ length: count }, (_, i) => ({
-      instanceId: `${taskId}-reissue-${Date.now()}-${i}`,
-      taskId,
-      slotIndex: maxIndex + i + 1,
-      status: "issued",
-    }));
-    setSlotInstances(prev => [...prev, ...newInstances]);
-    setToast(`${count} unissued slot${count > 1 ? "s" : ""} returned to task pool!`);
   };
 
   const handleCreatePost = (post: Post) => {
@@ -601,8 +518,6 @@ export default function IssuerApp() {
         )}
         {activeTab === "tasks" && (
           <TasksTab
-            issuerTasks={issuer.tasks}
-            totalPending={totalPending}
             creditsCommitted={creditsCommitted}
             onCreateOpen={() => setCreateSheet(true)}
             onProposeOpen={() => setProposeSheet(true)}
@@ -612,23 +527,13 @@ export default function IssuerApp() {
             approvedCatalogTasks={approvedCatalogTasks}
             onIssueTask={id => setIssueTaskId(id)}
             onModifyTask={id => setModifyTaskId(id)}
-            slotInstances={slotInstances}
-            onReissueSlots={handleReissueSlots}
             taskWriteStatus={taskWriteStatus}
           />
         )}
         {activeTab === "mycity" && (
           <MyCityTab posts={allPosts} orgName={issuer.orgName} onCompose={() => setComposeOpen(true)} />
         )}
-        {activeTab === "verify" && (
-          <VerifyTab
-            issuerTasks={issuer.tasks}
-            slotInstances={slotInstances}
-            onRemoveInstance={handleRemoveSlotInstance}
-            onMoveToCompleted={handleMoveSlotToCompleted}
-            onVerify={handleVerify}
-          />
-        )}
+        {activeTab === "verify" && <VerifyTab onVerify={handleVerify} />}
         {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} />}
       </AppShell>
 
@@ -967,8 +872,6 @@ function ProfileTab({
 // ─── Tasks Tab ────────────────────────────────────────────────────────────────
 
 function TasksTab({
-  issuerTasks,
-  totalPending,
   creditsCommitted,
   onCreateOpen,
   onProposeOpen,
@@ -978,12 +881,8 @@ function TasksTab({
   approvedCatalogTasks,
   onIssueTask,
   onModifyTask,
-  slotInstances,
-  onReissueSlots,
   taskWriteStatus,
 }: {
-  issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
-  totalPending: number;
   creditsCommitted: number;
   onCreateOpen: () => void;
   onProposeOpen: () => void;
@@ -993,15 +892,164 @@ function TasksTab({
   approvedCatalogTasks: Task[];
   onIssueTask: (id: string) => void;
   onModifyTask: (id: string) => void;
-  slotInstances: SlotInstance[];
-  onReissueSlots: (taskId: string, count: number) => void;
   taskWriteStatus: TaskWriteStatus;
 }) {
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"my" | "pending">("my");
-  const pendingAll = issuerTasks.flatMap(t => t.pendingCompletions.map(addr => ({ task: t, citizen: addr })));
+  const [onchainTasks, setOnchainTasks] = useState<
+    Array<{
+      id: string;
+      title: string;
+      category: string;
+      estimatedTime: string;
+      credits: number;
+      voteTokens: number;
+      slots: number;
+      verifiedCount: number;
+    }>
+  >([]);
+  const [pendingAll, setPendingAll] = useState<
+    Array<{ task: { id: string; title: string; credits: number; voteTokens: number }; citizen: string }>
+  >([]);
+  const [loadingOnchain, setLoadingOnchain] = useState(false);
   const explorerHref = taskWriteStatus.hash ? `https://sepolia.basescan.org/tx/${taskWriteStatus.hash}` : null;
   const creditsRemaining = EPOCH1_CAP - creditsCommitted;
   const atCap = creditsRemaining <= 0;
+
+  useEffect(() => {
+    if (!address) {
+      setOnchainTasks([]);
+      setPendingAll([]);
+      return;
+    }
+
+    let cancelled = false;
+    const parseMetadata = (raw: string): Partial<Task> => {
+      try {
+        return JSON.parse(raw) as Partial<Task>;
+      } catch {
+        return {};
+      }
+    };
+
+    const sync = async () => {
+      setLoadingOnchain(true);
+      try {
+        const nextId = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "nextOpportunityId",
+          args: [],
+        })) as bigint;
+
+        const tasks: Array<{
+          id: string;
+          title: string;
+          category: string;
+          estimatedTime: string;
+          credits: number;
+          voteTokens: number;
+          slots: number;
+          verifiedCount: number;
+        }> = [];
+        const pending: Array<{
+          task: { id: string; title: string; credits: number; voteTokens: number };
+          citizen: string;
+        }> = [];
+
+        for (let id = 0n; id < nextId; id++) {
+          let opp:
+            | readonly [
+                issuer: `0x${string}`,
+                metadataURI: string,
+                rewardCity: bigint,
+                rewardVote: bigint,
+                eligibilityHook: `0x${string}`,
+                mode: number,
+                maxCompletions: bigint,
+                expiresAt: bigint,
+                cooldownSeconds: bigint,
+                active: boolean,
+                verifiedCount: number,
+              ]
+            | undefined;
+          try {
+            opp = (await baseSepoliaPublicClient.readContract({
+              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+              abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+              functionName: "opportunities",
+              args: [id],
+            })) as any;
+          } catch {
+            continue;
+          }
+          if (!opp) continue;
+          if (opp[0].toLowerCase() !== address.toLowerCase()) continue;
+
+          const metadata = parseMetadata(opp[1]);
+          const rewardCity = opp[2];
+          const rewardVote = opp[3] === 0n ? opp[2] : opp[3];
+          const task = {
+            id: `task-${id.toString()}`,
+            title: metadata.title || `Opportunity #${id.toString()}`,
+            category: metadata.category || "Community",
+            estimatedTime: metadata.estimatedTime || "TBD",
+            credits: Math.floor(Number(formatUnits(rewardCity, 18))),
+            voteTokens: Math.floor(Number(formatUnits(rewardVote, 18))),
+            slots: Number(opp[6]),
+            verifiedCount: Number(opp[10]),
+          };
+          tasks.push(task);
+
+          const claimant = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "claimedBy",
+            args: [id],
+          })) as `0x${string}`;
+
+          if (claimant === "0x0000000000000000000000000000000000000000") continue;
+
+          const completionRaw = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "completions",
+            args: [id, claimant],
+          })) as readonly [proofHash: `0x${string}`, submittedAt: bigint, verifiedAt: bigint, status: number];
+          const submittedAt = completionRaw[1];
+          const verifiedAt = completionRaw[2];
+          const status = completionRaw[3];
+          if (verifiedAt > 0n || status === 2) continue;
+          if (submittedAt > 0n || status === 1) {
+            pending.push({
+              task: { id: task.id, title: task.title, credits: task.credits, voteTokens: task.voteTokens },
+              citizen: claimant,
+            });
+          }
+        }
+
+        tasks.sort((a, b) => Number(b.id.match(/(\d+)$/)?.[1] ?? "0") - Number(a.id.match(/(\d+)$/)?.[1] ?? "0"));
+        if (!cancelled) {
+          setOnchainTasks(tasks);
+          setPendingAll(pending);
+        }
+      } catch {
+        if (!cancelled) {
+          setOnchainTasks([]);
+          setPendingAll([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingOnchain(false);
+      }
+    };
+
+    void sync();
+    const id = window.setInterval(() => void sync(), 7000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [address]);
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
@@ -1025,11 +1073,12 @@ function TasksTab({
             }}
           >
             {v === "my"
-              ? `My Tasks (${issuerTasks.length + approvedCatalogTasks.length})`
-              : `Pending (${totalPending + proposedTasks.length})`}
+              ? `My Tasks (${onchainTasks.length + approvedCatalogTasks.length})`
+              : `Pending (${pendingAll.length + proposedTasks.length})`}
           </button>
         ))}
       </div>
+      {loadingOnchain && <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Syncing onchain tasks...</div>}
 
       {taskWriteStatus.state !== "idle" && (
         <div
@@ -1228,20 +1277,17 @@ function TasksTab({
             </>
           )}
 
-          {issuerTasks.length === 0 && approvedCatalogTasks.length === 0 ? (
+          {onchainTasks.length === 0 && approvedCatalogTasks.length === 0 ? (
             <EmptyState
               emoji="📭"
               title="No tasks yet"
               desc="Post a task from the catalog to start receiving completions from participants."
             />
-          ) : issuerTasks.length > 0 ? (
+          ) : onchainTasks.length > 0 ? (
             <>
-              <SectionLabel text={`Active Tasks (${issuerTasks.length})`} />
+              <SectionLabel text={`Active Tasks (${onchainTasks.length})`} />
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {issuerTasks.map(t => {
-                  const activeInstances = slotInstances.filter(s => s.taskId === t.id);
-                  const activeCount = activeInstances.length;
-                  const unissuedCount = t.slots - activeCount;
+                {onchainTasks.map(t => {
                   return (
                     <div key={t.id} style={{ ...surfaceCard }}>
                       <div
@@ -1266,29 +1312,8 @@ function TasksTab({
 
                       <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED, marginBottom: 10 }}>
                         <span>✓ {t.verifiedCount} verified</span>
-                        <span>
-                          👥 {activeCount}/{t.slots} slots active
-                        </span>
+                        <span>👥 Max {t.slots > 0 ? t.slots : "∞"} completions</span>
                       </div>
-
-                      {unissuedCount > 0 && (
-                        <button
-                          onClick={() => onReissueSlots(t.id, unissuedCount)}
-                          style={{
-                            width: "100%",
-                            background: "rgba(221,158,51,0.08)",
-                            border: "1px solid rgba(221,158,51,0.3)",
-                            borderRadius: 10,
-                            padding: "8px 0",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "#DD9E33",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Issue {unissuedCount} unissued task{unissuedCount > 1 ? "s" : ""}
-                        </button>
-                      )}
                     </div>
                   );
                 })}
@@ -2233,32 +2258,163 @@ function ComposePostSheet({
 
 // ─── Verify Tab ───────────────────────────────────────────────────────────────
 
-function VerifyTab({
-  issuerTasks,
-  slotInstances,
-  onRemoveInstance,
-  onMoveToCompleted,
-  onVerify,
-}: {
-  issuerTasks: ReturnType<typeof useDemo>["state"]["issuer"]["tasks"];
-  slotInstances: SlotInstance[];
-  onRemoveInstance: (instanceId: string) => void;
-  onMoveToCompleted: (instanceId: string) => void;
-  onVerify: (taskId: string, citizen: string) => void;
-}) {
+type OnchainVerifyItem = {
+  taskId: string;
+  opportunityId: bigint;
+  title: string;
+  estimatedTime: string;
+  credits: number;
+  voteTokens: number;
+  claimant?: `0x${string}`;
+  submittedAt?: bigint;
+};
+
+function VerifyTab({ onVerify }: { onVerify: (taskId: string, citizen: string) => void }) {
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"issued" | "claimed" | "completed">("issued");
   const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
+  const [issuedItems, setIssuedItems] = useState<OnchainVerifyItem[]>([]);
+  const [claimedItems, setClaimedItems] = useState<OnchainVerifyItem[]>([]);
+  const [completedItems, setCompletedItems] = useState<OnchainVerifyItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const getTask = (taskId: string) => issuerTasks.find(t => t.id === taskId);
+  useEffect(() => {
+    if (!address) {
+      setIssuedItems([]);
+      setClaimedItems([]);
+      setCompletedItems([]);
+      return;
+    }
 
-  const issuedInstances = slotInstances.filter(s => s.status === "issued");
-  const claimedInstances = slotInstances.filter(s => s.status === "claimed");
-  const completedInstances = slotInstances.filter(s => s.status === "completed");
+    let cancelled = false;
+
+    const parseMetadata = (raw: string): Partial<Task> => {
+      try {
+        return JSON.parse(raw) as Partial<Task>;
+      } catch {
+        return {};
+      }
+    };
+
+    const syncIssuerTasks = async () => {
+      setLoading(true);
+      try {
+        const nextId = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "nextOpportunityId",
+          args: [],
+        })) as bigint;
+
+        const issued: OnchainVerifyItem[] = [];
+        const claimed: OnchainVerifyItem[] = [];
+        const completed: OnchainVerifyItem[] = [];
+
+        for (let id = 0n; id < nextId; id++) {
+          let oppRaw:
+            | readonly [
+                issuer: `0x${string}`,
+                metadataURI: string,
+                rewardCity: bigint,
+                rewardVote: bigint,
+                eligibilityHook: `0x${string}`,
+                mode: number,
+                maxCompletions: bigint,
+                expiresAt: bigint,
+                cooldownSeconds: bigint,
+                active: boolean,
+                verifiedCount: number,
+              ]
+            | undefined;
+          try {
+            oppRaw = (await baseSepoliaPublicClient.readContract({
+              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+              abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+              functionName: "opportunities",
+              args: [id],
+            })) as any;
+          } catch {
+            continue;
+          }
+          if (!oppRaw) continue;
+
+          const issuer = oppRaw[0];
+          if (issuer.toLowerCase() !== address.toLowerCase()) continue;
+
+          const metadata = parseMetadata(oppRaw[1]);
+          const rewardCity = oppRaw[2];
+          const rewardVote = oppRaw[3];
+          const itemBase: OnchainVerifyItem = {
+            taskId: `task-${id.toString()}`,
+            opportunityId: id,
+            title: metadata.title || `Opportunity #${id.toString()}`,
+            estimatedTime: metadata.estimatedTime || "TBD",
+            credits: Math.floor(Number(formatUnits(rewardCity, 18))),
+            voteTokens: Math.floor(Number(formatUnits(rewardVote === 0n ? rewardCity : rewardVote, 18))),
+          };
+
+          const claimant = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "claimedBy",
+            args: [id],
+          })) as `0x${string}`;
+
+          if (claimant === "0x0000000000000000000000000000000000000000") {
+            issued.push(itemBase);
+            continue;
+          }
+
+          const completionRaw = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "completions",
+            args: [id, claimant],
+          })) as readonly [proofHash: `0x${string}`, submittedAt: bigint, verifiedAt: bigint, status: number];
+          const completion = {
+            submittedAt: completionRaw[1],
+            verifiedAt: completionRaw[2],
+            status: completionRaw[3],
+          };
+
+          if (completion.verifiedAt > 0n || completion.status === 2) continue;
+          if (completion.submittedAt > 0n || completion.status === 1) {
+            completed.push({ ...itemBase, claimant, submittedAt: completion.submittedAt });
+          } else {
+            claimed.push({ ...itemBase, claimant });
+          }
+        }
+
+        const sortByIdDesc = (a: OnchainVerifyItem, b: OnchainVerifyItem) =>
+          Number(b.opportunityId) - Number(a.opportunityId);
+        if (!cancelled) {
+          setIssuedItems(issued.sort(sortByIdDesc));
+          setClaimedItems(claimed.sort(sortByIdDesc));
+          setCompletedItems(completed.sort(sortByIdDesc));
+        }
+      } catch {
+        if (!cancelled) {
+          setIssuedItems([]);
+          setClaimedItems([]);
+          setCompletedItems([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void syncIssuerTasks();
+    const id = window.setInterval(() => void syncIssuerTasks(), 7000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [address]);
 
   const TOGGLE_OPTIONS = [
-    { key: "issued", label: `Issued (${issuedInstances.length})` },
-    { key: "claimed", label: `Claimed (${claimedInstances.length})` },
-    { key: "completed", label: `Completed (${completedInstances.length})` },
+    { key: "issued", label: `Issued (${issuedItems.length})` },
+    { key: "claimed", label: `Claimed (${claimedItems.length})` },
+    { key: "completed", label: `Completed (${completedItems.length})` },
   ] as const;
 
   return (
@@ -2295,10 +2451,12 @@ function VerifyTab({
         ))}
       </div>
 
+      {loading && <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Syncing onchain issuer tasks...</div>}
+
       {/* ── Issued Instances ── */}
       {view === "issued" && (
         <>
-          {issuedInstances.length === 0 ? (
+          {issuedItems.length === 0 ? (
             <EmptyState
               emoji="📋"
               title="No issued tasks"
@@ -2306,11 +2464,9 @@ function VerifyTab({
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {issuedInstances.map(inst => {
-                const task = getTask(inst.taskId);
-                if (!task) return null;
+              {issuedItems.map(task => {
                 return (
-                  <div key={inst.instanceId} style={{ ...surfaceCard }}>
+                  <div key={task.taskId} style={{ ...surfaceCard }}>
                     <div
                       style={{
                         display: "flex",
@@ -2323,9 +2479,7 @@ function VerifyTab({
                         <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
                           {task.title}
                         </div>
-                        <div style={{ fontSize: 11, color: MUTED }}>
-                          {task.estimatedTime} · Slot #{inst.slotIndex}
-                        </div>
+                        <div style={{ fontSize: 11, color: MUTED }}>{task.estimatedTime} · Opportunity Open</div>
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
                         {task.credits} CITYx
@@ -2347,23 +2501,6 @@ function VerifyTab({
                     >
                       Open · Awaiting Claim
                     </div>
-
-                    <button
-                      onClick={() => onRemoveInstance(inst.instanceId)}
-                      style={{
-                        width: "100%",
-                        background: "rgba(255,107,157,0.08)",
-                        border: "1px solid rgba(255,107,157,0.25)",
-                        borderRadius: 10,
-                        padding: "9px 0",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#ff6b9d",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Remove Task
-                    </button>
                   </div>
                 );
               })}
@@ -2375,19 +2512,17 @@ function VerifyTab({
       {/* ── Claimed Instances ── */}
       {view === "claimed" && (
         <>
-          {claimedInstances.length === 0 ? (
+          {claimedItems.length === 0 ? (
             <EmptyState
               emoji="👤"
               title="No claimed tasks"
-              desc="When participants claim your tasks they'll appear here. Move from Issued to simulate a claim."
+              desc="When participants claim your onchain tasks, they will appear here automatically."
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {claimedInstances.map(inst => {
-                const task = getTask(inst.taskId);
-                if (!task) return null;
+              {claimedItems.map(task => {
                 return (
-                  <div key={inst.instanceId} style={{ ...surfaceCard }}>
+                  <div key={task.taskId} style={{ ...surfaceCard }}>
                     <div
                       style={{
                         display: "flex",
@@ -2400,9 +2535,7 @@ function VerifyTab({
                         <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
                           {task.title}
                         </div>
-                        <div style={{ fontSize: 11, color: MUTED }}>
-                          {task.estimatedTime} · Slot #{inst.slotIndex}
-                        </div>
+                        <div style={{ fontSize: 11, color: MUTED }}>{task.estimatedTime} · Claimed In Progress</div>
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
                         {task.credits} CITYx
@@ -2424,40 +2557,13 @@ function VerifyTab({
                     >
                       Claimed · In Progress
                     </div>
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => onRemoveInstance(inst.instanceId)}
-                        style={{
-                          flex: 1,
-                          background: "rgba(255,107,157,0.08)",
-                          border: "1px solid rgba(255,107,157,0.25)",
-                          borderRadius: 10,
-                          padding: "9px 0",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#ff6b9d",
-                          cursor: "pointer",
-                        }}
-                      >
-                        No Show
-                      </button>
-                      <button
-                        onClick={() => onMoveToCompleted(inst.instanceId)}
-                        style={{
-                          flex: 1,
-                          background: "rgba(52,238,182,0.1)",
-                          border: "1px solid rgba(52,238,182,0.3)",
-                          borderRadius: 10,
-                          padding: "9px 0",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: ACCENT,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Move to Completed
-                      </button>
+                    {task.claimant && (
+                      <div style={{ fontSize: 11, color: MUTED, fontFamily: "monospace" }}>
+                        Claimed by {task.claimant.slice(0, 8)}...{task.claimant.slice(-6)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
+                      Waiting for participant completion submission.
                     </div>
                   </div>
                 );
@@ -2470,21 +2576,19 @@ function VerifyTab({
       {/* ── Completed Instances ── */}
       {view === "completed" && (
         <>
-          {completedInstances.length === 0 ? (
+          {completedItems.length === 0 ? (
             <EmptyState
               emoji="🎉"
               title="Nothing to verify yet"
-              desc="Move claimed tasks to Completed, then verify and mint credits here."
+              desc="When participants submit completion proof onchain, they will appear here for verification."
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {completedInstances.map(inst => {
-                const task = getTask(inst.taskId);
-                if (!task) return null;
-                const fbKey = inst.instanceId;
+              {completedItems.map(task => {
+                const fbKey = task.taskId;
                 return (
                   <div
-                    key={inst.instanceId}
+                    key={`${task.taskId}-${task.claimant ?? "none"}`}
                     style={{
                       background: SURFACE,
                       border: "1px solid rgba(221,158,51,0.2)",
@@ -2494,7 +2598,9 @@ function VerifyTab({
                   >
                     <div style={{ marginBottom: 10 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{task.title}</div>
-                      <div style={{ fontSize: 11, color: MUTED }}>Slot #{inst.slotIndex}</div>
+                      <div style={{ fontSize: 11, color: MUTED }}>
+                        Awaiting verification for Opportunity #{task.opportunityId.toString()}
+                      </div>
                     </div>
 
                     <div
@@ -2541,19 +2647,20 @@ function VerifyTab({
 
                     <button
                       onClick={() => {
-                        onVerify(inst.taskId, inst.instanceId);
-                        onRemoveInstance(inst.instanceId);
+                        if (!task.claimant) return;
+                        onVerify(task.taskId, task.claimant);
                       }}
+                      disabled={!task.claimant}
                       style={{
                         width: "100%",
-                        background: ACCENT,
+                        background: task.claimant ? ACCENT : "rgba(255,255,255,0.1)",
                         border: "none",
                         borderRadius: 12,
                         padding: "11px 0",
                         fontSize: 13,
                         fontWeight: 700,
-                        color: BG,
-                        cursor: "pointer",
+                        color: task.claimant ? BG : MUTED,
+                        cursor: task.claimant ? "pointer" : "not-allowed",
                       }}
                     >
                       Verify & Mint Credits

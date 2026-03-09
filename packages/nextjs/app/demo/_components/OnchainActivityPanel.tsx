@@ -50,12 +50,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
   const fromBlock = useMemo(() => {
     if (!latestBlock) return 0n;
-    return latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
-  }, [latestBlock]);
-
-  const fallbackFromBlock = useMemo(() => {
-    if (!latestBlock) return 0n;
-    return latestBlock > 1_500n ? latestBlock - 1_500n : 0n;
+    return latestBlock > 80_000n ? latestBlock - 80_000n : 0n;
   }, [latestBlock]);
 
   useEffect(() => {
@@ -99,15 +94,28 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Redeemer MCE Activity" },
               ];
 
-      const settled = await Promise.allSettled(
-        roleContracts.map(c =>
-          baseSepoliaPublicClient.getLogs({
-            address: c.address,
-            fromBlock: role === "issuer" ? fallbackFromBlock : fromBlock,
+      const fetchLogs = async (address: `0x${string}`, startBlock: bigint) => {
+        try {
+          return await baseSepoliaPublicClient.getLogs({
+            address,
+            fromBlock: startBlock,
             toBlock: latestBlock,
-          } as any),
-        ),
-      );
+          } as any);
+        } catch {
+          const tighterStart = latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
+          try {
+            return await baseSepoliaPublicClient.getLogs({
+              address,
+              fromBlock: tighterStart,
+              toBlock: latestBlock,
+            } as any);
+          } catch {
+            return [];
+          }
+        }
+      };
+
+      const settled = await Promise.allSettled(roleContracts.map(c => fetchLogs(c.address, fromBlock)));
 
       const next: ActivityItem[] = [];
       settled.forEach((s, i) => {
@@ -139,7 +147,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
     };
 
     void run();
-  }, [fallbackFromBlock, fromBlock, latestBlock, role]);
+  }, [fromBlock, latestBlock, role]);
 
   return (
     <div

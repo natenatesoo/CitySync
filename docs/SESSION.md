@@ -78,6 +78,21 @@ When major product, contract-integration, or deployment-impacting changes are ma
 - Onchain-only participant task sourcing + activity feed robustness:
   - Participant Explore now fetches tasks directly from onchain `OpportunityManager` (`nextOpportunityId`, `opportunities(id)`, `claimedBy(id)`), parses metadata, and builds Open/My task lists from contract state instead of simulated local task arrays.
   - Right-side activity panel was simplified to role-relevant contract log streams (per contract address) rather than strict event-shape decoding to reduce empty-feed failures when ABI/event-shape drift occurs.
+- Follow-up fix for missing Open Tasks and blank activity panel:
+  - Fixed onchain task discovery off-by-one in Participant Explore (`opportunityId` loop now includes `0` and only treats `nextOpportunityId == 0` as empty), which restores visibility for first-issued tasks on deployments where IDs start at zero.
+  - Hardened role activity feed log queries with wider lookback and per-contract fallback window so temporary RPC/query-range failures no longer zero out the entire right-side panel.
+  - Updated Issuer Verify empty-state copy to remove simulation wording and reflect chain-driven claim flow.
+- Issuer Verify migrated to chain-derived state:
+  - Verify tab no longer depends on local `slotInstances` simulation for lifecycle transitions.
+  - Issued / Claimed / Completed sections are now built from live `OpportunityManager` reads for the connected issuer:
+    - Issued: issuer opportunities with zero-address `claimedBy`
+    - Claimed: `claimedBy` set, no completion submission yet
+    - Completed: completion submitted onchain and awaiting issuer verification
+  - Verify action now calls onchain `verifyCompletion` directly for the claimant/opportunity pair from this live snapshot.
+- Issuer Tasks tab simulation removal:
+  - Removed local `slotInstances` state, localStorage persistence, and reissue-slot simulation handlers from Issuer app state.
+  - Tasks tab now builds Active Tasks and Pending Verifications from live `OpportunityManager` reads for the connected issuer.
+  - Active Tasks now show onchain completion cap (`maxCompletions`) and verified counts; slot-based simulated counters/actions were removed.
 
 ### Current State
 - `/demo` onchain reads/writes/activity now resolve through the same Account Kit + Base Sepolia context.

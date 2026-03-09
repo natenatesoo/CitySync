@@ -1551,21 +1551,16 @@ function ExploreTab() {
           args: [],
         })) as bigint;
 
-        if (nextId <= 1n) {
+        if (nextId <= 0n) {
           if (!cancelled) setOnchainTasks([]);
           return;
         }
 
         const taskPromises: Promise<(Task & { claimedBy?: `0x${string}` }) | null>[] = [];
-        for (let id = 1n; id < nextId; id++) {
+        for (let id = 0n; id < nextId; id++) {
           taskPromises.push(
             (async () => {
-              const oppRaw = (await baseSepoliaPublicClient.readContract({
-                address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-                functionName: "opportunities",
-                args: [id],
-              })) as unknown as readonly [
+              let oppRaw: readonly [
                 issuer: `0x${string}`,
                 metadataURI: string,
                 rewardCity: bigint,
@@ -1578,6 +1573,17 @@ function ExploreTab() {
                 active: boolean,
                 verifiedCount: number,
               ];
+              try {
+                oppRaw = (await baseSepoliaPublicClient.readContract({
+                  address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+                  abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+                  functionName: "opportunities",
+                  args: [id],
+                })) as unknown as typeof oppRaw;
+              } catch {
+                // Skip missing/sparse IDs without failing the full sync.
+                return null;
+              }
 
               const opp = {
                 issuer: oppRaw[0],
