@@ -1913,11 +1913,12 @@ function ExploreTab() {
     const optimisticUnclaimedByMe = !!addressLower && claimedBy === addressLower && optimisticUnclaimIds.includes(t.id);
     return isUnclaimed || optimisticUnclaimedByMe;
   });
-  const hasOnchainOnboardingOpen = openOnchainTasks.some(t => t.isOnboarding);
-  const openTasks =
-    !isOnboarded && !hasOnchainOnboardingOpen && !localOnboardingClaimed
-      ? [DEMO_LOCAL_ONBOARDING_TASK, ...openOnchainTasks]
-      : openOnchainTasks;
+  const nonOnboardingOpenOnchainTasks = openOnchainTasks.filter(t => !t.isOnboarding);
+  const openTasks = !isOnboarded
+    ? localOnboardingClaimed
+      ? nonOnboardingOpenOnchainTasks
+      : [DEMO_LOCAL_ONBOARDING_TASK, ...nonOnboardingOpenOnchainTasks]
+    : openOnchainTasks;
   const searchedOpenTasks = openTasks.filter(t => {
     const q = search.trim().toLowerCase();
     if (!q) return true;

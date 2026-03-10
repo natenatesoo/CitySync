@@ -658,3 +658,9 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Added a demo-local claimable onboarding task fallback in Participant Explore when no onchain onboarding task is currently open.
 - New participants now always have at least one onboarding task they can claim/execute to activate access.
 - Fallback task participates in the same `Claim -> Execute -> Onboard Account` flow and persists per wallet.
+
+## 2026-03-09 — Single Infinite Onboarding Task Path
+
+- Updated Participant Explore onboarding logic to always use one canonical infinite onboarding task for non-onboarded users.
+- For non-onboarded users, onchain onboarding tasks are hidden so there is only one onboarding path in the UI.
+- After onboarding, normal onchain task visibility resumes.
