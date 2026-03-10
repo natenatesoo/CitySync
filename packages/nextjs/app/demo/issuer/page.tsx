@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useAccount } from "@account-kit/react";
+import { useAccount, useAuthModal, useSignerStatus } from "@account-kit/react";
 import { formatUnits } from "viem";
 import AppShell from "../_components/AppShell";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
@@ -323,6 +323,8 @@ type TaskWriteStatus = {
 export default function IssuerApp() {
   const { state, setRole, issuerCreateTask, issuerVerifyCompletion, issuerSetTaskActive } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
+  const { openAuthModal } = useAuthModal();
+  const { isConnected, isAuthenticating } = useSignerStatus();
   const [activeTab, setActiveTab] = useState("profile");
   const [createSheet, setCreateSheet] = useState(false);
   const [proposeSheet, setProposeSheet] = useState(false);
@@ -336,6 +338,7 @@ export default function IssuerApp() {
   const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [verifyWriteStatus, setVerifyWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [openInfoCards, setOpenInfoCards] = useState<IssuerLearnCardKey[]>([]);
+  const reconnectPromptedRef = useRef(false);
 
   const { issuer } = state;
   const rightPanel = getIssuerRightPanel(activeTab);
@@ -356,6 +359,16 @@ export default function IssuerApp() {
     // Intentional mount-only role selection; avoids reruns when callback identity updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    if (!isConnected || address || isAuthenticating) {
+      reconnectPromptedRef.current = false;
+      return;
+    }
+    if (reconnectPromptedRef.current) return;
+    reconnectPromptedRef.current = true;
+    openAuthModal();
+  }, [address, isAuthenticating, isConnected, openAuthModal]);
 
   const catalogStorageKey = React.useMemo(
     () => `citysync:demo:issuer:catalog:v1:${(address ?? FAKE_WALLETS.issuer).toLowerCase()}`,
@@ -388,6 +401,13 @@ export default function IssuerApp() {
   const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
 
   const handleVerify = async (taskId: string, citizen: string) => {
+    if (!address) {
+      setVerifyWriteStatus({ state: "failed", error: "Session not ready. Finish sign-in and retry Verify & Mint." });
+      if (!isAuthenticating) openAuthModal();
+      setToast("Finish sign-in to activate your issuer account, then retry.");
+      return;
+    }
+
     setVerifyWriteStatus({ state: "pending" });
     const result = await issuerVerifyCompletion(taskId, citizen);
     if (result.ok) {
@@ -441,8 +461,9 @@ export default function IssuerApp() {
 
   const handleIssueTask = async (task: Task, slots: number) => {
     if (!address) {
-      setTaskWriteStatus({ state: "failed", error: "Connect your issuer wallet in the top-right and retry." });
-      setToast("Connect your issuer wallet first, then issue from catalog.");
+      setTaskWriteStatus({ state: "failed", error: "Session not ready. Finish sign-in and tap Issue again." });
+      if (!isAuthenticating) openAuthModal();
+      setToast("Finish sign-in to activate your issuer account, then issue from catalog.");
       return;
     }
 
@@ -513,6 +534,21 @@ export default function IssuerApp() {
         leftPanel={leftPanel}
         rightPanel={rightPanel}
       >
+        {isConnected && !address && (
+          <div
+            style={{
+              marginBottom: 12,
+              background: "rgba(65,105,225,0.12)",
+              border: "1px solid rgba(65,105,225,0.35)",
+              color: "rgba(255,255,255,0.85)",
+              borderRadius: 10,
+              padding: "10px 12px",
+              fontSize: 12,
+            }}
+          >
+            Reconnecting issuer account session…
+          </div>
+        )}
         {activeTab === "profile" && (
           <ProfileTab
             issuer={issuer}

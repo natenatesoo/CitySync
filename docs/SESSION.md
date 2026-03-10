@@ -700,3 +700,13 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - Completed cards now use a confirmation popup before Verify & Mint, including a feedback field
 - Demo context:
   - added issuer helper `issuerSetTaskActive(taskId, active)` for onchain task activation/deactivation writes.
+
+## 2026-03-10 — Issuer Session Reconnect UX
+
+- Replaced issuer write error copy from wallet-centric language to session-centric language:
+  - now uses "Session not ready. Finish sign-in..."
+- Added issuer auto-reconnect behavior:
+  - when signer status is connected but issuer address is missing, auth modal auto-opens once to recover session
+- Added Issuer in-app reconnect banner:
+  - "Reconnecting issuer account session..."
+- Issuer `Issue Task` and `Verify & Mint` now auto-prompt sign-in when session is missing and return actionable retry copy.

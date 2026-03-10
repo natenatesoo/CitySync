@@ -1044,7 +1044,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       });
 
       if (!address) {
-        return { ok: false, taskId: task.id, error: "No connected issuer wallet found." };
+        return {
+          ok: false,
+          taskId: task.id,
+          error: "Session not ready. Finish sign-in to activate your issuer account.",
+        };
       }
 
       try {
