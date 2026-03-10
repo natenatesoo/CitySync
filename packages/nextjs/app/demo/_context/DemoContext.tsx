@@ -1,7 +1,13 @@
 "use client";
 
 import React, { ReactNode, createContext, useCallback, useContext, useEffect, useReducer, useRef } from "react";
-import { useAccount, useSendUserOperation, useSmartAccountClient } from "@account-kit/react";
+import {
+  useAccount,
+  useAuthModal,
+  useSendUserOperation,
+  useSignerStatus,
+  useSmartAccountClient,
+} from "@account-kit/react";
 import { decodeEventLog, encodeFunctionData, formatUnits, keccak256, parseUnits, stringToHex } from "viem";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS, DEMO_OFFER_ROUTES } from "../_config/baseSepoliaContracts";
@@ -614,6 +620,8 @@ const DemoContext = createContext<DemoContextValue | null>(null);
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { address } = useAccount({ type: "ModularAccountV2" });
+  const { openAuthModal } = useAuthModal();
+  const { isConnected, isAuthenticating } = useSignerStatus();
   const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
   const { sendUserOperationAsync } = useSendUserOperation({
     client,
@@ -621,6 +629,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
   const taskStateHydratedRef = useRef(false);
+  const reconnectPromptedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -663,6 +672,29 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     }
   }, [state.availableTasks, state.issuer.tasks, state.issuer.totalTasksIssued]);
 
+  useEffect(() => {
+    if (!isConnected || address || isAuthenticating) {
+      reconnectPromptedRef.current = false;
+      return;
+    }
+    if (reconnectPromptedRef.current) return;
+    reconnectPromptedRef.current = true;
+    openAuthModal();
+  }, [address, isAuthenticating, isConnected, openAuthModal]);
+
+  const normalizeWriteError = useCallback((error: unknown, fallback: string) => {
+    if (!(error instanceof Error)) return fallback;
+    const lower = error.message.toLowerCase();
+    if (
+      lower.includes("smart account client unavailable") ||
+      lower.includes("session not ready") ||
+      lower.includes("no connected issuer wallet")
+    ) {
+      return "Session not ready. Finish sign-in and retry.";
+    }
+    return error.message;
+  }, []);
+
   const writeContractAsync = useCallback(
     async (params: {
       address: `0x${string}`;
@@ -670,7 +702,10 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       functionName: string;
       args: readonly unknown[];
     }) => {
-      if (!client) throw new Error("Smart account client unavailable");
+      if (!client) {
+        if (!isAuthenticating) openAuthModal();
+        throw new Error("Session not ready. Finish sign-in and retry.");
+      }
       const data = encodeFunctionData({
         abi: params.abi as any,
         functionName: params.functionName as any,
@@ -684,7 +719,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         },
       } as any);
     },
-    [client, sendUserOperationAsync],
+    [client, isAuthenticating, openAuthModal, sendUserOperationAsync],
   );
 
   const getResultHash = useCallback((result: unknown): `0x${string}` | undefined => {
@@ -900,11 +935,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         });
         return { ok: true, hash: getResultHash(result) };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Claim failed";
+        const message = normalizeWriteError(error, "Claim failed");
         return { ok: false, error: message };
       }
     },
-    [getResultHash, writeContractAsync],
+    [getResultHash, normalizeWriteError, writeContractAsync],
   );
 
   const unclaimTask = useCallback(
@@ -923,11 +958,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         });
         return { ok: true, hash: getResultHash(result) };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unclaim failed";
+        const message = normalizeWriteError(error, "Unclaim failed");
         return { ok: false, error: message };
       }
     },
-    [getResultHash, writeContractAsync],
+    [getResultHash, normalizeWriteError, writeContractAsync],
   );
 
   const startVerify = useCallback(
@@ -1093,11 +1128,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "ISSUER_CREATE_TASK", task: { ...task, id: finalTaskId } });
         return { ok: true, hash, taskId: finalTaskId };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Task issuance failed";
+        const message = normalizeWriteError(error, "Task issuance failed");
         return { ok: false, taskId: task.id, error: message };
       }
     },
-    [address, getOpportunityIdFromReceipt, getResultHash, writeContractAsync],
+    [address, getOpportunityIdFromReceipt, getResultHash, normalizeWriteError, writeContractAsync],
   );
 
   const issuerVerifyCompletion = useCallback(
@@ -1116,11 +1151,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         });
         return { ok: true, hash: getResultHash(result) };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Verify completion failed";
+        const message = normalizeWriteError(error, "Verify completion failed");
         return { ok: false, error: message };
       }
     },
-    [getResultHash, writeContractAsync],
+    [getResultHash, normalizeWriteError, writeContractAsync],
   );
 
   const issuerSetTaskActive = useCallback(
@@ -1137,11 +1172,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         });
         return { ok: true, hash: getResultHash(result) };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "setOpportunityActive failed";
+        const message = normalizeWriteError(error, "setOpportunityActive failed");
         return { ok: false, error: message };
       }
     },
-    [getResultHash, writeContractAsync],
+    [getResultHash, normalizeWriteError, writeContractAsync],
   );
 
   const redeemerToggleMCE = useCallback(() => {
@@ -1182,11 +1217,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         });
         return { ok: true, hash: getResultHash(result) };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Offer creation failed";
+        const message = normalizeWriteError(error, "Offer creation failed");
         return { ok: false, error: message };
       }
     },
-    [getResultHash, state.redeemer.acceptsMCE, writeContractAsync],
+    [getResultHash, normalizeWriteError, state.redeemer.acceptsMCE, writeContractAsync],
   );
 
   const redeemerRemoveOffer = useCallback(

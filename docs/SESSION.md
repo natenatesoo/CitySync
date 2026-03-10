@@ -710,3 +710,13 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Added Issuer in-app reconnect banner:
   - "Reconnecting issuer account session..."
 - Issuer `Issue Task` and `Verify & Mint` now auto-prompt sign-in when session is missing and return actionable retry copy.
+
+## 2026-03-10 — Global Session Auto-Reconnect (All Roles)
+
+- Promoted reconnect behavior into `DemoContext` so all role actions share the same session policy.
+- Added global auto-auth prompt:
+  - when signer is connected but no smart-account address is present, auth modal auto-opens once to recover session.
+- Centralized write failure normalization:
+  - session/client-unavailable errors now return consistent user-facing copy:
+    - "Session not ready. Finish sign-in and retry."
+- `writeContractAsync` now triggers auth modal automatically when smart-account client is missing before throwing.
