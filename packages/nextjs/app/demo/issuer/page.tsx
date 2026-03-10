@@ -168,6 +168,7 @@ type IssuerLearnCardKey =
   | "activity-stats"
   | "epoch-issuance"
   | "active-tasks"
+  | "issue-tasks"
   | "task-catalog"
   | "verify-flow"
   | "mycity-feed"
@@ -193,6 +194,11 @@ const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, LearnInfoCard> = {
     title: "Active Tasks",
     subtitle: "Live task instance state",
     body: "Active task instances are opportunities that are currently open, claimed, or pending verification. Completed or unissued tasks are excluded from this list.",
+  },
+  "issue-tasks": {
+    title: "Issuing Tasks",
+    subtitle: "How issuance works onchain",
+    body: "Use approved catalog templates to issue live task instances onchain. Each issued instance enters the open task pool for participants to claim, execute, and submit for issuer verification.",
   },
   "task-catalog": {
     title: "Task Catalog Operations",
@@ -517,6 +523,11 @@ export default function IssuerApp() {
             proposedTasks={proposedTasks}
             onApproveProposed={handleApproveProposed}
             approvedCatalogTasks={approvedCatalogTasks}
+            onRemoveCatalogTask={taskId => {
+              setApprovedCatalogTasks(prev => prev.filter(t => t.id !== taskId));
+              setToast("Task removed from catalog.");
+            }}
+            onModifyCatalogTask={taskId => setCatalogModifyTaskId(taskId)}
             taskWriteStatus={taskWriteStatus}
             onLearnMore={openLearnMore}
           />
@@ -546,10 +557,6 @@ export default function IssuerApp() {
           approvedCatalogTasks={approvedCatalogTasks}
           onIssueTask={id => {
             setIssueTaskId(id);
-            setCreateSheet(false);
-          }}
-          onModifyTask={id => {
-            setCatalogModifyTaskId(id);
             setCreateSheet(false);
           }}
         />
@@ -1039,6 +1046,8 @@ function TasksTab({
   proposedTasks,
   onApproveProposed,
   approvedCatalogTasks,
+  onRemoveCatalogTask,
+  onModifyCatalogTask,
   taskWriteStatus,
   onLearnMore,
 }: {
@@ -1048,6 +1057,8 @@ function TasksTab({
   proposedTasks: ProposedTask[];
   onApproveProposed: (task: ProposedTask) => void;
   approvedCatalogTasks: Task[];
+  onRemoveCatalogTask: (taskId: string) => void;
+  onModifyCatalogTask: (taskId: string) => void;
   taskWriteStatus: TaskWriteStatus;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
@@ -1185,9 +1196,6 @@ function TasksTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("task-catalog")} />
-      </div>
       <div
         style={{
           ...surfaceCard,
@@ -1344,6 +1352,9 @@ function TasksTab({
           >
             <IconPlus /> Issue Task from Catalog
           </button>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <LearnMoreLink onClick={() => onLearnMore("issue-tasks")} />
+          </div>
 
           {(() => {
             const openPoolTasks = onchainTasks.filter(
@@ -1422,6 +1433,9 @@ function TasksTab({
           >
             <IconPlus /> Propose New Task for Approval
           </button>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+            <LearnMoreLink onClick={() => onLearnMore("task-catalog")} />
+          </div>
 
           {/* Proposed tasks awaiting approval */}
           {proposedTasks.length > 0 && (
@@ -1513,8 +1527,81 @@ function TasksTab({
           )}
 
           {proposedTasks.length === 0 ? (
-            <EmptyState emoji="🎉" title="All clear!" desc="No pending proposals right now." />
+            <EmptyState emoji="📝" title="Propose a Task to add to your Task Catalog." desc="" />
           ) : null}
+
+          <SectionLabel text={`Task Catalog (${approvedCatalogTasks.length})`} />
+          {approvedCatalogTasks.length === 0 ? (
+            <EmptyState emoji="📚" title="No tasks in catalog" desc="Approve a proposed task to add it to catalog." />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {approvedCatalogTasks.map(task => (
+                <div key={task.id} style={{ ...surfaceCard }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{task.title}</div>
+                      <div style={{ fontSize: 11, color: MUTED }}>
+                        {task.category} · {task.estimatedTime}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", marginLeft: 12 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{task.credits} CITYx</div>
+                      <div style={{ fontSize: 11, color: DIMMED }}>+{task.voteTokens} VOTE</div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED, marginBottom: 12, flexWrap: "wrap" }}
+                  >
+                    <span>📍 {task.location || "TBD"}</span>
+                    <span>📅 {task.taskDate || "TBD"}</span>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => onRemoveCatalogTask(task.id)}
+                      style={{
+                        flex: 1,
+                        background: "rgba(255,107,157,0.12)",
+                        border: "1px solid rgba(255,107,157,0.35)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#ff6b9d",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remove From Catalog
+                    </button>
+                    <button
+                      onClick={() => onModifyCatalogTask(task.id)}
+                      style={{
+                        flex: 1,
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: MUTED,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Modify Task Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>
@@ -1527,12 +1614,10 @@ function CreateTaskSheet({
   onClose,
   approvedCatalogTasks = [],
   onIssueTask,
-  onModifyTask,
 }: {
   onClose: () => void;
   approvedCatalogTasks?: Task[];
   onIssueTask: (taskId: string) => void;
-  onModifyTask: (taskId: string) => void;
 }) {
   return (
     <div
@@ -1612,7 +1697,7 @@ function CreateTaskSheet({
                   <button
                     onClick={() => onIssueTask(task.id)}
                     style={{
-                      flex: 1,
+                      width: "100%",
                       background: ACCENT,
                       border: "none",
                       borderRadius: 10,
@@ -1624,22 +1709,6 @@ function CreateTaskSheet({
                     }}
                   >
                     Issue Task
-                  </button>
-                  <button
-                    onClick={() => onModifyTask(task.id)}
-                    style={{
-                      flex: 1,
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 10,
-                      padding: "9px 0",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: MUTED,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Modify Task
                   </button>
                 </div>
               </div>

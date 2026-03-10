@@ -747,3 +747,12 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
     - Verify (`Verification and Mint`)
     - MCEs (`MCE Strategy`)
   - added new issuer info-card content for those areas.
+
+## 2026-03-10 — Issuer Tasks Tab: Catalog Management + Issue Flow Simplification
+
+- Updated Issuer `Tasks` tab behavior for clearer separation of catalog management vs issuance:
+  - In `Task Catalog`, cards for approved tasks now render directly below `+ Propose New Task for Approval`.
+  - Each catalog card now includes:
+    - `Remove From Catalog` (removes template from catalog state)
+    - `Modify Task Details` (opens existing modify sheet limited to Date/Time and Location)
+- In `Issue Tasks`, after opening `+ Issue Task from Catalog`, issue-sheet cards now show only `Issue Task` (removed `Modify Task` button from that flow).
