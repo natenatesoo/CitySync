@@ -172,13 +172,14 @@ type IssuerLearnCardKey =
   | "task-catalog"
   | "verify-flow"
   | "mycity-feed"
-  | "mce-strategy";
+  | "epoch1-voting"
+  | "next-epoch";
 
 const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, LearnInfoCard> = {
   "becoming-certified-issuer": {
     title: "Becoming a Certified Issuer Organization",
     subtitle: "Role onboarding and certification",
-    body: "Certified Issuer Organizations can publish civic tasks and verify completions. In production, certification is reviewed by governance and operational criteria before issuance permissions are granted.",
+    body: "In production, onboarding certification is reviewed by governance and operational criteria set by City/Sync before issuance permissions are granted. Issuer eligibility requires that an organization be formally incorporated as a public-service entity, demonstrate a track record of serving the local community, and possess the operational capacity to manage and oversee a volunteer program.",
   },
   "activity-stats": {
     title: "Activity Stats",
@@ -202,23 +203,28 @@ const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, LearnInfoCard> = {
   },
   "task-catalog": {
     title: "Task Catalog Operations",
-    subtitle: "From approval to issuance",
-    body: "Approved task templates remain reusable in your catalog. Issuers can issue any template again by creating new onchain task instances for new dates, locations, and slot counts.",
+    subtitle: "From Approval to Issuance",
+    body: "The Task catalog serves to standardize Task rates over time. As new tasks enter the City-Wide Task catalog, the Representative Issuer Committee will begin to set standard rates of similar tasks, similarly. The Committee has the final say in what rate is issued for that Task and if the proposed task satisfies the rule requirements set out by the Committee. The initial Task ruleset will include the following declarations: (1) tasks cannot replace existing paid functions of the Issuer Organization, and (2) tasks must facilitate the delivery of a public-good or public-service.",
   },
   "verify-flow": {
-    title: "Verification and Mint",
-    subtitle: "Finalizing civic work onchain",
-    body: "When issuers verify completion, the workflow mints CITY and VOTE rewards to participants and records the verification transaction for shared visibility across issuer organizations.",
+    title: "Verification and CITY Distribution",
+    subtitle: "Task Tracking",
+    body: "Issuer organizations can keep track of Issued Tasks available to Civic Participants, when they are claimed, and when they need to be verified. When issuers verify completion, the workflow mints CITY and VOTE rewards to participants.",
   },
   "mycity-feed": {
     title: "Issuer MyCity Feed",
-    subtitle: "Public communication layer",
-    body: "The MyCity feed lets issuers publish updates, opportunities, and event context so participant activity and organizational priorities stay coordinated.",
+    subtitle: "Public Communication Layer",
+    body: "The MyCity feed lets Issuer and Redeemer organizations publish updates, opportunities, announcements, and events as a method to inform and engage with Civic Participants. This offers the public-sector a channel for publicity and awareness for important community activities.",
   },
-  "mce-strategy": {
-    title: "MCE Strategy",
-    subtitle: "Planning next coordination cycles",
-    body: "MCE planning helps issuers align task issuance and verification capacity with upcoming city-wide priorities and expected participant demand.",
+  "epoch1-voting": {
+    title: "Epoch 1 Voting",
+    subtitle: "Planning MCE's",
+    body: "Epoch 1 voting is reserved for Civic Participants. Your role is to monitor which proposals are gaining support. The Issuer Representative Committee will be responsible for creating and distributing tasks on behalf of Issuer organizations that will execute on the winning proposal. These tasks will be added to your Task Catalog automatically during the next Epoch.",
+  },
+  "next-epoch": {
+    title: "The Next Epoch",
+    subtitle: "Epoch Proposals & Process",
+    body: "While Epoch 1 Proposals are being voted on, active Issuer and Redeemer organizations will have the ability to propose their own MCE initiatives based on their observations and desires for the community. During this time, Civic Participants can boost these proposals through likes to provide signaling for the Issuer Committee, who will ultimately decide the top 5 proposals based on community need. Redeemers also have the opportunity to influence what 5 proposals are selected by providing preemptive Redemption Offerings for proposals that they like. This allows private businesses to influence community direction through their willingness to offer private goods and services in exchange for local outcomes.",
   },
 };
 
@@ -935,8 +941,9 @@ function ProfileTab({
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Your Role as an Issuer</div>
         <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          You post volunteer tasks, set CITYx and VOTE credit rewards, and verify completions from your wallet. When you
-          verify a completion, CITYx credits and VOTE tokens are minted to the participant on-chain.
+          Certified Issuer Organizations are able to publish civic tasks that expand their impact and mission. They are
+          also responsible for managing and verifying tasks completions. When an Issuer organization verifies task
+          completion, CITY and VOTE credits are distributed to participants onchain.
         </p>
       </div>
 
@@ -3020,9 +3027,6 @@ function MCEsTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("mce-strategy")} />
-      </div>
       {/* Epoch toggle */}
       <div
         style={{
@@ -3063,20 +3067,8 @@ function MCEsTab({
       {/* Epoch 1 — View only, no voting */}
       {section === "epoch1" && (
         <>
-          <div
-            style={{
-              ...surfaceCard,
-              marginBottom: 16,
-              padding: "12px 16px",
-              background: "rgba(65,105,225,0.08)",
-              border: "1px solid rgba(65,105,225,0.25)",
-            }}
-          >
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-              <span style={{ fontWeight: 600, color: "#4169E1" }}>Issuer Organizations observe Epoch 1 voting</span> —
-              you cannot allocate VOTE tokens to proposals. Epoch 1 voting is reserved for Civic Participants. Your role
-              is to monitor which proposals are gaining support and prepare to plan tasks for the winner.
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <LearnMoreLink onClick={() => onLearnMore("epoch1-voting")} />
           </div>
 
           {epoch1Mces.length === 0 ? (
@@ -3157,11 +3149,8 @@ function MCEsTab({
       {/* Epoch 2 — View + Create proposal */}
       {section === "epoch2" && (
         <>
-          <div style={{ ...surfaceCard, marginBottom: 16, padding: "14px 16px" }}>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-              These proposals are gathering community support for the next voting epoch. As an Issuer Organization, you
-              can submit new proposals here. The top-liked proposals may be selected for Epoch 2 voting.
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <LearnMoreLink onClick={() => onLearnMore("next-epoch")} />
           </div>
 
           {/* Create proposal button */}
@@ -3445,7 +3434,7 @@ function IssueTaskPopup({
   onClose: () => void;
   onIssue: (slots: number) => void;
 }) {
-  const [slots, setSlots] = useState(5);
+  const [slots, setSlots] = useState(1);
 
   return (
     <div
