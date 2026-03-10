@@ -489,6 +489,12 @@ export default function IssuerApp() {
   };
 
   const handleIssueTask = async (task: Task, slots: number) => {
+    if (!address) {
+      setTaskWriteStatus({ state: "failed", error: "Connect your issuer wallet in the top-right and retry." });
+      setToast("Connect your issuer wallet first, then issue from catalog.");
+      return;
+    }
+
     setTaskWriteStatus({ state: "pending" });
     setIssueTaskId(null);
 
@@ -1106,7 +1112,7 @@ function TasksTab({
               <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
                 {taskWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
                 {taskWriteStatus.state === "confirmed" && "Confirmed onchain"}
-                {taskWriteStatus.state === "failed" && "Failed onchain (UI-only for this attempt)"}
+                {taskWriteStatus.state === "failed" && "Failed onchain"}
               </div>
               {taskWriteStatus.error && (
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>

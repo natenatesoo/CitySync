@@ -664,3 +664,8 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Updated Participant Explore onboarding logic to always use one canonical infinite onboarding task for non-onboarded users.
 - For non-onboarded users, onchain onboarding tasks are hidden so there is only one onboarding path in the UI.
 - After onboarding, normal onchain task visibility resumes.
+
+## 2026-03-10 — Issuer Task Issue Wallet-Connection Guard
+
+- Added an early guard in Issuer `handleIssueTask` to fail fast when no issuer wallet is connected, with explicit guidance to connect via the top-right wallet control.
+- Updated task write status copy from `Failed onchain (UI-only for this attempt)` to `Failed onchain` to avoid misleading fallback messaging.
