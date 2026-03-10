@@ -233,7 +233,9 @@ type RedeemerLearnCardKey =
   | "offerings-activity"
   | "mycity-feed"
   | "dashboard-metrics"
-  | "mce-participation";
+  | "mce-participation"
+  | "epoch1-voting"
+  | "next-epoch";
 
 const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
   "profile-account": {
@@ -252,9 +254,9 @@ const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
     body: "Catalog entries are reusable templates for future commitments. You can edit them over time and issue new active offerings without recreating details from scratch.",
   },
   "offerings-commitment": {
-    title: "Onchain Commitments",
-    subtitle: "When offers become active",
-    body: "Committing an offering publishes it onchain and makes it redeemable for participants. Active commitments should reflect terms your organization can honor.",
+    title: "Why Offerings Are Committed",
+    subtitle: "Epoch and MCE commitment model",
+    body: "Committed offerings are locked for the duration of an Epoch or MCE event to provide predictability for Civic Participants and strengthen participation incentives. Redeemer organizations must honor these commitments and abide by the rules established by the Representative Redeemer Committee.",
   },
   "offerings-activity": {
     title: "Redeemer Onchain Activity",
@@ -275,6 +277,16 @@ const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
     title: "MCE Participation",
     subtitle: "Event-based reward programs",
     body: "Mass Coordination Events align participant demand around city priorities. Redeemers support this by publishing MCE-specific offerings and redemption capacity.",
+  },
+  "epoch1-voting": {
+    title: "Epoch 1 Voting",
+    subtitle: "Planning MCE's",
+    body: "Epoch 1 voting is reserved for Civic Participants. Your role is to monitor which proposals are gaining support. The Issuer Representative Committee will be responsible for creating and distributing tasks on behalf of Issuer organizations that will execute on the winning proposal. These tasks will be added to your Task Catalog automatically during the next Epoch.",
+  },
+  "next-epoch": {
+    title: "The Next Epoch",
+    subtitle: "Epoch Proposals & Process",
+    body: "While Epoch 1 Proposals are being voted on, active Issuer and Redeemer organizations will have the ability to propose their own MCE initiatives based on their observations and desires for the community. During this time, Civic Participants can boost these proposals through likes to provide signaling for the Issuer Committee, who will ultimately decide the top 5 proposals based on community need. Redeemers also have the opportunity to influence what 5 proposals are selected by providing preemptive Redemption Offerings for proposals that they like. This allows private businesses to influence community direction through their willingness to offer private goods and services in exchange for local outcomes.",
   },
 };
 
@@ -555,10 +567,12 @@ export default function RedeemerApp() {
             mceOfferings={mceOfferings}
             committedCatalog={committedCatalog}
             mceCatalog={mceCatalog}
-            onIssueFromCatalogCommitted={() => setCatalogIssueSheet("committed")}
-            onIssueFromCatalogMCE={() => setCatalogIssueSheet("mce")}
+            onCommitFromCatalogCommitted={handleIssueCommittedFromCatalog}
+            onCommitFromCatalogMCE={handleIssueMceFromCatalog}
             onAddCommitted={() => setCatalogEditor({ type: "committed" })}
             onAddMCE={() => setCatalogEditor({ type: "mce" })}
+            onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+            onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
             onShowQR={setQrTarget}
             onRemoveAttempt={id => setRemoveTarget(id)}
             onProcess={handleProcess}
@@ -1008,10 +1022,12 @@ function OfferingsTab({
   mceOfferings,
   committedCatalog,
   mceCatalog,
-  onIssueFromCatalogCommitted,
-  onIssueFromCatalogMCE,
+  onCommitFromCatalogCommitted,
+  onCommitFromCatalogMCE,
   onAddCommitted,
   onAddMCE,
+  onModifyCommitted,
+  onModifyMCE,
   onShowQR,
   onRemoveAttempt,
   onProcess,
@@ -1024,10 +1040,12 @@ function OfferingsTab({
   mceOfferings: MCECustomOffering[];
   committedCatalog: CustomOffering[];
   mceCatalog: MCECustomOffering[];
-  onIssueFromCatalogCommitted: () => void;
-  onIssueFromCatalogMCE: () => void;
+  onCommitFromCatalogCommitted: (catalogId: string) => void;
+  onCommitFromCatalogMCE: (catalogId: string) => void;
   onAddCommitted: () => void;
   onAddMCE: () => void;
+  onModifyCommitted: (catalogId: string) => void;
+  onModifyMCE: (catalogId: string) => void;
   onShowQR: (data: QROfferingData) => void;
   onRemoveAttempt: (id: string) => void;
   onProcess: (queueId: string) => void;
@@ -1036,14 +1054,14 @@ function OfferingsTab({
   onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
   const [view, setView] = useState<"committed" | "mce">("committed");
+  const [pendingCommittedCatalogCommitId, setPendingCommittedCatalogCommitId] = useState<string | null>(null);
+  const [pendingMceCatalogCommitId, setPendingMceCatalogCommitId] = useState<string | null>(null);
   const explorerHref = offerWriteStatus.hash ? `https://sepolia.basescan.org/tx/${offerWriteStatus.hash}` : null;
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("offerings-catalog")} />
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <LearnMoreLink onClick={() => onLearnMore("offerings-commitment")} />
-        <LearnMoreLink onClick={() => onLearnMore("offerings-activity")} />
       </div>
       {/* Segment control */}
       <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
@@ -1118,27 +1136,6 @@ function OfferingsTab({
       {view === "committed" && (
         <>
           <button
-            onClick={onIssueFromCatalogCommitted}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              background: "rgba(65,105,225,0.08)",
-              border: "1px dashed rgba(65,105,225,0.35)",
-              borderRadius: 14,
-              padding: "14px 0",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#7ea0ff",
-              cursor: "pointer",
-              marginBottom: 10,
-            }}
-          >
-            <IconPlus /> Issue Offering From Catalog ({committedCatalog.length})
-          </button>
-          <button
             onClick={onAddCommitted}
             style={{
               width: "100%",
@@ -1159,6 +1156,71 @@ function OfferingsTab({
           >
             <IconPlus /> Add Offering to Catalog
           </button>
+
+          <SectionLabel text={`Offering Catalog (${committedCatalog.length})`} />
+
+          {committedCatalog.length === 0 ? (
+            <EmptyState
+              emoji="📚"
+              title="No offerings in catalog yet"
+              desc="Add an offering to catalog, then commit it onchain."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+              {committedCatalog.map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    ...surfaceCard,
+                    border: "1px solid rgba(52,238,182,0.2)",
+                    background: "rgba(52,238,182,0.04)",
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{item.name}</div>
+                  {item.stipulations && (
+                    <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6, lineHeight: 1.45 }}>
+                      {item.stipulations}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, marginBottom: 8 }}>
+                    {item.costCity} CITYx
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
+                    <button
+                      onClick={() => onModifyCommitted(item.id)}
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Modify Offering
+                    </button>
+                    <button
+                      onClick={() => setPendingCommittedCatalogCommitId(item.id)}
+                      style={{
+                        background: ACCENT,
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: BG,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Commit Offering
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <SectionLabel text={`Active Committed Offerings (${committedOfferings.length})`} />
 
@@ -1366,33 +1428,25 @@ function OfferingsTab({
             redeemer.redemptionQueue.length === 0 &&
             redeemer.processedRedemptions.length === 0 &&
             null}
+
+          {pendingCommittedCatalogCommitId && (
+            <ConfirmDialog
+              title="Commit Offering?"
+              message="This commitment will be locked, and your organization agrees to honor this commitment until the end of the Epoch."
+              confirmLabel="Confirm Commit"
+              onConfirm={() => {
+                onCommitFromCatalogCommitted(pendingCommittedCatalogCommitId);
+                setPendingCommittedCatalogCommitId(null);
+              }}
+              onCancel={() => setPendingCommittedCatalogCommitId(null)}
+            />
+          )}
         </>
       )}
 
       {/* ── MCE Offerings ── */}
       {view === "mce" && (
         <>
-          <button
-            onClick={onIssueFromCatalogMCE}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              background: "rgba(65,105,225,0.08)",
-              border: "1px dashed rgba(65,105,225,0.35)",
-              borderRadius: 14,
-              padding: "14px 0",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#7ea0ff",
-              cursor: "pointer",
-              marginBottom: 10,
-            }}
-          >
-            <IconPlus /> Issue Offering From Catalog ({mceCatalog.length})
-          </button>
           <button
             onClick={onAddMCE}
             style={{
@@ -1412,8 +1466,78 @@ function OfferingsTab({
               marginBottom: 16,
             }}
           >
-            <IconPlus /> Add Offering to Catalog
+            <IconPlus /> Add Offering to MCE Catalog
           </button>
+
+          <SectionLabel text={`MCE Offering Catalog (${mceCatalog.length})`} />
+
+          {mceCatalog.length === 0 ? (
+            <EmptyState
+              emoji="📚"
+              title="No offerings in MCE catalog yet"
+              desc="Add an MCE offering to catalog, then commit it onchain."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+              {mceCatalog.map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    ...surfaceCard,
+                    border: "1px solid rgba(221,158,51,0.22)",
+                    background: "rgba(221,158,51,0.04)",
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{item.name}</div>
+                  {item.mceNames.length > 0 && (
+                    <div style={{ fontSize: 11, color: DIMMED, marginBottom: 4 }}>
+                      Events: {item.mceNames.join(", ")}
+                    </div>
+                  )}
+                  {item.stipulations && (
+                    <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6, lineHeight: 1.45 }}>
+                      {item.stipulations}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#DD9E33", marginBottom: 8 }}>
+                    {item.costCity} CITYx
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
+                    <button
+                      onClick={() => onModifyMCE(item.id)}
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Modify Offering
+                    </button>
+                    <button
+                      onClick={() => setPendingMceCatalogCommitId(item.id)}
+                      style={{
+                        background: "#DD9E33",
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: BG,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Commit Offering
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <SectionLabel text={`Active MCE Offerings (${mceOfferings.length})`} />
 
@@ -1525,6 +1649,19 @@ function OfferingsTab({
                 </div>
               ))}
             </div>
+          )}
+
+          {pendingMceCatalogCommitId && (
+            <ConfirmDialog
+              title="Commit Offering?"
+              message="This MCE commitment will be locked, and your organization agrees to honor this commitment until the end of the MCE Event."
+              confirmLabel="Confirm Commit"
+              onConfirm={() => {
+                onCommitFromCatalogMCE(pendingMceCatalogCommitId);
+                setPendingMceCatalogCommitId(null);
+              }}
+              onCancel={() => setPendingMceCatalogCommitId(null)}
+            />
           )}
         </>
       )}
@@ -2771,9 +2908,6 @@ function MCEsTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("mce-participation")} />
-      </div>
       {/* Epoch toggle */}
       <div
         style={{
@@ -2814,20 +2948,8 @@ function MCEsTab({
       {/* Epoch 1 — View only */}
       {section === "epoch1" && (
         <>
-          <div
-            style={{
-              ...surfaceCard,
-              marginBottom: 16,
-              padding: "12px 16px",
-              background: "rgba(65,105,225,0.08)",
-              border: "1px solid rgba(65,105,225,0.25)",
-            }}
-          >
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-              <span style={{ fontWeight: 600, color: "#4169E1" }}>Redeemer Organizations observe Epoch 1 voting</span> —
-              you cannot allocate VOTE tokens to proposals. Epoch 1 voting is reserved for Civic Participants. Monitor
-              which proposals are gaining support and prepare MCE Offerings for the likely winner.
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <LearnMoreLink onClick={() => onLearnMore("epoch1-voting")} />
           </div>
 
           {epoch1Mces.length === 0 ? (
@@ -2908,11 +3030,8 @@ function MCEsTab({
       {/* Epoch 2 — View + Create proposal */}
       {section === "epoch2" && (
         <>
-          <div style={{ ...surfaceCard, marginBottom: 16, padding: "14px 16px" }}>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-              These proposals are gathering community support for the next voting epoch. As a Redeemer Organization, you
-              can submit new proposals here. The top-liked proposals may be selected for Epoch 2 voting.
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <LearnMoreLink onClick={() => onLearnMore("next-epoch")} />
           </div>
 
           {/* Create proposal button */}

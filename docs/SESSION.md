@@ -756,3 +756,39 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
     - `Remove From Catalog` (removes template from catalog state)
     - `Modify Task Details` (opens existing modify sheet limited to Date/Time and Location)
 - In `Issue Tasks`, after opening `+ Issue Task from Catalog`, issue-sheet cards now show only `Issue Task` (removed `Modify Task` button from that flow).
+
+## 2026-03-10 — Redeemer Committed Offerings: Catalog-First Flow
+
+- Updated Redeemer `Offerings` tab (Committed section) to use a catalog-first layout:
+  - single top button: `+ Add Offering to Catalog`
+  - added `Offering Catalog` subsection under the button with card list of catalog offerings
+  - each catalog card now includes:
+    - `Modify Offering` (opens catalog edit sheet)
+    - `Commit Offering` (opens confirmation and commits onchain)
+  - retained `Active Committed Offerings` as the second subsection below catalog.
+- Removed the separate `+ Issue Offering From Catalog` button from the Committed section (MCE section unchanged).
+
+## 2026-03-10 — Redeemer MCE Offerings: Catalog-First Flow
+
+- Applied the same catalog-first structure to the MCE Offerings section:
+  - removed `+ Issue Offering From Catalog`
+  - renamed add button to `+ Add Offering to MCE Catalog`
+  - added `MCE Offering Catalog` subsection populated with catalog cards
+  - each MCE catalog card now includes `Modify Offering` and `Commit Offering`
+  - retained `Active MCE Offerings` as the second subsection.
+- Committed and MCE sections now both operate without the separate issue-from-catalog entry button.
+
+## 2026-03-10 — Redeemer MCE Tab: Epoch Learn More Links
+
+- Replaced Redeemer MCE tab inline informational cards in `Epoch 1` and `Epoch 2` with section-specific Learn More links.
+- Wired those links to the same info-box content model used in Issuer MCE:
+  - `Epoch 1 Voting` / `Planning MCE's`
+  - `The Next Epoch` / `Epoch Proposals & Process`
+- Removed the redundant generic top-level MCE Learn More link in that tab so guidance is tied directly to each epoch section.
+
+## 2026-03-10 — Redeemer Offerings Tab: Single Commitment Learn More
+
+- Replaced the three Offerings-tab Learn More links with a single link and a unified info box explaining:
+  - why offerings are committed for the full Epoch/MCE duration,
+  - that this supports participant predictability and stronger participation incentives,
+  - and that redeemers must comply with Representative Redeemer Committee rules.
