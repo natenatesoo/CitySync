@@ -598,6 +598,10 @@ interface DemoContextValue {
     taskId: string,
     citizenAddress: string,
   ) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
+  issuerSetTaskActive: (
+    taskId: string,
+    active: boolean,
+  ) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   redeemerToggleMCE: () => void;
   redeemerAddOffer: (offer: RedemptionOffer) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   redeemerRemoveOffer: (offerId: string) => void;
@@ -1115,6 +1119,27 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     [getResultHash, writeContractAsync],
   );
 
+  const issuerSetTaskActive = useCallback(
+    async (taskId: string, active: boolean) => {
+      const opportunityId = parseTaskOpportunityId(taskId);
+      if (!opportunityId) return { ok: false, error: "Invalid opportunity id." };
+
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "setOpportunityActive",
+          args: [opportunityId, active],
+        });
+        return { ok: true, hash: getResultHash(result) };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "setOpportunityActive failed";
+        return { ok: false, error: message };
+      }
+    },
+    [getResultHash, writeContractAsync],
+  );
+
   const redeemerToggleMCE = useCallback(() => {
     const next = !state.redeemer.acceptsMCE;
     dispatch({ type: "REDEEMER_TOGGLE_MCE" });
@@ -1197,6 +1222,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         redeemOffer,
         issuerCreateTask,
         issuerVerifyCompletion,
+        issuerSetTaskActive,
         redeemerToggleMCE,
         redeemerAddOffer,
         redeemerRemoveOffer,

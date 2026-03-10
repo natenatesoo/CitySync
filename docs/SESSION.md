@@ -669,3 +669,34 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 
 - Added an early guard in Issuer `handleIssueTask` to fail fast when no issuer wallet is connected, with explicit guidance to connect via the top-right wallet control.
 - Updated task write status copy from `Failed onchain (UI-only for this attempt)` to `Failed onchain` to avoid misleading fallback messaging.
+
+## 2026-03-10 — Issuer UX: Learn More Panel + Profile/Tasks/Verify Updates
+
+- Added a Learn More interaction model in Issuer role:
+  - section-level `Learn More` links (circled `i`) now open dismissible info cards in the left panel
+  - left panel remains hidden until at least one Learn More card is opened
+- Profile tab updates:
+  - Certified Issuer card now shows the connected issuer account address (abbreviated)
+  - Added `Copy` action and `View onchain account` explorer link
+  - Added Learn More links for:
+    - Becoming a Certified Issuer Organization
+    - Activity Stats
+    - Epoch Issuance
+    - Active Tasks
+  - Active Tasks list now reflects live onchain task-instance status (`Open`, `Claimed`, `Pending Verification`) and excludes completed/unissued instances
+- Tasks tab updates:
+  - toggles renamed to `Issue Tasks` and `Task Catalog`
+  - added epoch budget allocation card above the toggle
+  - `Issue Tasks` now shows only active tasks in the open pool
+  - `Task Catalog` now centers proposal flow under `+Propose New Task for Approval`
+  - updated approval helper text to reference Issuer Representative Committee and made text white
+- Verify tab updates:
+  - added `Unissue Task` action for Issued tasks using `setOpportunityActive(opportunityId,false)` onchain
+  - Claimed cards copy updates:
+    - `TBD · Task Claimed`
+    - badge `In Progress · [Date/Time of the Task]`
+    - status text `Waiting for Task Execution.`
+  - Claimed cards now support expandable details with `No Show` action (also sets task inactive onchain)
+  - Completed cards now use a confirmation popup before Verify & Mint, including a feedback field
+- Demo context:
+  - added issuer helper `issuerSetTaskActive(taskId, active)` for onchain task activation/deactivation writes.

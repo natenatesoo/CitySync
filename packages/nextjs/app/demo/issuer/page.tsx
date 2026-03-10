@@ -119,187 +119,101 @@ const DIMMED = "rgba(255,255,255,0.25)";
 
 // ─── Panel helpers ────────────────────────────────────────────────────────────
 
-function PanelCard({
-  label,
-  title,
-  accent,
-  children,
-}: {
-  label: string;
-  title: string;
-  accent: string;
-  children: React.ReactNode;
-}) {
+function LearnMoreLink({ onClick }: { onClick: () => void }) {
   return (
-    <div
+    <button
+      onClick={onClick}
       style={{
-        background: "rgba(255,255,255,0.025)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 16,
-        padding: "20px",
-        marginBottom: 12,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: "transparent",
+        border: "none",
+        color: "rgba(255,255,255,0.6)",
+        cursor: "pointer",
+        fontSize: 11,
+        fontWeight: 600,
       }}
     >
-      <div
+      <span
         style={{
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          border: "1px solid rgba(255,255,255,0.4)",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
           fontSize: 10,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          color: accent,
-          marginBottom: 8,
+          lineHeight: 1,
         }}
       >
-        {label}
-      </div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 10, lineHeight: 1.3 }}>{title}</div>
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.65 }}>{children}</div>
-    </div>
+        i
+      </span>
+      Learn More
+    </button>
   );
 }
 
-function getIssuerPanels(
-  activeTab: string,
-  _state: ReturnType<typeof useDemo>["state"],
-): { left: React.ReactNode; right: React.ReactNode } {
+function IssuerInfoPanel({
+  infoKeys,
+  onClose,
+}: {
+  infoKeys: IssuerLearnCardKey[];
+  onClose: (key: IssuerLearnCardKey) => void;
+}) {
+  if (infoKeys.length === 0) return null;
+  return (
+    <>
+      {infoKeys.map(key => {
+        const info = ISSUER_LEARN_CARDS[key];
+        return (
+          <div
+            key={key}
+            style={{
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{info.title}</div>
+                <div style={{ fontSize: 11, color: ACCENT, fontWeight: 600, marginBottom: 8 }}>{info.subtitle}</div>
+              </div>
+              <button
+                onClick={() => onClose(key)}
+                style={{ background: "transparent", border: "none", color: MUTED, cursor: "pointer", fontSize: 16 }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{info.body}</div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+function getIssuerRightPanel(_activeTab: string): React.ReactNode {
   const rightPanel = <OnchainActivityPanel role="issuer" accent={ACCENT} />;
 
-  switch (activeTab) {
+  switch (_activeTab) {
     case "profile":
-      return {
-        left: (
-          <>
-            <PanelCard label="Issuer Organization" title="Issuing Authority" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                Your organization has been certified to issue CITYx credits in exchange for verified civic
-                contributions. This role sits at the heart of the CitySync protocol.
-              </p>
-              <p style={{ margin: 0 }}>
-                As a trusted node in the network, your verification signature is what triggers token issuance on-chain —
-                there is no central authority minting these credits, only verified issuers like you.
-              </p>
-            </PanelCard>
-            <PanelCard label="Issuance Cap" title="CITYx Budget" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                Each organization is allocated a CITYx issuance cap per epoch. This cap determines the maximum CITYx you
-                can distribute across all tasks you post within the epoch window.
-              </p>
-              <p style={{ margin: 0 }}>
-                Managing your budget means balancing task frequency and credit amounts to maximize civic engagement
-                within your allocation.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
+      return rightPanel;
     case "tasks":
-      return {
-        left: (
-          <>
-            <PanelCard label="Task Management" title="Task Catalog" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                All tasks in this catalog have passed a preliminary moderation review to ensure they represent genuine
-                civic value.
-              </p>
-              <p style={{ margin: 0 }}>
-                You can add any approved task directly to your task list, set your available slots, and begin receiving
-                completions from participants immediately.
-              </p>
-            </PanelCard>
-            <PanelCard label="Task Approvals" title="Proposing a New Task" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                Don&apos;t see a task that fits your organization&apos;s civic goals? You can propose a new task for
-                admin review.
-              </p>
-              <p style={{ margin: 0 }}>
-                Submitted proposals enter a moderation queue where city administrators evaluate civic impact, credit
-                alignment, and task feasibility before approving it for the catalog.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
+      return rightPanel;
     case "mycity":
-      return {
-        left: (
-          <PanelCard label="City Feed" title="Your Voice in the City" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Post announcements, events, and opportunities directly to all participants and orgs. Your posts appear in
-              the city-wide MyCity feed — your primary channel for outreach and community building.
-            </p>
-            <p style={{ margin: 0 }}>
-              Use categories to help participants find what&apos;s relevant to them. Events and Opportunities tend to
-              drive the most engagement.
-            </p>
-          </PanelCard>
-        ),
-        right: rightPanel,
-      };
-
+      return rightPanel;
     case "verify":
-      return {
-        left: (
-          <>
-            <PanelCard label="Issued Tasks" title="Open Task Pool" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                Issued tasks are live in the participant catalog — citizens can see and claim them. You can remove a
-                task at any time to close off new claims. Tasks already claimed will still be completable by those
-                participants.
-              </p>
-            </PanelCard>
-            <PanelCard label="Claimed Tasks" title="In Progress" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                Once a participant claims a task, it moves to Claimed. They&apos;ve committed to showing up and
-                executing. Use the notification reminder to nudge participants who may need a heads-up before the
-                scheduled time.
-              </p>
-            </PanelCard>
-            <PanelCard label="Completed Tasks" title="Awaiting Verification" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                When a participant submits completion proof onchain, it enters your verification queue automatically.
-                Review and click Verify to mint CITYx and VOTE to the participant.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
+      return rightPanel;
     case "mces":
-      return {
-        left: (
-          <>
-            <PanelCard label="MCE Proposals" title="Your Role in MCE Creation" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                As a certified Issuer Organization, you are one of the most informed entities in the city about what
-                civic work is actually needed on the ground. Use that knowledge to submit MCE proposals that reflect
-                real community priorities — not just what sounds good, but what can actually be executed.
-              </p>
-              <p style={{ margin: 0 }}>
-                Epoch 2 is your window to propose. Draft your proposal with a clear title, description, goals, and
-                expected benefits. The most-liked proposals are reviewed by the Representative Issuer Committee for
-                entry into the next voting epoch.
-              </p>
-            </PanelCard>
-            <PanelCard label="Planning & Issuance" title="Winning MCE Responsibility" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                When an MCE proposal wins the Epoch 1 vote, the city enters a Planning Phase. Issuer Organizations are
-                responsible for designing and submitting the tasks that will execute on that proposal. You then issue
-                those tasks during the Active Phase — participants earn MCE Credits for completing them, redeemable at
-                an expanded set of Redeemer venues that opt into the MCE program.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
+      return rightPanel;
     default:
-      return { left: null, right: null };
+      return rightPanel;
   }
 }
 
@@ -325,6 +239,31 @@ const STATUS_COLOR: Record<string, string> = {
   Active: "#34eeb6",
   Closed: "rgba(255,255,255,0.3)",
   Rejected: "#ff6b9d",
+};
+
+type IssuerLearnCardKey = "becoming-certified-issuer" | "activity-stats" | "epoch-issuance" | "active-tasks";
+
+const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, { title: string; subtitle: string; body: string }> = {
+  "becoming-certified-issuer": {
+    title: "Becoming a Certified Issuer Organization",
+    subtitle: "Role onboarding and certification",
+    body: "Certified Issuer Organizations can publish civic tasks and verify completions. In production, certification is reviewed by governance and operational criteria before issuance permissions are granted.",
+  },
+  "activity-stats": {
+    title: "Activity Stats",
+    subtitle: "How issuer metrics are tracked",
+    body: "These stats summarize your onchain task lifecycle activity, including created tasks, credits issued, and verifications currently awaiting action.",
+  },
+  "epoch-issuance": {
+    title: "Epoch Issuance",
+    subtitle: "Allocation and budget controls",
+    body: "Each epoch sets an issuance budget to balance credit supply with redemption capacity. Issuers can monitor consumption in real time and adjust issuance strategy throughout the epoch.",
+  },
+  "active-tasks": {
+    title: "Active Tasks",
+    subtitle: "Live task instance state",
+    body: "Active task instances are opportunities that are currently open, claimed, or pending verification. Completed or unissued tasks are excluded from this list.",
+  },
 };
 
 // ─── Success Toast ────────────────────────────────────────────────────────────
@@ -382,7 +321,7 @@ type TaskWriteStatus = {
 };
 
 export default function IssuerApp() {
-  const { state, setRole, issuerCreateTask, issuerVerifyCompletion } = useDemo();
+  const { state, setRole, issuerCreateTask, issuerVerifyCompletion, issuerSetTaskActive } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
   const [createSheet, setCreateSheet] = useState(false);
@@ -396,9 +335,21 @@ export default function IssuerApp() {
   const [toast, setToast] = useState<string | null>(null);
   const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [verifyWriteStatus, setVerifyWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
+  const [openInfoCards, setOpenInfoCards] = useState<IssuerLearnCardKey[]>([]);
 
   const { issuer } = state;
-  const { left: leftPanel, right: rightPanel } = getIssuerPanels(activeTab, state);
+  const rightPanel = getIssuerRightPanel(activeTab);
+  const leftPanel =
+    openInfoCards.length > 0 ? (
+      <IssuerInfoPanel
+        infoKeys={openInfoCards}
+        onClose={key => setOpenInfoCards(prev => prev.filter(k => k !== key))}
+      />
+    ) : null;
+
+  const openLearnMore = React.useCallback((key: IssuerLearnCardKey) => {
+    setOpenInfoCards(prev => (prev.includes(key) ? prev : [...prev, key]));
+  }, []);
 
   React.useEffect(() => {
     setRole("issuer");
@@ -563,7 +514,12 @@ export default function IssuerApp() {
         rightPanel={rightPanel}
       >
         {activeTab === "profile" && (
-          <ProfileTab issuer={issuer} totalPending={totalPending} creditsCommitted={creditsCommitted} />
+          <ProfileTab
+            issuer={issuer}
+            totalPending={totalPending}
+            creditsCommitted={creditsCommitted}
+            onLearnMore={openLearnMore}
+          />
         )}
         {activeTab === "tasks" && (
           <TasksTab
@@ -574,12 +530,19 @@ export default function IssuerApp() {
             onApproveProposed={handleApproveProposed}
             approvedCatalogTasks={approvedCatalogTasks}
             taskWriteStatus={taskWriteStatus}
+            onLearnMore={openLearnMore}
           />
         )}
         {activeTab === "mycity" && (
           <MyCityTab posts={allPosts} orgName={issuer.orgName} onCompose={() => setComposeOpen(true)} />
         )}
-        {activeTab === "verify" && <VerifyTab onVerify={handleVerify} verifyWriteStatus={verifyWriteStatus} />}
+        {activeTab === "verify" && (
+          <VerifyTab
+            onVerify={handleVerify}
+            onSetTaskActive={issuerSetTaskActive}
+            verifyWriteStatus={verifyWriteStatus}
+          />
+        )}
         {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} />}
       </AppShell>
 
@@ -645,17 +608,26 @@ function ProfileTab({
   issuer,
   totalPending,
   creditsCommitted,
+  onLearnMore,
 }: {
   issuer: ReturnType<typeof useDemo>["state"]["issuer"];
   totalPending: number;
   creditsCommitted: number;
+  onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { dispatch } = useDemo();
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(issuer.orgName);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [activeTaskInstances, setActiveTaskInstances] = useState<
+    Array<{ id: string; title: string; credits: number; status: "Open" | "Claimed" | "Pending Verification" }>
+  >([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const issuerAddress = address ?? FAKE_WALLETS.issuer;
+  const shortAddress = `${issuerAddress.slice(0, 8)}...${issuerAddress.slice(-6)}`;
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -678,6 +650,104 @@ function ProfileTab({
     setEditing(false);
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    const parseMetadata = (raw: string): Partial<Task> => {
+      try {
+        return JSON.parse(raw) as Partial<Task>;
+      } catch {
+        return {};
+      }
+    };
+
+    const sync = async () => {
+      try {
+        const nextId = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+          abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          functionName: "nextOpportunityId",
+          args: [],
+        })) as bigint;
+
+        const items: Array<{
+          id: string;
+          title: string;
+          credits: number;
+          status: "Open" | "Claimed" | "Pending Verification";
+        }> = [];
+        for (let id = 0n; id < nextId; id++) {
+          const opp = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "opportunities",
+            args: [id],
+          })) as readonly [
+            `0x${string}`,
+            string,
+            bigint,
+            bigint,
+            `0x${string}`,
+            number,
+            bigint,
+            bigint,
+            bigint,
+            boolean,
+            number,
+          ];
+
+          if (!opp[9]) continue;
+          if (opp[0].toLowerCase() !== issuerAddress.toLowerCase()) continue;
+
+          const claimant = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "claimedBy",
+            args: [id],
+          })) as `0x${string}`;
+
+          const metadata = parseMetadata(opp[1]);
+          const base = {
+            id: `task-${id.toString()}`,
+            title: metadata.title || `Opportunity #${id.toString()}`,
+            credits: Math.floor(Number(formatUnits(opp[2], 18))),
+          };
+
+          if (claimant === "0x0000000000000000000000000000000000000000") {
+            items.push({ ...base, status: "Open" });
+            continue;
+          }
+
+          const completion = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "completions",
+            args: [id, claimant],
+          })) as readonly [`0x${string}`, bigint, bigint, number];
+
+          if (completion[2] > 0n || completion[3] === 2) continue;
+          items.push({
+            ...base,
+            status: completion[1] > 0n || completion[3] === 1 ? "Pending Verification" : "Claimed",
+          });
+        }
+
+        if (!cancelled)
+          setActiveTaskInstances(
+            items.sort((a, b) => Number(b.id.match(/(\d+)$/)?.[1] ?? 0) - Number(a.id.match(/(\d+)$/)?.[1] ?? 0)),
+          );
+      } catch {
+        if (!cancelled) setActiveTaskInstances([]);
+      }
+    };
+
+    void sync();
+    const id = window.setInterval(() => void sync(), 7000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [issuerAddress]);
+
   return (
     <div style={{ padding: "24px 20px 100px" }}>
       {/* Welcome banner */}
@@ -691,16 +761,20 @@ function ProfileTab({
         }}
       >
         <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "rgba(221,158,51,0.6)",
-            marginBottom: 4,
-          }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}
         >
-          Certified Issuer Organization
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "rgba(221,158,51,0.6)",
+            }}
+          >
+            Certified Issuer Organization
+          </div>
+          <LearnMoreLink onClick={() => onLearnMore("becoming-certified-issuer")} />
         </div>
 
         {editing ? (
@@ -798,8 +872,48 @@ function ProfileTab({
           </div>
         )}
 
-        <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>
-          {FAKE_WALLETS.issuer}
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            color: "rgba(255,255,255,0.6)",
+            marginBottom: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <span>{shortAddress}</span>
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(issuerAddress);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1200);
+              } catch {
+                // Ignore copy failures.
+              }
+            }}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: ACCENT,
+              cursor: "pointer",
+              fontSize: 11,
+              padding: 0,
+            }}
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+          <a
+            href={`https://sepolia.basescan.org/address/${issuerAddress}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: ACCENT, textDecoration: "none", fontSize: 11 }}
+          >
+            View onchain account ↗
+          </a>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -826,7 +940,7 @@ function ProfileTab({
       </div>
 
       {/* Stats */}
-      <SectionLabel text="Issuance Stats" />
+      <SectionLabel text="Issuance Stats" right={<LearnMoreLink onClick={() => onLearnMore("activity-stats")} />} />
       <div style={{ ...surfaceCard, padding: 0, marginBottom: 20, overflow: "hidden" }}>
         <StatRow label="Tasks Created" value={issuer.totalTasksIssued} />
         <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border />
@@ -834,7 +948,10 @@ function ProfileTab({
       </div>
 
       {/* Epoch 1 Issuance Allocation */}
-      <SectionLabel text="Epoch 1 Issuance Allocation" />
+      <SectionLabel
+        text="Epoch 1 Issuance Allocation"
+        right={<LearnMoreLink onClick={() => onLearnMore("epoch-issuance")} />}
+      />
       <div
         style={{
           ...surfaceCard,
@@ -882,11 +999,11 @@ function ProfileTab({
       </div>
 
       {/* Active tasks quick view */}
-      {issuer.tasks.length > 0 && (
+      {activeTaskInstances.length > 0 && (
         <>
-          <SectionLabel text="Active Tasks" />
+          <SectionLabel text="Active Tasks" right={<LearnMoreLink onClick={() => onLearnMore("active-tasks")} />} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-            {issuer.tasks.slice(0, 3).map(t => (
+            {activeTaskInstances.map(t => (
               <div
                 key={t.id}
                 style={{
@@ -899,9 +1016,7 @@ function ProfileTab({
               >
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{t.title}</div>
-                  <div style={{ fontSize: 11, color: MUTED }}>
-                    {t.verifiedCount} verified · {t.pendingCompletions.length} pending
-                  </div>
+                  <div style={{ fontSize: 11, color: MUTED }}>{t.status}</div>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
               </div>
@@ -910,7 +1025,7 @@ function ProfileTab({
         </>
       )}
 
-      {issuer.tasks.length === 0 && (
+      {activeTaskInstances.length === 0 && (
         <EmptyState
           emoji="📋"
           title="Ready to create tasks?"
@@ -931,6 +1046,7 @@ function TasksTab({
   onApproveProposed,
   approvedCatalogTasks,
   taskWriteStatus,
+  onLearnMore: _onLearnMore,
 }: {
   creditsCommitted: number;
   onCreateOpen: () => void;
@@ -939,9 +1055,10 @@ function TasksTab({
   onApproveProposed: (task: ProposedTask) => void;
   approvedCatalogTasks: Task[];
   taskWriteStatus: TaskWriteStatus;
+  onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const [view, setView] = useState<"my" | "pending">("my");
+  const [view, setView] = useState<"issue" | "catalog">("issue");
   const [onchainTasks, setOnchainTasks] = useState<
     Array<{
       id: string;
@@ -952,6 +1069,8 @@ function TasksTab({
       voteTokens: number;
       slots: number;
       verifiedCount: number;
+      claimedBy?: `0x${string}`;
+      active: boolean;
     }>
   >([]);
   const [loadingOnchain, setLoadingOnchain] = useState(false);
@@ -993,6 +1112,8 @@ function TasksTab({
           voteTokens: number;
           slots: number;
           verifiedCount: number;
+          claimedBy?: `0x${string}`;
+          active: boolean;
         }> = [];
         for (let id = 0n; id < nextId; id++) {
           let opp:
@@ -1022,6 +1143,14 @@ function TasksTab({
           }
           if (!opp) continue;
           if (opp[0].toLowerCase() !== address.toLowerCase()) continue;
+          if (!opp[9]) continue;
+
+          const claimedBy = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            functionName: "claimedBy",
+            args: [id],
+          })) as `0x${string}`;
 
           const metadata = parseMetadata(opp[1]);
           const rewardCity = opp[2];
@@ -1035,6 +1164,8 @@ function TasksTab({
             voteTokens: Math.floor(Number(formatUnits(rewardVote, 18))),
             slots: Number(opp[6]),
             verifiedCount: Number(opp[10]),
+            claimedBy,
+            active: Boolean(opp[9]),
           };
           tasks.push(task);
         }
@@ -1060,9 +1191,54 @@ function TasksTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div
+        style={{
+          ...surfaceCard,
+          marginBottom: 14,
+          background: "linear-gradient(135deg, #1a1a00 0%, #1E1E2C 100%)",
+          border: "1px solid rgba(221,158,51,0.2)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Jan 1, 2026 – Mar 31, 2026</div>
+            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>104 CITYx / month</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: ACCENT }}>{creditsCommitted}</div>
+            <div style={{ fontSize: 11, color: MUTED }}>of {EPOCH1_CAP} CITYx used</div>
+          </div>
+        </div>
+        <div
+          style={{
+            height: 6,
+            borderRadius: 3,
+            background: "rgba(255,255,255,0.08)",
+            overflow: "hidden",
+            marginBottom: 8,
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${Math.min(100, Math.round((creditsCommitted / EPOCH1_CAP) * 100))}%`,
+              background:
+                creditsCommitted >= EPOCH1_CAP ? "#ff6b9d" : creditsCommitted / EPOCH1_CAP > 0.8 ? "#f59e0b" : ACCENT,
+              borderRadius: 3,
+              transition: "width 0.4s ease",
+            }}
+          />
+        </div>
+        <div style={{ fontSize: 11, color: MUTED }}>
+          {EPOCH1_CAP - creditsCommitted > 0
+            ? `${EPOCH1_CAP - creditsCommitted} CITYx remaining this epoch`
+            : "Epoch allocation fully committed"}
+        </div>
+      </div>
+
       {/* Segment control */}
       <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
-        {(["my", "pending"] as const).map(v => (
+        {(["issue", "catalog"] as const).map(v => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -1079,15 +1255,13 @@ function TasksTab({
               color: view === v ? BG : MUTED,
             }}
           >
-            {v === "my"
-              ? `My Tasks (${onchainTasks.length + approvedCatalogTasks.length})`
-              : `Pending (${proposedTasks.length})`}
+            {v === "issue" ? `Issue Tasks (${onchainTasks.length})` : `Task Catalog (${approvedCatalogTasks.length})`}
           </button>
         ))}
       </div>
       {loadingOnchain && <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Syncing onchain tasks...</div>}
 
-      {view === "my" && (
+      {view === "issue" && (
         <>
           {taskWriteStatus.state !== "idle" && (
             <div
@@ -1174,7 +1348,61 @@ function TasksTab({
             <IconPlus /> Issue Task from Catalog
           </button>
 
-          {/* Propose CTA */}
+          {(() => {
+            const openPoolTasks = onchainTasks.filter(
+              t => !t.claimedBy || t.claimedBy === "0x0000000000000000000000000000000000000000",
+            );
+
+            return openPoolTasks.length === 0 ? (
+              <EmptyState
+                emoji="📭"
+                title="No open tasks in pool"
+                desc={
+                  approvedCatalogTasks.length > 0
+                    ? "Use Issue Task from Catalog to issue your approved tasks."
+                    : "Approve a proposed task first, then issue it from the catalog."
+                }
+              />
+            ) : (
+              <>
+                <SectionLabel text={`Active Tasks (${openPoolTasks.length})`} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {openPoolTasks.map(t => (
+                    <div key={t.id} style={{ ...surfaceCard }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          marginBottom: 10,
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>
+                            {t.category} · {t.estimatedTime}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
+                          <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED, marginBottom: 10 }}>
+                        <span>Open Pool</span>
+                        <span>Onchain Opportunity</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+        </>
+      )}
+
+      {view === "catalog" && (
+        <>
           <button
             onClick={atCap ? undefined : onProposeOpen}
             disabled={atCap}
@@ -1198,58 +1426,6 @@ function TasksTab({
             <IconPlus /> Propose New Task for Approval
           </button>
 
-          {onchainTasks.length === 0 ? (
-            <EmptyState
-              emoji="📭"
-              title="No tasks yet"
-              desc={
-                approvedCatalogTasks.length > 0
-                  ? "Use Issue Task from Catalog to issue your approved tasks."
-                  : "Approve a proposed task first, then issue it from the catalog."
-              }
-            />
-          ) : onchainTasks.length > 0 ? (
-            <>
-              <SectionLabel text={`Active Tasks (${onchainTasks.length})`} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {onchainTasks.map(t => {
-                  return (
-                    <div key={t.id} style={{ ...surfaceCard }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          marginBottom: 10,
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-                          <div style={{ fontSize: 11, color: MUTED }}>
-                            {t.category} · {t.estimatedTime}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{t.credits} CITYx</div>
-                          <div style={{ fontSize: 11, color: DIMMED }}>+{t.voteTokens} VOTE</div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: 12, fontSize: 12, color: MUTED, marginBottom: 10 }}>
-                        <span>✓ {t.verifiedCount} verified</span>
-                        <span>Onchain Opportunity</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          ) : null}
-        </>
-      )}
-
-      {view === "pending" && (
-        <>
           {/* Proposed tasks awaiting approval */}
           {proposedTasks.length > 0 && (
             <>
@@ -1324,14 +1500,14 @@ function TasksTab({
                     <div
                       style={{
                         fontSize: 10,
-                        color: DIMMED,
+                        color: "#fff",
                         textAlign: "center",
                         lineHeight: 1.5,
                         fontStyle: "italic",
                       }}
                     >
-                      As a demo, you are auto-approving your own task proposal. In production, this would go through an
-                      admin moderation queue.
+                      As a demo, you are auto-approving your own task proposal. In production, this would be approved by
+                      the Issuer Representative Committee.
                     </div>
                   </div>
                 ))}
@@ -2064,6 +2240,7 @@ type OnchainVerifyItem = {
   opportunityId: bigint;
   title: string;
   estimatedTime: string;
+  taskDate?: string;
   credits: number;
   voteTokens: number;
   claimant?: `0x${string}`;
@@ -2072,9 +2249,11 @@ type OnchainVerifyItem = {
 
 function VerifyTab({
   onVerify,
+  onSetTaskActive,
   verifyWriteStatus,
 }: {
   onVerify: (taskId: string, citizen: string) => Promise<void>;
+  onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   verifyWriteStatus: TaskWriteStatus;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
@@ -2084,6 +2263,10 @@ function VerifyTab({
   const [claimedItems, setClaimedItems] = useState<OnchainVerifyItem[]>([]);
   const [completedItems, setCompletedItems] = useState<OnchainVerifyItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedClaimed, setExpandedClaimed] = useState<Record<string, boolean>>({});
+  const [confirmVerify, setConfirmVerify] = useState<{ taskId: string; claimant: `0x${string}`; title: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!address) {
@@ -2156,6 +2339,7 @@ function VerifyTab({
             opportunityId: id,
             title: metadata.title || `Opportunity #${id.toString()}`,
             estimatedTime: metadata.estimatedTime || "TBD",
+            taskDate: metadata.taskDate || "TBD",
             credits: Math.floor(Number(formatUnits(rewardCity, 18))),
             voteTokens: Math.floor(Number(formatUnits(rewardVote === 0n ? rewardCity : rewardVote, 18))),
           };
@@ -2308,6 +2492,24 @@ function VerifyTab({
                     >
                       Open · Awaiting Claim
                     </div>
+                    <button
+                      onClick={async () => {
+                        await onSetTaskActive(task.taskId, false);
+                      }}
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: "rgba(255,107,157,0.14)",
+                        color: "#ff6b9d",
+                        border: "1px solid rgba(255,107,157,0.35)",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Unissue Task
+                    </button>
                   </div>
                 );
               })}
@@ -2342,7 +2544,7 @@ function VerifyTab({
                         <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
                           {task.title}
                         </div>
-                        <div style={{ fontSize: 11, color: MUTED }}>{task.estimatedTime} · Claimed In Progress</div>
+                        <div style={{ fontSize: 11, color: MUTED }}>{task.estimatedTime} · Task Claimed</div>
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0, marginLeft: 12 }}>
                         {task.credits} CITYx
@@ -2362,7 +2564,7 @@ function VerifyTab({
                         marginBottom: 12,
                       }}
                     >
-                      Claimed · In Progress
+                      In Progress · {task.taskDate || "TBD"}
                     </div>
                     {task.claimant && (
                       <div style={{ fontSize: 11, color: MUTED, fontFamily: "monospace" }}>
@@ -2370,8 +2572,58 @@ function VerifyTab({
                       </div>
                     )}
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
-                      Waiting for participant completion submission.
+                      Waiting for Task Execution.
                     </div>
+                    <button
+                      onClick={() => setExpandedClaimed(prev => ({ ...prev, [task.taskId]: !prev[task.taskId] }))}
+                      style={{
+                        marginTop: 10,
+                        width: "100%",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: MUTED,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {expandedClaimed[task.taskId] ? "Hide Details" : "Show Details"}
+                    </button>
+                    {expandedClaimed[task.taskId] && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          padding: 12,
+                          borderRadius: 10,
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <div style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
+                          Claimant no-show handling removes this task from circulation.
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await onSetTaskActive(task.taskId, false);
+                          }}
+                          style={{
+                            width: "100%",
+                            background: "rgba(255,107,157,0.14)",
+                            border: "1px solid rgba(255,107,157,0.35)",
+                            borderRadius: 10,
+                            padding: "10px 0",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: "#ff6b9d",
+                            cursor: "pointer",
+                          }}
+                        >
+                          No Show
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -2498,7 +2750,7 @@ function VerifyTab({
                     <button
                       onClick={async () => {
                         if (!task.claimant) return;
-                        await onVerify(task.taskId, task.claimant);
+                        setConfirmVerify({ taskId: task.taskId, claimant: task.claimant, title: task.title });
                       }}
                       disabled={!task.claimant}
                       style={{
@@ -2521,6 +2773,83 @@ function VerifyTab({
             </div>
           )}
         </>
+      )}
+
+      {confirmVerify && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 220,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div style={{ ...surfaceCard, width: "100%", maxWidth: 420 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Confirm Verify & Mint</div>
+            <div style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>{confirmVerify.title}</div>
+            <textarea
+              placeholder="Optional feedback on task execution…"
+              value={feedbackMap[confirmVerify.taskId] ?? ""}
+              onChange={e => setFeedbackMap(prev => ({ ...prev, [confirmVerify.taskId]: e.target.value }))}
+              rows={3}
+              style={{
+                width: "100%",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+                color: "#fff",
+                fontSize: 12,
+                padding: "8px 12px",
+                outline: "none",
+                resize: "none",
+                boxSizing: "border-box",
+                marginBottom: 12,
+                lineHeight: 1.5,
+              }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => setConfirmVerify(null)}
+                style={{
+                  flex: 1,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 10,
+                  padding: "10px 0",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: MUTED,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await onVerify(confirmVerify.taskId, confirmVerify.claimant);
+                  setConfirmVerify(null);
+                }}
+                style={{
+                  flex: 1,
+                  background: ACCENT,
+                  border: "none",
+                  borderRadius: 10,
+                  padding: "10px 0",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: BG,
+                  cursor: "pointer",
+                }}
+              >
+                Confirm Verify & Mint
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -3279,19 +3608,28 @@ function ModifyTaskSheet({
 
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
-function SectionLabel({ text }: { text: string }) {
+function SectionLabel({ text, right }: { text: string; right?: React.ReactNode }) {
   return (
     <div
       style={{
-        fontSize: 11,
-        fontWeight: 600,
-        textTransform: "uppercase",
-        letterSpacing: "0.1em",
-        color: "rgba(255,255,255,0.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
         marginBottom: 10,
       }}
     >
-      {text}
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          color: "rgba(255,255,255,0.35)",
+        }}
+      >
+        {text}
+      </span>
+      {right}
     </div>
   );
 }
