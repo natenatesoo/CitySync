@@ -1318,6 +1318,28 @@ const ALL_CATEGORIES: TaskCategory[] = [
   "Infrastructure",
 ];
 
+const DEMO_LOCAL_ONBOARDING_TASK: Task = {
+  id: "onboarding-demo-local",
+  title: "In-Person Account Activation",
+  description:
+    "Complete a quick in-person onboarding check-in with a City/Sync representative. This activates your account and unlocks the full task catalog.",
+  category: "Onboarding",
+  credits: 0,
+  voteTokens: 0,
+  estimatedTime: "10-15 min",
+  location: "City Hall - Civic Services Desk",
+  slots: 9999,
+  slotsRemaining: 9999,
+  issuerName: "City/Sync Onboarding",
+  issuerId: "citysync-onboarding",
+  tags: ["onboarding", "in-person"],
+  isOnboarding: true,
+  taskDate: "Walk-in during onboarding hours",
+  successCriteria: "Complete the in-person identity and account activation check.",
+  creditRatePerHr: 0,
+  credentials: "Government ID",
+};
+
 function TaskCard({
   task,
   isClaimed,
@@ -1650,6 +1672,7 @@ function ExploreTab() {
   });
   const [pendingVerificationIds, setPendingVerificationIds] = useState<string[]>([]);
   const [onboardingReadyIds, setOnboardingReadyIds] = useState<string[]>([]);
+  const [localOnboardingClaimed, setLocalOnboardingClaimed] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [pendingTaskSnapshots, setPendingTaskSnapshots] = useState<Record<string, Task>>({});
   const [completedTasks, setCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
@@ -1660,6 +1683,7 @@ function ExploreTab() {
     const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
     const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
     const onboardingReadyKey = `citysync:demo:participant:onboarding-ready:${walletKey}`;
+    const onboardingClaimedKey = `citysync:demo:participant:onboarding-claimed:${walletKey}`;
     const onboardedKey = `citysync:demo:participant:onboarded:${walletKey}`;
     const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
     const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
@@ -1673,6 +1697,11 @@ function ExploreTab() {
       if (rawOnboardingReady) {
         const parsed = JSON.parse(rawOnboardingReady) as string[];
         if (Array.isArray(parsed)) setOnboardingReadyIds(parsed);
+      }
+      const rawOnboardingClaimed = window.localStorage.getItem(onboardingClaimedKey);
+      if (rawOnboardingClaimed) {
+        const parsed = JSON.parse(rawOnboardingClaimed) as boolean;
+        setLocalOnboardingClaimed(Boolean(parsed));
       }
       const rawOnboarded = window.localStorage.getItem(onboardedKey);
       if (rawOnboarded) {
@@ -1699,19 +1728,29 @@ function ExploreTab() {
     const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
     const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
     const onboardingReadyKey = `citysync:demo:participant:onboarding-ready:${walletKey}`;
+    const onboardingClaimedKey = `citysync:demo:participant:onboarding-claimed:${walletKey}`;
     const onboardedKey = `citysync:demo:participant:onboarded:${walletKey}`;
     const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
     const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
     try {
       window.localStorage.setItem(pendingKey, JSON.stringify(pendingVerificationIds));
       window.localStorage.setItem(onboardingReadyKey, JSON.stringify(onboardingReadyIds));
+      window.localStorage.setItem(onboardingClaimedKey, JSON.stringify(localOnboardingClaimed));
       window.localStorage.setItem(onboardedKey, JSON.stringify(isOnboarded));
       window.localStorage.setItem(pendingSnapshotsKey, JSON.stringify(pendingTaskSnapshots));
       window.localStorage.setItem(completedKey, JSON.stringify(completedTasks));
     } catch {
       // Ignore persistence failures.
     }
-  }, [address, pendingVerificationIds, onboardingReadyIds, isOnboarded, pendingTaskSnapshots, completedTasks]);
+  }, [
+    address,
+    pendingVerificationIds,
+    onboardingReadyIds,
+    localOnboardingClaimed,
+    isOnboarded,
+    pendingTaskSnapshots,
+    completedTasks,
+  ]);
 
   useEffect(() => {
     // Keep legacy participants with existing CITY balances unlocked.
@@ -1868,12 +1907,17 @@ function ExploreTab() {
   }, []);
 
   const addressLower = address?.toLowerCase();
-  const openTasks = onchainTasks.filter(t => {
+  const openOnchainTasks = onchainTasks.filter(t => {
     const claimedBy = t.claimedBy?.toLowerCase();
     const isUnclaimed = !claimedBy || claimedBy === "0x0000000000000000000000000000000000000000";
     const optimisticUnclaimedByMe = !!addressLower && claimedBy === addressLower && optimisticUnclaimIds.includes(t.id);
     return isUnclaimed || optimisticUnclaimedByMe;
   });
+  const hasOnchainOnboardingOpen = openOnchainTasks.some(t => t.isOnboarding);
+  const openTasks =
+    !isOnboarded && !hasOnchainOnboardingOpen && !localOnboardingClaimed
+      ? [DEMO_LOCAL_ONBOARDING_TASK, ...openOnchainTasks]
+      : openOnchainTasks;
   const searchedOpenTasks = openTasks.filter(t => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
@@ -1897,14 +1941,25 @@ function ExploreTab() {
     }
     return 0;
   });
-  const myTasksRaw = onchainTasks.filter(
-    t =>
-      !!addressLower &&
-      !!t.claimedBy &&
-      t.claimedBy.toLowerCase() === addressLower &&
-      !optimisticUnclaimIds.includes(t.id),
+  const myTasksRaw = React.useMemo(
+    () =>
+      onchainTasks.filter(
+        t =>
+          !!addressLower &&
+          !!t.claimedBy &&
+          t.claimedBy.toLowerCase() === addressLower &&
+          !optimisticUnclaimIds.includes(t.id),
+      ),
+    [addressLower, onchainTasks, optimisticUnclaimIds],
   );
-  const myTasks = myTasksRaw.filter(t => t.completionStatus !== 2);
+  const localClaimedTasks: OnchainTask[] = React.useMemo(
+    () => (localOnboardingClaimed ? [{ ...DEMO_LOCAL_ONBOARDING_TASK, completionStatus: 0 }] : []),
+    [localOnboardingClaimed],
+  );
+  const myTasks = React.useMemo(
+    () => [...localClaimedTasks, ...myTasksRaw.filter(t => t.completionStatus !== 2)],
+    [localClaimedTasks, myTasksRaw],
+  );
   const onchainCompletedTasks = myTasksRaw.filter(t => t.completionStatus === 2);
   const myTaskIds = new Set(myTasks.map(t => t.id));
 
@@ -1965,6 +2020,12 @@ function ExploreTab() {
       setToast("Max 2 tasks can be claimed at a time");
       return;
     }
+    if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
+      setLocalOnboardingClaimed(true);
+      setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
+      setToast(`Claimed: ${task.title}`);
+      return;
+    }
     const result = await claimTask(task.id);
     if (result.ok) {
       setToast(`Claimed: ${task.title}`);
@@ -1974,6 +2035,12 @@ function ExploreTab() {
   };
 
   const handleUnclaim = async (task: Task) => {
+    if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
+      setLocalOnboardingClaimed(false);
+      setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
+      setToast("Task returned to Open Tasks");
+      return;
+    }
     const result = await unclaimTask(task.id);
     if (result.ok) {
       setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
@@ -1994,9 +2061,13 @@ function ExploreTab() {
   };
 
   const handleOnboardAccount = async (task: Task) => {
-    const result = await unclaimTask(task.id);
-    if (result.ok) {
-      setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+    if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
+      setLocalOnboardingClaimed(false);
+    } else {
+      const result = await unclaimTask(task.id);
+      if (result.ok) {
+        setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
+      }
     }
     setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
     setPendingVerificationIds(prev => prev.filter(id => id !== task.id));

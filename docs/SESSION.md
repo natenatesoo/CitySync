@@ -652,3 +652,9 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - `citysync:demo:participant:onboarding-ready:<wallet>`
   - `citysync:demo:participant:onboarded:<wallet>`
 - Added onboarding-required banner in Explore open view and locked non-onboarding tasks until activation.
+
+## 2026-03-09 — Claimable Onboarding Fallback Task
+
+- Added a demo-local claimable onboarding task fallback in Participant Explore when no onchain onboarding task is currently open.
+- New participants now always have at least one onboarding task they can claim/execute to activate access.
+- Fallback task participates in the same `Claim -> Execute -> Onboard Account` flow and persists per wallet.
