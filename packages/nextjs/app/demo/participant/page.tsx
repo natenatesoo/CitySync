@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
 import { formatUnits } from "viem";
 import AppShell from "../_components/AppShell";
+import { LearnInfoCard, LearnMoreLink, LearnMorePanel } from "../_components/LearnMore";
 import { NavTab } from "../_components/BottomNav";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
@@ -17,172 +18,77 @@ const ACCENT = "#4169E1";
 const TEAL = "#34eeb6";
 const GOLD = "#DD9E33";
 
-// ─── Panel helpers ────────────────────────────────────────────────────────────
+type ParticipantLearnCardKey =
+  | "profile-account"
+  | "profile-identity"
+  | "explore-onboarding"
+  | "explore-task-flow"
+  | "explore-verify"
+  | "mycity-feed"
+  | "vote-process"
+  | "vote-mce"
+  | "redeem-flow";
 
-function PanelCard({
-  label,
-  title,
-  accent,
-  children,
-}: {
-  label: string;
-  title: string;
-  accent: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        background: "rgba(255,255,255,0.025)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 16,
-        padding: "20px",
-        marginBottom: 12,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 10,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          color: accent,
-          marginBottom: 8,
-        }}
-      >
-        {label}
-      </div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 10, lineHeight: 1.3 }}>{title}</div>
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.65 }}>{children}</div>
-    </div>
-  );
-}
+const PARTICIPANT_LEARN_CARDS: Record<ParticipantLearnCardKey, LearnInfoCard> = {
+  "profile-account": {
+    title: "Account Provisioning",
+    subtitle: "How your account works",
+    body: "Your City/Sync sign-in provisions a smart account for onchain actions. The app syncs CITY, VOTE, and MCE balances from contract state and keeps your role session aligned.",
+  },
+  "profile-identity": {
+    title: "Participant Identity",
+    subtitle: "Profile and credibility",
+    body: "Your profile tracks participation history, completed tasks, and governance activity. Over time, this creates a civic reputation tied to verified community contributions.",
+  },
+  "explore-onboarding": {
+    title: "Onboarding Requirement",
+    subtitle: "Why onboarding exists",
+    body: "Onboarding confirms real community membership through an in-person step. Once activated, your account can interact with the wider City/Sync task and redemption ecosystem.",
+  },
+  "explore-task-flow": {
+    title: "Task Lifecycle",
+    subtitle: "Open → Claimed → Completed",
+    body: "Claim tasks from the open pool, execute and submit completion, and track progression through verification to completion. This keeps participant work visible and auditable.",
+  },
+  "explore-verify": {
+    title: "Verification",
+    subtitle: "How rewards are minted",
+    body: "Issuers verify task completions onchain. Verification mints CITY and VOTE rewards to the participant account, creating a direct record of civic work and rewards.",
+  },
+  "mycity-feed": {
+    title: "MyCity Feed",
+    subtitle: "Local information layer",
+    body: "MyCity is a role-shared civic feed where organizations publish events, announcements, and opportunities. It functions as coordination context around task participation.",
+  },
+  "vote-process": {
+    title: "Voting Process",
+    subtitle: "Using earned VOTE",
+    body: "VOTE is earned through civic contribution and used in time-bounded proposal rounds. Participants can allocate vote weight to proposals during open voting windows.",
+  },
+  "vote-mce": {
+    title: "MCE Governance",
+    subtitle: "Mass Coordination Events",
+    body: "MCEs are mission-oriented cycles where the community signals priorities and organizations execute coordinated tasks. This links governance outcomes to tangible civic execution.",
+  },
+  "redeem-flow": {
+    title: "Redemption Flow",
+    subtitle: "Using CITY credits",
+    body: "CITY credits are redeemed against partner offerings. Redemption calls contract logic onchain and updates available balance, creating a closed loop from contribution to utility.",
+  },
+};
 
-function getParticipantPanels(
-  activeTab: string,
-  _state: ReturnType<typeof useDemo>["state"],
-): { left: React.ReactNode; right: React.ReactNode } {
+function getParticipantRightPanel(activeTab: string): React.ReactNode {
   const rightPanel = <OnchainActivityPanel role="participant" accent={ACCENT} />;
 
   switch (activeTab) {
     case "profile":
-      return {
-        left: (
-          <>
-            <PanelCard label="Account Login" title="Welcome to City/Sync" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                When you first log in with your email, you are provisioned an on-chain account. This account serves as
-                your wallet and holds all of your City/Sync tokens — CITYx, VOTE, and special MCE credits.
-              </p>
-            </PanelCard>
-            <PanelCard label="My Profile" title="Your City/Sync Profile" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                The Profile tab lets you edit your City/Sync identity, track your token balances, and view your
-                completed tasks and voting history.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
     case "explore":
-      return {
-        left: (
-          <>
-            <PanelCard label="Task Catalog" title="Onboarding Tasks" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                All new Civic Participants must complete an in-person onboarding task to activate their account. All
-                certified Issuers offer a continuous set of onboarding tasks. The initial task is how the protocol
-                ensures real community membership. Upon completion, your account is whitelisted and can interact with
-                all City/Sync smart contracts. Once this is done, you are free to claim any available tasks from the
-                Task Catalog.
-              </p>
-            </PanelCard>
-            <PanelCard label="Task Management" title="Earning CITYx Credits" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                When you claim a task, you are reserving it for execution. Citizens can claim a maximum of 2 tasks at
-                any given time. Once you claim a task, it will appear in the My Tasks tab. After completing the task,
-                you can submit proof for verification. Once verified, you will receive your CITYx and VOTE tokens.
-              </p>
-            </PanelCard>
-            <PanelCard label="DEMO Limitations" title="Verification" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                Once a task is completed, the issuing organization is responsible for reviewing and verifying your work.
-                Once approved, your CITYx and VOTE will be distributed. For the purpose of this DEMO, verification is
-                automatically approved.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
     case "mycity":
-      return {
-        left: (
-          <PanelCard label="MyCity Feed" title="Your City's Bulletin Board" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Certified Issuer Organizations and Redeemer Venues post here directly — announcements, events, volunteer
-              opportunities, and deals.
-            </p>
-            <p style={{ margin: 0 }}>
-              No ads. No algorithms. Just your city&apos;s orgs talking to you. Like posts to boost their visibility in
-              the community feed.
-            </p>
-          </PanelCard>
-        ),
-        right: rightPanel,
-      };
-
     case "vote":
-      return {
-        left: (
-          <>
-            <PanelCard label="Voting Process" title="Using your $VOTE" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                $VOTE tokens are non-transferable and are earned 1:1 with your $CITYx tokens. At City/Sync we utilize
-                Approval Voting to make decisions on a finite set of proposals. During the open period of voting, users
-                have an opportunity to change their votes however they see fit. Once the open period ends, a much
-                shorter closed period of voting begins, where $VOTE tokens can no longer be changed. At the end of the
-                voting period, the proposal with the most votes is enacted.
-              </p>
-            </PanelCard>
-            <PanelCard label="MCE Governance" title="MCE Epochs" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                MCEs can be thought of as mission-oriented tasks that cover a 3-month sprint. Once an MCE has
-                successfully passed, Issuer Organizations spend a week planning tasks that execute on the winning
-                proposal. All MCE tasks issue a unique credit usable by Civic Participants. During the voting period,
-                Issuer &amp; Redeemer Organizations can create new MCE Proposals. The Representative Issuer Committee
-                selects 5 proposals from the pool to enter the next Epoch — Civic Participants influence the Committee
-                by signaling support through &ldquo;likes&rdquo;. By the time Epoch 1 ends, Epoch 2 Voting will
-                conclude, repeating quarterly.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
     case "redeem":
-      return {
-        left: (
-          <PanelCard label="Redemptions" title="Using your CITYx" accent={ACCENT}>
-            <p style={{ margin: 0 }}>
-              On this page you can view all of the offerings within the Redemption Universe. Redeemer Organizations will
-              have printed QR codes for each of their offerings that interact with the token contract and call the
-              &ldquo;Burn&rdquo; function. When visiting a Redeemer Organization&apos;s location, scan the QR code at
-              the Point of Sale — this instantly calls the function and burns your CITYx at the rate for that offering.
-              A visible and audible cue will appear on screen to prove to the Redeemer Organization that the transaction
-              was processed and the CITYx was deducted from your account.
-            </p>
-          </PanelCard>
-        ),
-        right: rightPanel,
-      };
-
+      return rightPanel;
     default:
-      return { left: null, right: null };
+      return rightPanel;
   }
 }
 
@@ -1023,7 +929,13 @@ function SuccessToast({ message, onDismiss }: { message: string; onDismiss: () =
 // PROFILE TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
-function ProfileTab({ onTabChange }: { onTabChange: (tab: string) => void }) {
+function ProfileTab({
+  onTabChange,
+  onLearnMore,
+}: {
+  onTabChange: (tab: string) => void;
+  onLearnMore: (key: ParticipantLearnCardKey) => void;
+}) {
   const { state, setCitizenName } = useDemo();
   const p = state.participant;
   const [editing, setEditing] = useState(false);
@@ -1053,6 +965,13 @@ function ProfileTab({ onTabChange }: { onTabChange: (tab: string) => void }) {
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Participant Profile</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LearnMoreLink onClick={() => onLearnMore("profile-account")} />
+          <LearnMoreLink onClick={() => onLearnMore("profile-identity")} />
+        </div>
+      </div>
       {/* Identity card */}
       <div style={{ ...card, marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
@@ -1648,7 +1567,7 @@ function TaskCard({
   );
 }
 
-function ExploreTab() {
+function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
   type OnchainTask = Task & { claimedBy?: `0x${string}`; completionStatus?: number };
   const { state, claimTask, unclaimTask, startVerify } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
@@ -2099,6 +2018,14 @@ function ExploreTab() {
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Task Marketplace</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LearnMoreLink onClick={() => onLearnMore("explore-onboarding")} />
+          <LearnMoreLink onClick={() => onLearnMore("explore-task-flow")} />
+          <LearnMoreLink onClick={() => onLearnMore("explore-verify")} />
+        </div>
+      </div>
       {/* Open / Claimed / Completed toggle */}
       <div
         style={{
@@ -2355,7 +2282,7 @@ function ExploreTab() {
 // MYCITY TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
-function MyCityTab() {
+function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
   const { state, likePost } = useDemo();
   const [sort, setSort] = useState<"recent" | "top">("recent");
 
@@ -2406,6 +2333,9 @@ function MyCityTab() {
 
       <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16 }}>
         Updates from Issuer and Redeemer organizations in your city
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
       </div>
 
       {sorted.map(post => {
@@ -2493,7 +2423,7 @@ function MyCityTab() {
 // VOTE TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
-function VoteTab() {
+function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
   const { state, allocateMceVote, likeEpoch2 } = useDemo();
   const p = state.participant;
   const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
@@ -2512,6 +2442,13 @@ function VoteTab() {
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Governance Voting</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LearnMoreLink onClick={() => onLearnMore("vote-process")} />
+          <LearnMoreLink onClick={() => onLearnMore("vote-mce")} />
+        </div>
+      </div>
       {/* Epoch toggle */}
       <div
         style={{
@@ -2834,7 +2771,7 @@ function VoteTab() {
 
 type CreditFilter = "All" | "CITYx" | "MCE";
 
-function RedeemTab() {
+function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
   const { state, redeemOffer } = useDemo();
   const p = state.participant;
   const [filter, setFilter] = useState<CreditFilter>("All");
@@ -2858,6 +2795,10 @@ function RedeemTab() {
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Redeem CITY Credits</div>
+        <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
+      </div>
       {/* Balances */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
@@ -3072,12 +3013,26 @@ export default function ParticipantPage() {
   const { state, setRole } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
+  const [openInfoCards, setOpenInfoCards] = useState<ParticipantLearnCardKey[]>([]);
 
   useEffect(() => {
     if (!state.role) setRole("participant");
   }, [state.role, setRole]);
 
-  const { left: leftPanel, right: rightPanel } = getParticipantPanels(activeTab, state);
+  const rightPanel = getParticipantRightPanel(activeTab);
+  const leftPanel =
+    openInfoCards.length > 0 ? (
+      <LearnMorePanel
+        keys={openInfoCards}
+        cards={PARTICIPANT_LEARN_CARDS}
+        onClose={key => setOpenInfoCards(prev => prev.filter(existing => existing !== key))}
+        accent={ACCENT}
+      />
+    ) : null;
+
+  const openLearnMore = React.useCallback((key: ParticipantLearnCardKey) => {
+    setOpenInfoCards(prev => (prev.includes(key) ? prev : [...prev, key]));
+  }, []);
 
   return (
     <>
@@ -3095,11 +3050,11 @@ export default function ParticipantPage() {
         leftPanel={leftPanel}
         rightPanel={rightPanel}
       >
-        {activeTab === "profile" && <ProfileTab onTabChange={setActiveTab} />}
-        {activeTab === "explore" && <ExploreTab />}
-        {activeTab === "mycity" && <MyCityTab />}
-        {activeTab === "vote" && <VoteTab />}
-        {activeTab === "redeem" && <RedeemTab />}
+        {activeTab === "profile" && <ProfileTab onTabChange={setActiveTab} onLearnMore={openLearnMore} />}
+        {activeTab === "explore" && <ExploreTab onLearnMore={openLearnMore} />}
+        {activeTab === "mycity" && <MyCityTab onLearnMore={openLearnMore} />}
+        {activeTab === "vote" && <VoteTab onLearnMore={openLearnMore} />}
+        {activeTab === "redeem" && <RedeemTab onLearnMore={openLearnMore} />}
       </AppShell>
 
       {/* Verification overlay rendered outside AppShell so it covers all layers */}

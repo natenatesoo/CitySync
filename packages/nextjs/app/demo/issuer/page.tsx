@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useAccount, useAuthModal, useSignerStatus } from "@account-kit/react";
 import { formatUnits } from "viem";
 import AppShell from "../_components/AppShell";
+import { LearnInfoCard, LearnMoreLink, LearnMorePanel } from "../_components/LearnMore";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
@@ -119,85 +120,6 @@ const DIMMED = "rgba(255,255,255,0.25)";
 
 // ─── Panel helpers ────────────────────────────────────────────────────────────
 
-function LearnMoreLink({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        background: "transparent",
-        border: "none",
-        color: "rgba(255,255,255,0.6)",
-        cursor: "pointer",
-        fontSize: 11,
-        fontWeight: 600,
-      }}
-    >
-      <span
-        style={{
-          width: 14,
-          height: 14,
-          borderRadius: "50%",
-          border: "1px solid rgba(255,255,255,0.4)",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 10,
-          lineHeight: 1,
-        }}
-      >
-        i
-      </span>
-      Learn More
-    </button>
-  );
-}
-
-function IssuerInfoPanel({
-  infoKeys,
-  onClose,
-}: {
-  infoKeys: IssuerLearnCardKey[];
-  onClose: (key: IssuerLearnCardKey) => void;
-}) {
-  if (infoKeys.length === 0) return null;
-  return (
-    <>
-      {infoKeys.map(key => {
-        const info = ISSUER_LEARN_CARDS[key];
-        return (
-          <div
-            key={key}
-            style={{
-              background: "rgba(255,255,255,0.025)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 12,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 8 }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{info.title}</div>
-                <div style={{ fontSize: 11, color: ACCENT, fontWeight: 600, marginBottom: 8 }}>{info.subtitle}</div>
-              </div>
-              <button
-                onClick={() => onClose(key)}
-                style={{ background: "transparent", border: "none", color: MUTED, cursor: "pointer", fontSize: 16 }}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{info.body}</div>
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
 function getIssuerRightPanel(_activeTab: string): React.ReactNode {
   const rightPanel = <OnchainActivityPanel role="issuer" accent={ACCENT} />;
 
@@ -241,9 +163,17 @@ const STATUS_COLOR: Record<string, string> = {
   Rejected: "#ff6b9d",
 };
 
-type IssuerLearnCardKey = "becoming-certified-issuer" | "activity-stats" | "epoch-issuance" | "active-tasks";
+type IssuerLearnCardKey =
+  | "becoming-certified-issuer"
+  | "activity-stats"
+  | "epoch-issuance"
+  | "active-tasks"
+  | "task-catalog"
+  | "verify-flow"
+  | "mycity-feed"
+  | "mce-strategy";
 
-const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, { title: string; subtitle: string; body: string }> = {
+const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, LearnInfoCard> = {
   "becoming-certified-issuer": {
     title: "Becoming a Certified Issuer Organization",
     subtitle: "Role onboarding and certification",
@@ -263,6 +193,26 @@ const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, { title: string; subtitle: 
     title: "Active Tasks",
     subtitle: "Live task instance state",
     body: "Active task instances are opportunities that are currently open, claimed, or pending verification. Completed or unissued tasks are excluded from this list.",
+  },
+  "task-catalog": {
+    title: "Task Catalog Operations",
+    subtitle: "From approval to issuance",
+    body: "Approved task templates remain reusable in your catalog. Issuers can issue any template again by creating new onchain task instances for new dates, locations, and slot counts.",
+  },
+  "verify-flow": {
+    title: "Verification and Mint",
+    subtitle: "Finalizing civic work onchain",
+    body: "When issuers verify completion, the workflow mints CITY and VOTE rewards to participants and records the verification transaction for shared visibility across issuer organizations.",
+  },
+  "mycity-feed": {
+    title: "Issuer MyCity Feed",
+    subtitle: "Public communication layer",
+    body: "The MyCity feed lets issuers publish updates, opportunities, and event context so participant activity and organizational priorities stay coordinated.",
+  },
+  "mce-strategy": {
+    title: "MCE Strategy",
+    subtitle: "Planning next coordination cycles",
+    body: "MCE planning helps issuers align task issuance and verification capacity with upcoming city-wide priorities and expected participant demand.",
   },
 };
 
@@ -344,9 +294,11 @@ export default function IssuerApp() {
   const rightPanel = getIssuerRightPanel(activeTab);
   const leftPanel =
     openInfoCards.length > 0 ? (
-      <IssuerInfoPanel
-        infoKeys={openInfoCards}
+      <LearnMorePanel
+        keys={openInfoCards}
+        cards={ISSUER_LEARN_CARDS}
         onClose={key => setOpenInfoCards(prev => prev.filter(k => k !== key))}
+        accent={ACCENT}
       />
     ) : null;
 
@@ -570,16 +522,22 @@ export default function IssuerApp() {
           />
         )}
         {activeTab === "mycity" && (
-          <MyCityTab posts={allPosts} orgName={issuer.orgName} onCompose={() => setComposeOpen(true)} />
+          <MyCityTab
+            posts={allPosts}
+            orgName={issuer.orgName}
+            onCompose={() => setComposeOpen(true)}
+            onLearnMore={openLearnMore}
+          />
         )}
         {activeTab === "verify" && (
           <VerifyTab
             onVerify={handleVerify}
             onSetTaskActive={issuerSetTaskActive}
             verifyWriteStatus={verifyWriteStatus}
+            onLearnMore={openLearnMore}
           />
         )}
-        {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} />}
+        {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} onLearnMore={openLearnMore} />}
       </AppShell>
 
       {createSheet && (
@@ -1082,7 +1040,7 @@ function TasksTab({
   onApproveProposed,
   approvedCatalogTasks,
   taskWriteStatus,
-  onLearnMore: _onLearnMore,
+  onLearnMore,
 }: {
   creditsCommitted: number;
   onCreateOpen: () => void;
@@ -1227,6 +1185,9 @@ function TasksTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("task-catalog")} />
+      </div>
       <div
         style={{
           ...surfaceCard,
@@ -1984,7 +1945,17 @@ function ProposeTaskSheet({
 
 // ─── MyCity Tab ───────────────────────────────────────────────────────────────
 
-function MyCityTab({ posts, orgName, onCompose }: { posts: Post[]; orgName: string; onCompose: () => void }) {
+function MyCityTab({
+  posts,
+  orgName,
+  onCompose,
+  onLearnMore,
+}: {
+  posts: Post[];
+  orgName: string;
+  onCompose: () => void;
+  onLearnMore: (key: IssuerLearnCardKey) => void;
+}) {
   const [sort, setSort] = useState<"recent" | "top">("recent");
 
   const sorted = [...posts].sort((a, b) => {
@@ -2005,24 +1976,27 @@ function MyCityTab({ posts, orgName, onCompose }: { posts: Post[]; orgName: stri
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>MyCity Feed</div>
-        <button
-          onClick={onCompose}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: ACCENT,
-            border: "none",
-            borderRadius: 10,
-            padding: "8px 14px",
-            fontSize: 12,
-            fontWeight: 700,
-            color: BG,
-            cursor: "pointer",
-          }}
-        >
-          <IconPlus /> New Post
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
+          <button
+            onClick={onCompose}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: ACCENT,
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              color: BG,
+              cursor: "pointer",
+            }}
+          >
+            <IconPlus /> New Post
+          </button>
+        </div>
       </div>
 
       {/* Sort tabs */}
@@ -2287,10 +2261,12 @@ function VerifyTab({
   onVerify,
   onSetTaskActive,
   verifyWriteStatus,
+  onLearnMore,
 }: {
   onVerify: (taskId: string, citizen: string) => Promise<void>;
   onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   verifyWriteStatus: TaskWriteStatus;
+  onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"issued" | "claimed" | "completed">("issued");
@@ -2446,6 +2422,9 @@ function VerifyTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("verify-flow")} />
+      </div>
       {/* Three-way toggle */}
       <div
         style={{
@@ -2893,7 +2872,15 @@ function VerifyTab({
 
 // ─── MCEs Tab ─────────────────────────────────────────────────────────────────
 
-function MCEsTab({ state, orgName }: { state: ReturnType<typeof useDemo>["state"]; orgName: string }) {
+function MCEsTab({
+  state,
+  orgName,
+  onLearnMore,
+}: {
+  state: ReturnType<typeof useDemo>["state"];
+  orgName: string;
+  onLearnMore: (key: IssuerLearnCardKey) => void;
+}) {
   const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
   const [proposeOpen, setProposeOpen] = useState(false);
   const [localProposals, setLocalProposals] = useState<
@@ -2964,6 +2951,9 @@ function MCEsTab({ state, orgName }: { state: ReturnType<typeof useDemo>["state"
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("mce-strategy")} />
+      </div>
       {/* Epoch toggle */}
       <div
         style={{

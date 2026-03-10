@@ -720,3 +720,30 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - session/client-unavailable errors now return consistent user-facing copy:
     - "Session not ready. Finish sign-in and retry."
 - `writeContractAsync` now triggers auth modal automatically when smart-account client is missing before throwing.
+
+## 2026-03-10 — Cross-Role Learn More System (All Roles/Tabs)
+
+- Added a shared reusable Learn More UI component at `packages/nextjs/app/demo/_components/LearnMore.tsx`:
+  - `LearnMoreLink` (circled info icon + label)
+  - `LearnMorePanel` (dismissible left-panel info cards)
+- Participant role updates:
+  - replaced legacy left-panel mapping with on-demand Learn More cards only
+  - added contextual Learn More links across all tabs:
+    - Profile: account model + participant identity
+    - Explore: onboarding + task lifecycle + verification flow
+    - MyCity: feed context
+    - Vote: voting process + MCE governance
+    - Redeem: redemption flow
+- Redeemer role updates:
+  - removed static always-on left-panel content in favor of Learn More card triggers
+  - added learn links across tabs:
+    - Profile, Offerings, MyCity, Dashboard, MCEs
+  - added redeemer-specific info-card copy for account model, offering commitments/catalog, activity semantics, dashboard metrics, and MCE participation
+- Issuer role updates:
+  - migrated issuer Learn More rendering to the shared reusable component
+  - expanded Learn More coverage beyond profile into:
+    - Tasks (`Task Catalog Operations`)
+    - MyCity (`Issuer MyCity Feed`)
+    - Verify (`Verification and Mint`)
+    - MCEs (`MCE Strategy`)
+  - added new issuer info-card content for those areas.

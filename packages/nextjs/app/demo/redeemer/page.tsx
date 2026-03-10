@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
 import { useSmartAccountClient } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
+import { LearnInfoCard, LearnMoreLink, LearnMorePanel } from "../_components/LearnMore";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, Post, PostCategory, RedemptionOffer } from "../_data/mockData";
@@ -224,157 +225,58 @@ function SuccessToast({ message, onDone }: { message: string; onDone: () => void
   );
 }
 
-// ─── Panel helpers ────────────────────────────────────────────────────────────
+type RedeemerLearnCardKey =
+  | "profile-account"
+  | "profile-role"
+  | "offerings-catalog"
+  | "offerings-commitment"
+  | "offerings-activity"
+  | "mycity-feed"
+  | "dashboard-metrics"
+  | "mce-participation";
 
-function PanelCard({
-  label,
-  title,
-  accent,
-  children,
-}: {
-  label: string;
-  title: string;
-  accent: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <p
-        style={{
-          margin: "0 0 4px",
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.1em",
-          color: accent,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </p>
-      <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 700, color: "#fff" }}>{title}</h3>
-      <div style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(255,255,255,0.55)" }}>{children}</div>
-    </div>
-  );
-}
-
-function getRedeemerPanels(
-  activeTab: string,
-  _state: ReturnType<typeof useDemo>["state"],
-  _committedOfferings: CustomOffering[],
-  _mceOfferings: MCECustomOffering[],
-): { left: React.ReactNode; right: React.ReactNode } {
-  const rightPanel = <OnchainActivityPanel role="redeemer" accent={ACCENT} />;
-
-  switch (activeTab) {
-    case "profile":
-      return {
-        left: (
-          <PanelCard label="Redeemer Organization" title="Where CITYx Meets Real Value" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Redeemer organizations close the loop between civic participation and tangible rewards. Citizens earn
-              CITYx by completing tasks — you let them spend it in your venue.
-            </p>
-            <p style={{ margin: 0 }}>
-              Registering your organization unlocks access to the full redemption network, MCE rewards, and on-chain
-              proof of community engagement.
-            </p>
-          </PanelCard>
-        ),
-        right: rightPanel,
-      };
-
-    case "offerings":
-      return {
-        left: (
-          <>
-            <PanelCard label="Committed Offerings" title="Epoch Commitments" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                When you create a Committed Offering, it is locked for the duration of the current Epoch. This
-                commitment signals reliability to participants — they know your offer will be honored throughout the
-                entire period.
-              </p>
-              <p style={{ margin: 0 }}>
-                Offerings cannot be removed or modified until the Epoch ends or the offer expires. Plan your pricing and
-                stipulations carefully before submitting.
-              </p>
-            </PanelCard>
-            <PanelCard label="MCE Offerings" title="Event-Linked Rewards" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                MCE Offerings are tied to a specific Mass Coordination Event and expire when that event ends or your
-                chosen duration lapses. Once created, MCE offerings are locked — no changes are permitted. Set your
-                offer duration thoughtfully to maximize participant engagement during the event window.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
-    case "mycity":
-      return {
-        left: (
-          <PanelCard label="MyCity Feed" title="Connect with Your Community" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Post promotions, events, and announcements to the city-wide feed. Your posts reach every participant and
-              organization in the network.
-            </p>
-            <p style={{ margin: 0 }}>
-              Use the feed to announce limited-time offers, new redemption categories, or upcoming MCE events where your
-              venue participates as a reward partner.
-            </p>
-          </PanelCard>
-        ),
-        right: rightPanel,
-      };
-
-    case "dashboard":
-      return {
-        left: (
-          <PanelCard label="Impact Dashboard" title="Your Redemption Record" accent={ACCENT}>
-            <p style={{ margin: "0 0 12px" }}>
-              Every redemption your organization processes is permanently settled on Base. Your dashboard reflects
-              real-time community impact — no invoices, no chargebacks.
-            </p>
-            <p style={{ margin: 0 }}>
-              Monitor how each offering performs, track CITYx burned per category, and see your contribution to total
-              network supply reduction.
-            </p>
-          </PanelCard>
-        ),
-        right: rightPanel,
-      };
-
-    case "mces":
-      return {
-        left: (
-          <>
-            <PanelCard label="MCE Proposals" title="Your Role in MCE Creation" accent={ACCENT}>
-              <p style={{ margin: "0 0 12px" }}>
-                As a Redeemer Organization, you are embedded in the community where civic work happens. Your perspective
-                on what participants value most is crucial — submit MCE proposals that reflect real redemption demand
-                and community reward priorities.
-              </p>
-              <p style={{ margin: 0 }}>
-                Epoch 2 is your window to propose. Draft your proposal with a clear title, description, goals, and
-                expected benefits. The most-liked proposals are reviewed for entry into the next voting epoch.
-              </p>
-            </PanelCard>
-            <PanelCard label="MCE Participation" title="Winning MCE Benefits" accent={ACCENT}>
-              <p style={{ margin: 0 }}>
-                When an MCE wins the vote, a surge of motivated participants will seek reward venues that have opted in.
-                Create MCE Offerings in the Offerings tab to be featured as a reward destination during the event — MCE
-                Credits are funded from the pooled treasury, keeping your participation profitable.
-              </p>
-            </PanelCard>
-          </>
-        ),
-        right: rightPanel,
-      };
-
-    default:
-      return { left: null, right: null };
-  }
-}
+const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
+  "profile-account": {
+    title: "Redeemer Account",
+    subtitle: "Registered organization identity",
+    body: "Your redeemer profile ties venue details, organization identity, and account-level redemption actions to one persistent role session in the demo.",
+  },
+  "profile-role": {
+    title: "Redeemer Responsibilities",
+    subtitle: "How redeemers create utility",
+    body: "Redeemers convert earned CITY into real-world value through committed offerings and event-specific reward programs, closing the contribution-to-benefit loop.",
+  },
+  "offerings-catalog": {
+    title: "Offerings Catalog",
+    subtitle: "Templates before commitment",
+    body: "Catalog entries are reusable templates for future commitments. You can edit them over time and issue new active offerings without recreating details from scratch.",
+  },
+  "offerings-commitment": {
+    title: "Onchain Commitments",
+    subtitle: "When offers become active",
+    body: "Committing an offering publishes it onchain and makes it redeemable for participants. Active commitments should reflect terms your organization can honor.",
+  },
+  "offerings-activity": {
+    title: "Redeemer Onchain Activity",
+    subtitle: "Shared role-wide visibility",
+    body: "The activity panel tracks committed offerings and redemption-related contract actions across redeemer organizations, with explorer links for each transaction.",
+  },
+  "mycity-feed": {
+    title: "MyCity Communications",
+    subtitle: "Public coordination channel",
+    body: "Use MyCity to announce reward programs, venue updates, and campaign participation so participants can discover timely redemption options.",
+  },
+  "dashboard-metrics": {
+    title: "Impact Dashboard",
+    subtitle: "Operational performance view",
+    body: "Dashboard metrics summarize active offerings, queue throughput, and redemption outcomes so your team can measure engagement and service reliability.",
+  },
+  "mce-participation": {
+    title: "MCE Participation",
+    subtitle: "Event-based reward programs",
+    body: "Mass Coordination Events align participant demand around city priorities. Redeemers support this by publishing MCE-specific offerings and redemption capacity.",
+  },
+};
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -395,11 +297,25 @@ export default function RedeemerApp() {
   const [catalogIssueSheet, setCatalogIssueSheet] = useState<"committed" | "mce" | null>(null);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
   const [offerWriteStatus, setOfferWriteStatus] = useState<OfferWriteStatus>({ state: "idle" });
+  const [openInfoCards, setOpenInfoCards] = useState<RedeemerLearnCardKey[]>([]);
 
   const { redeemer, mces } = state;
   const canCommitOnchain = Boolean(address && client);
   const allPosts = [...localPosts, ...state.posts];
-  const { left: leftPanel, right: rightPanel } = getRedeemerPanels(activeTab, state, committedOfferings, mceOfferings);
+  const rightPanel = <OnchainActivityPanel role="redeemer" accent={ACCENT} />;
+  const leftPanel =
+    openInfoCards.length > 0 ? (
+      <LearnMorePanel
+        keys={openInfoCards}
+        cards={REDEEMER_LEARN_CARDS}
+        onClose={key => setOpenInfoCards(prev => prev.filter(existing => existing !== key))}
+        accent={ACCENT}
+      />
+    ) : null;
+
+  const openLearnMore = React.useCallback((key: RedeemerLearnCardKey) => {
+    setOpenInfoCards(prev => (prev.includes(key) ? prev : [...prev, key]));
+  }, []);
 
   React.useEffect(() => {
     setRole("redeemer");
@@ -631,7 +547,7 @@ export default function RedeemerApp() {
         leftPanel={leftPanel}
         rightPanel={rightPanel}
       >
-        {activeTab === "profile" && <ProfileTab redeemer={redeemer} dispatch={dispatch} />}
+        {activeTab === "profile" && <ProfileTab redeemer={redeemer} dispatch={dispatch} onLearnMore={openLearnMore} />}
         {activeTab === "offerings" && (
           <OfferingsTab
             redeemer={redeemer}
@@ -648,15 +564,26 @@ export default function RedeemerApp() {
             onProcess={handleProcess}
             orgName={redeemer.orgName}
             offerWriteStatus={offerWriteStatus}
+            onLearnMore={openLearnMore}
           />
         )}
         {activeTab === "mycity" && (
-          <MyCityTab posts={allPosts} orgName={redeemer.orgName} onCompose={() => setComposeOpen(true)} />
+          <MyCityTab
+            posts={allPosts}
+            orgName={redeemer.orgName}
+            onCompose={() => setComposeOpen(true)}
+            onLearnMore={openLearnMore}
+          />
         )}
         {activeTab === "dashboard" && (
-          <DashboardTab redeemer={redeemer} committedOfferings={committedOfferings} mceOfferings={mceOfferings} />
+          <DashboardTab
+            redeemer={redeemer}
+            committedOfferings={committedOfferings}
+            mceOfferings={mceOfferings}
+            onLearnMore={openLearnMore}
+          />
         )}
-        {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} />}
+        {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} onLearnMore={openLearnMore} />}
       </AppShell>
 
       {catalogEditor?.type === "committed" && (
@@ -736,9 +663,11 @@ export default function RedeemerApp() {
 function ProfileTab({
   redeemer,
   dispatch,
+  onLearnMore,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
   dispatch: ReturnType<typeof useDemo>["dispatch"];
+  onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(redeemer.orgName);
@@ -792,6 +721,10 @@ function ProfileTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("profile-account")} />
+        <LearnMoreLink onClick={() => onLearnMore("profile-role")} />
+      </div>
       {/* Welcome banner */}
       <div
         style={{
@@ -1084,6 +1017,7 @@ function OfferingsTab({
   onProcess,
   orgName,
   offerWriteStatus,
+  onLearnMore,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
   committedOfferings: CustomOffering[];
@@ -1099,12 +1033,18 @@ function OfferingsTab({
   onProcess: (queueId: string) => void;
   orgName: string;
   offerWriteStatus: OfferWriteStatus;
+  onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
   const [view, setView] = useState<"committed" | "mce">("committed");
   const explorerHref = offerWriteStatus.hash ? `https://sepolia.basescan.org/tx/${offerWriteStatus.hash}` : null;
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("offerings-catalog")} />
+        <LearnMoreLink onClick={() => onLearnMore("offerings-commitment")} />
+        <LearnMoreLink onClick={() => onLearnMore("offerings-activity")} />
+      </div>
       {/* Segment control */}
       <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
         {(["committed", "mce"] as const).map(v => (
@@ -2300,7 +2240,17 @@ function QRGrid({ seed }: { seed: string }) {
 
 // ─── MyCity Tab ───────────────────────────────────────────────────────────────
 
-function MyCityTab({ posts, orgName, onCompose }: { posts: Post[]; orgName: string; onCompose: () => void }) {
+function MyCityTab({
+  posts,
+  orgName,
+  onCompose,
+  onLearnMore,
+}: {
+  posts: Post[];
+  orgName: string;
+  onCompose: () => void;
+  onLearnMore: (key: RedeemerLearnCardKey) => void;
+}) {
   const [sort, setSort] = useState<"recent" | "top">("recent");
 
   const sorted = [...posts].sort((a, b) => {
@@ -2321,24 +2271,27 @@ function MyCityTab({ posts, orgName, onCompose }: { posts: Post[]; orgName: stri
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>MyCity Feed</div>
-        <button
-          onClick={onCompose}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: ACCENT,
-            border: "none",
-            borderRadius: 10,
-            padding: "8px 14px",
-            fontSize: 12,
-            fontWeight: 700,
-            color: BG,
-            cursor: "pointer",
-          }}
-        >
-          <IconPlus /> New Post
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
+          <button
+            onClick={onCompose}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: ACCENT,
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              color: BG,
+              cursor: "pointer",
+            }}
+          >
+            <IconPlus /> New Post
+          </button>
+        </div>
       </div>
 
       {/* Sort */}
@@ -2591,10 +2544,12 @@ function DashboardTab({
   redeemer,
   committedOfferings,
   mceOfferings,
+  onLearnMore,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
   committedOfferings: CustomOffering[];
   mceOfferings: MCECustomOffering[];
+  onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
   const totalCityxBurned = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
   // Simulated network-level values
@@ -2619,6 +2574,9 @@ function DashboardTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("dashboard-metrics")} />
+      </div>
       {/* Network Totals */}
       <SectionLabel text="Network Overview" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
@@ -2735,7 +2693,15 @@ function DashboardTab({
 
 // ─── MCEs Tab ─────────────────────────────────────────────────────────────────
 
-function MCEsTab({ state, orgName }: { state: ReturnType<typeof useDemo>["state"]; orgName: string }) {
+function MCEsTab({
+  state,
+  orgName,
+  onLearnMore,
+}: {
+  state: ReturnType<typeof useDemo>["state"];
+  orgName: string;
+  onLearnMore: (key: RedeemerLearnCardKey) => void;
+}) {
   const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
   const [proposeOpen, setProposeOpen] = useState(false);
   const [localProposals, setLocalProposals] = useState<
@@ -2805,6 +2771,9 @@ function MCEsTab({ state, orgName }: { state: ReturnType<typeof useDemo>["state"
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("mce-participation")} />
+      </div>
       {/* Epoch toggle */}
       <div
         style={{
