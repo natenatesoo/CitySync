@@ -594,7 +594,7 @@ interface DemoContextValue {
   allocateMceVote: (mceId: string, amount: number) => void;
   likePost: (postId: string) => void;
   likeEpoch2: (proposalId: string) => void;
-  redeemOffer: (offerId: string) => void;
+  redeemOffer: (offerId: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   issuerCreateTask: (task: Task) => Promise<{ ok: boolean; hash?: `0x${string}`; taskId: string; error?: string }>;
   issuerVerifyCompletion: (
     taskId: string,
@@ -1023,68 +1023,67 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const likeEpoch2 = useCallback((proposalId: string) => dispatch({ type: "LIKE_EPOCH2", proposalId }), []);
 
   const redeemOffer = useCallback(
-    (offerId: string) => {
+    async (offerId: string) => {
       const offer = state.offers.find(o => o.id === offerId);
-      if (!offer) return;
+      if (!offer) return { ok: false, error: "Offer not found." };
 
-      const onchainRoute = parseOnchainOfferId(offerId);
-      if (onchainRoute) {
-        if (offer.mceOnly) {
-          void writeContractAsync({
+      try {
+        const onchainRoute = parseOnchainOfferId(offerId);
+        if (onchainRoute) {
+          if (offer.mceOnly) {
+            const result = await writeContractAsync({
+              address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
+              abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
+              functionName: "purchaseOffer",
+              args: [onchainRoute.redeemer, onchainRoute.offerId],
+            });
+            const hash = getResultHash(result);
+            dispatch({ type: "REDEEM_OFFER", offerId, txHash: hash });
+            return { ok: true, hash };
+          }
+
+          const result = await writeContractAsync({
+            address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
+            abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+            functionName: "purchaseOffer",
+            args: [onchainRoute.redeemer, onchainRoute.offerId],
+          });
+          const hash = getResultHash(result);
+          dispatch({ type: "REDEEM_OFFER", offerId, txHash: hash });
+          return { ok: true, hash };
+        }
+
+        const route = DEMO_OFFER_ROUTES[offerId];
+        if (!route) {
+          return { ok: false, error: "Offer route not configured for onchain redemption." };
+        }
+
+        if (route.mode === "mce" || offer.mceOnly) {
+          const result = await writeContractAsync({
             address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
             abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
             functionName: "purchaseOffer",
-            args: [onchainRoute.redeemer, onchainRoute.offerId],
-          })
-            .then(result => {
-              dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
-            })
-            .catch(() => undefined);
-          return;
+            args: [route.redeemer, route.offerId],
+          });
+          const hash = getResultHash(result);
+          dispatch({ type: "REDEEM_OFFER", offerId, txHash: hash });
+          return { ok: true, hash };
         }
 
-        void writeContractAsync({
+        const result = await writeContractAsync({
           address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
           abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
           functionName: "purchaseOffer",
-          args: [onchainRoute.redeemer, onchainRoute.offerId],
-        })
-          .then(result => {
-            dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
-          })
-          .catch(() => undefined);
-        return;
-      }
-
-      const route = DEMO_OFFER_ROUTES[offerId];
-      if (!route) return;
-
-      if (route.mode === "mce" || offer.mceOnly) {
-        void writeContractAsync({
-          address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
-          abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
-          functionName: "purchaseOffer",
           args: [route.redeemer, route.offerId],
-        })
-          .then(result => {
-            dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
-          })
-          .catch(() => undefined);
-        return;
+        });
+        const hash = getResultHash(result);
+        dispatch({ type: "REDEEM_OFFER", offerId, txHash: hash });
+        return { ok: true, hash };
+      } catch (error) {
+        return { ok: false, error: normalizeWriteError(error, "Redemption failed") };
       }
-
-      void writeContractAsync({
-        address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
-        abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
-        functionName: "purchaseOffer",
-        args: [route.redeemer, route.offerId],
-      })
-        .then(result => {
-          dispatch({ type: "REDEEM_OFFER", offerId, txHash: getResultHash(result) });
-        })
-        .catch(() => undefined);
     },
-    [getResultHash, state.offers, writeContractAsync],
+    [getResultHash, normalizeWriteError, state.offers, writeContractAsync],
   );
 
   const issuerCreateTask = useCallback(

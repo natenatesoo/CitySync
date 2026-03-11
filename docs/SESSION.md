@@ -905,3 +905,23 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - retries `register()` every 10 seconds until onchain `isActiveRedeemer` sync flips `state.redeemer.registered` true
   - stops automatically when role changes or registration is confirmed.
 - This removes the one-shot registration failure mode where users had to manually retry after initial session timing issues.
+
+## 2026-03-11 — Redeemer Commit Offering: Strict Onchain Confirmation
+
+- Updated Redeemer catalog commit flows (`Committed` and `MCE`) to be chain-first:
+  - active offerings are now added to local `Active ... Offerings` lists only after `createOffer` confirms onchain
+  - removed prior local-success fallback behavior that could show offerings as active even when write failed.
+- Updated offer write status copy in Offerings tab:
+  - failure label now reads `Failed onchain` (removed `UI-only for this attempt` wording for this flow).
+- Result: commit behavior now matches onchain truth more closely and avoids false-positive active offering state.
+
+## 2026-03-11 — Participant Redeem: Strict Tx Confirmation
+
+- Refactored participant redemption flow to be strictly onchain-confirmed before showing redemption success.
+- Changes:
+  - `redeemOffer` now returns `{ ok, hash, error }` from `DemoContext` instead of fire-and-forget.
+  - Redeem modal now supports pending/error states and blocks dismissal while pending.
+  - Success checkout (`BurnConfirmOverlay`) is shown only after confirmed write success.
+  - Added `Last Redemption Write` status card with pending/confirmed/failed states and optional Base Sepolia tx link.
+- Result:
+  - removes false-positive redemption success UI when contract calls fail.

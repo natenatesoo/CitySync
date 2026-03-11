@@ -428,15 +428,6 @@ export default function RedeemerApp() {
     const template = committedCatalog.find(item => item.id === catalogId);
     if (!template) return;
 
-    const offering: CustomOffering = {
-      id: `committed-${Date.now()}`,
-      name: template.name,
-      costCity: template.costCity,
-      stipulations: template.stipulations,
-      createdAt: new Date().toISOString(),
-    };
-    setCommittedOfferings(prev => [offering, ...prev]);
-
     const onchainOffer: RedemptionOffer = {
       id: `offer-${Date.now()}`,
       redeemerName: redeemer.orgName || "Redeemer",
@@ -453,11 +444,19 @@ export default function RedeemerApp() {
     setOfferWriteStatus({ state: "pending" });
     const result = await redeemerAddOffer(onchainOffer);
     if (result.ok) {
+      const offering: CustomOffering = {
+        id: `committed-${Date.now()}`,
+        name: template.name,
+        costCity: template.costCity,
+        stipulations: template.stipulations,
+        createdAt: new Date().toISOString(),
+      };
+      setCommittedOfferings(prev => [offering, ...prev]);
       setOfferWriteStatus({ state: "confirmed", hash: result.hash });
       setToast("Committed offering issued from catalog and submitted onchain.");
     } else {
       setOfferWriteStatus({ state: "failed", error: result.error });
-      setToast("Offering issued locally from catalog, but onchain write failed.");
+      setToast("Committed offering commit failed onchain.");
     }
   };
 
@@ -496,17 +495,6 @@ export default function RedeemerApp() {
     const template = mceCatalog.find(item => item.id === catalogId);
     if (!template) return;
 
-    const offering: MCECustomOffering = {
-      id: `mce-offering-${Date.now()}`,
-      name: template.name,
-      costCity: template.costCity,
-      stipulations: template.stipulations,
-      mceIds: template.mceIds,
-      mceNames: template.mceNames,
-      createdAt: new Date().toISOString(),
-    };
-    setMceOfferings(prev => [offering, ...prev]);
-
     const onchainOffer: RedemptionOffer = {
       id: `offer-${Date.now()}`,
       redeemerName: redeemer.orgName || "Redeemer",
@@ -523,11 +511,21 @@ export default function RedeemerApp() {
     setOfferWriteStatus({ state: "pending" });
     const result = await redeemerAddOffer(onchainOffer);
     if (result.ok) {
+      const offering: MCECustomOffering = {
+        id: `mce-offering-${Date.now()}`,
+        name: template.name,
+        costCity: template.costCity,
+        stipulations: template.stipulations,
+        mceIds: template.mceIds,
+        mceNames: template.mceNames,
+        createdAt: new Date().toISOString(),
+      };
+      setMceOfferings(prev => [offering, ...prev]);
       setOfferWriteStatus({ state: "confirmed", hash: result.hash });
       setToast("MCE offering issued from catalog and submitted onchain.");
     } else {
       setOfferWriteStatus({ state: "failed", error: result.error });
-      setToast("Offering issued locally from catalog, but onchain write failed.");
+      setToast("MCE offering commit failed onchain.");
     }
   };
 
@@ -1117,7 +1115,7 @@ function OfferingsTab({
           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
             {offerWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
             {offerWriteStatus.state === "confirmed" && "Confirmed onchain"}
-            {offerWriteStatus.state === "failed" && "Failed onchain (UI-only for this attempt)"}
+            {offerWriteStatus.state === "failed" && "Failed onchain"}
           </div>
           {offerWriteStatus.error && (
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>

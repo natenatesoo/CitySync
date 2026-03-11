@@ -832,10 +832,14 @@ function RedeemModal({
   offer,
   onConfirm,
   onClose,
+  pending = false,
+  error,
 }: {
   offer: RedemptionOffer;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onClose: () => void;
+  pending?: boolean;
+  error?: string;
 }) {
   return (
     <div
@@ -851,7 +855,9 @@ function RedeemModal({
           background: "rgba(8,10,18,0.76)",
           pointerEvents: "auto",
         }}
-        onClick={onClose}
+        onClick={() => {
+          if (!pending) onClose();
+        }}
       />
       <div
         style={{
@@ -881,6 +887,7 @@ function RedeemModal({
             <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Confirm Redemption</span>
             <button
               onClick={onClose}
+              disabled={pending}
               style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
             >
               <IconXSmall size={18} />
@@ -936,6 +943,7 @@ function RedeemModal({
 
           <button
             onClick={onConfirm}
+            disabled={pending}
             style={{
               width: "100%",
               padding: "14px 0",
@@ -945,11 +953,15 @@ function RedeemModal({
               borderRadius: 12,
               fontWeight: 700,
               fontSize: 15,
-              cursor: "pointer",
+              cursor: pending ? "not-allowed" : "pointer",
+              opacity: pending ? 0.8 : 1,
             }}
           >
-            Redeem Now
+            {pending ? "Confirming Onchain..." : "Redeem Now"}
           </button>
+          {error ? (
+            <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,107,157,0.9)", lineHeight: 1.45 }}>{error}</div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -2941,6 +2953,11 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
 
 type CreditFilter = "All" | "CITYx" | "MCE";
 type RedeemView = "browse" | "history";
+type RedeemWriteStatus = {
+  state: "idle" | "pending" | "confirmed" | "failed";
+  hash?: `0x${string}`;
+  error?: string;
+};
 
 function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
   const { state, redeemOffer } = useDemo();
@@ -2948,6 +2965,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
   const [view, setView] = useState<RedeemView>("browse");
   const [filter, setFilter] = useState<CreditFilter>("All");
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
+  const [redeemWriteStatus, setRedeemWriteStatus] = useState<RedeemWriteStatus>({ state: "idle" });
   const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string; costCity: number } | null>(
     null,
   );
@@ -2981,10 +2999,16 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
       }));
   }, [filter, state.offers, state.pastRedemptions]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!confirmOffer) return;
     const offer = confirmOffer;
-    redeemOffer(offer.id);
+    setRedeemWriteStatus({ state: "pending" });
+    const result = await redeemOffer(offer.id);
+    if (!result.ok) {
+      setRedeemWriteStatus({ state: "failed", error: result.error });
+      return;
+    }
+    setRedeemWriteStatus({ state: "confirmed", hash: result.hash });
     setConfirmOffer(null);
     setBurnConfirm({ offerTitle: offer.offerTitle, redeemerName: offer.redeemerName, costCity: offer.costCity });
   };
@@ -3085,6 +3109,48 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
           </button>
         ) : null}
       </div>
+      {redeemWriteStatus.state !== "idle" && (
+        <div
+          style={{
+            ...card,
+            marginBottom: 12,
+            border:
+              redeemWriteStatus.state === "confirmed"
+                ? "1px solid rgba(52,238,182,0.35)"
+                : redeemWriteStatus.state === "failed"
+                  ? "1px solid rgba(255,107,157,0.35)"
+                  : "1px solid rgba(65,105,225,0.35)",
+            background:
+              redeemWriteStatus.state === "confirmed"
+                ? "rgba(52,238,182,0.08)"
+                : redeemWriteStatus.state === "failed"
+                  ? "rgba(255,107,157,0.08)"
+                  : "rgba(65,105,225,0.08)",
+          }}
+        >
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 6 }}>Last Redemption Write</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "white", marginBottom: 6 }}>
+            {redeemWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+            {redeemWriteStatus.state === "confirmed" && "Confirmed onchain"}
+            {redeemWriteStatus.state === "failed" && "Failed onchain"}
+          </div>
+          {redeemWriteStatus.error && (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.45 }}>
+              {redeemWriteStatus.error}
+            </div>
+          )}
+          {redeemWriteStatus.hash && (
+            <a
+              href={`https://sepolia.basescan.org/tx/${redeemWriteStatus.hash}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
+            >
+              View on Base Sepolia Explorer ↗
+            </a>
+          )}
+        </div>
+      )}
 
       {view === "browse" ? (
         <>
@@ -3168,7 +3234,11 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
                         </span>
                       </div>
                       <button
-                        onClick={() => !disabled && setConfirmOffer(offer)}
+                        onClick={() => {
+                          if (disabled) return;
+                          setRedeemWriteStatus({ state: "idle" });
+                          setConfirmOffer(offer);
+                        }}
                         disabled={disabled}
                         style={{
                           padding: "8px 18px",
@@ -3270,7 +3340,17 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
       )}
 
       {confirmOffer && (
-        <RedeemModal offer={confirmOffer} onConfirm={handleConfirm} onClose={() => setConfirmOffer(null)} />
+        <RedeemModal
+          offer={confirmOffer}
+          onConfirm={handleConfirm}
+          onClose={() => {
+            if (redeemWriteStatus.state !== "pending") {
+              setConfirmOffer(null);
+            }
+          }}
+          pending={redeemWriteStatus.state === "pending"}
+          error={redeemWriteStatus.state === "failed" ? redeemWriteStatus.error : undefined}
+        />
       )}
       {burnConfirm && (
         <BurnConfirmOverlay
