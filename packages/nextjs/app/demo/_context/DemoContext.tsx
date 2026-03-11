@@ -1028,8 +1028,41 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       if (!offer) return { ok: false, error: "Offer not found." };
 
       try {
+        const assertRedeemable = async (redeemer: `0x${string}`, expectedOfferId: bigint) => {
+          const profile = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "getProfile",
+            args: [redeemer],
+          })) as { registeredAt: bigint; active: boolean };
+
+          if (!profile.active || profile.registeredAt === 0n) {
+            return { ok: false as const, error: "Redeemer account is not active onchain yet." };
+          }
+
+          const onchainOffer = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "getOffer",
+            args: [redeemer, expectedOfferId],
+          })) as { name: string; active: boolean; mceOnly: boolean };
+
+          if (!onchainOffer.active || !onchainOffer.name) {
+            return { ok: false as const, error: "Offering is not active onchain." };
+          }
+
+          if (!offer.mceOnly && onchainOffer.mceOnly) {
+            return { ok: false as const, error: "Offering is MCE-only and cannot be redeemed with CITY." };
+          }
+
+          return { ok: true as const };
+        };
+
         const onchainRoute = parseOnchainOfferId(offerId);
         if (onchainRoute) {
+          const preflight = await assertRedeemable(onchainRoute.redeemer, onchainRoute.offerId);
+          if (!preflight.ok) return { ok: false, error: preflight.error };
+
           if (offer.mceOnly) {
             const result = await writeContractAsync({
               address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
@@ -1057,6 +1090,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!route) {
           return { ok: false, error: "Offer route not configured for onchain redemption." };
         }
+
+        const preflight = await assertRedeemable(route.redeemer, route.offerId);
+        if (!preflight.ok) return { ok: false, error: preflight.error };
 
         if (route.mode === "mce" || offer.mceOnly) {
           const result = await writeContractAsync({
@@ -1214,6 +1250,36 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const redeemerAddOffer = useCallback(
     async (offer: RedemptionOffer) => {
       try {
+        if (!address) {
+          return { ok: false, error: "Wallet not ready. Please wait a few seconds and try again." };
+        }
+
+        const isActiveRedeemer = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "isActiveRedeemer",
+          args: [address],
+        })) as boolean;
+
+        if (!isActiveRedeemer) {
+          try {
+            await writeContractAsync({
+              address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+              abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+              functionName: "register",
+              args: [],
+            });
+          } catch (registerError) {
+            const message = normalizeWriteError(registerError, "Redeemer registration failed");
+            return { ok: false, error: message };
+          }
+
+          return {
+            ok: false,
+            error: "Redeemer registration submitted onchain. Retry Commit Offering in a few seconds.",
+          };
+        }
+
         if (offer.mceOnly && !state.redeemer.acceptsMCE) {
           await writeContractAsync({
             address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
@@ -1241,7 +1307,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: message };
       }
     },
-    [getResultHash, normalizeWriteError, state.redeemer.acceptsMCE, writeContractAsync],
+    [address, getResultHash, normalizeWriteError, state.redeemer.acceptsMCE, writeContractAsync],
   );
 
   const redeemerRemoveOffer = useCallback(
