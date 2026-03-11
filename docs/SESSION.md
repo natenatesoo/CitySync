@@ -842,3 +842,13 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - converted remaining popup/sheet overlays from `position: fixed` to app-scoped `position: absolute`
   - kept bottom-sheet style sheets anchored above bottom tabs (`bottom: 92px`) with local dim layers.
 - Verified with lint/typecheck (`next:lint` + `next:check-types`), passing with only existing `no-img-element` warnings.
+
+## 2026-03-10 — Participant Redeem Overlay UX Fix
+
+- Updated Civic Participant redemption overlays to improve readability and scroll behavior in `Redeem` tab.
+- `Confirm Redemption` popup now uses a viewport-anchored in-app frame (`fixed`, constrained to app width, below header and above bottom tabs), so it opens centered relative to the current scroll position.
+- Popup visuals are now less transparent and more legible (solid card background and stronger contrast).
+- `Burn Confirmed` checkout overlay now uses a solid green full-content screen (inside app content area, not covering header/tabs).
+- Added explicit burn summary to checkout confirmation:
+  - offering name
+  - exact `CITYx` amount burned.

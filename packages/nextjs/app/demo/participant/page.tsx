@@ -300,6 +300,17 @@ const card: React.CSSProperties = {
   padding: "16px",
 };
 
+const APP_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  transform: "translateX(-50%)",
+  width: "100%",
+  maxWidth: 520,
+  top: 68,
+  bottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
+  pointerEvents: "none",
+};
+
 // ─── Category pill colors ─────────────────────────────────────────────────────
 
 const CAT_COLORS: Record<string, string> = {
@@ -628,10 +639,12 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
 function BurnConfirmOverlay({
   offerTitle,
   redeemerName,
+  costCity,
   onDone,
 }: {
   offerTitle: string;
   redeemerName: string;
+  costCity: number;
   onDone: () => void;
 }) {
   const [count, setCount] = React.useState(5);
@@ -671,10 +684,9 @@ function BurnConfirmOverlay({
   return (
     <div
       style={{
-        position: "absolute",
-        inset: 0,
+        ...APP_CONTENT_OVERLAY_FRAME,
         zIndex: 300,
-        background: "rgba(10, 30, 24, 0.97)",
+        background: "#0f4a37",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -731,20 +743,39 @@ function BurnConfirmOverlay({
 
       <div
         style={{
-          background: "rgba(52,238,182,0.08)",
-          border: "1px solid rgba(52,238,182,0.2)",
+          background: "rgba(255,255,255,0.12)",
+          border: "1px solid rgba(255,255,255,0.28)",
           borderRadius: 14,
-          padding: "14px 24px",
+          padding: "14px 20px",
           marginBottom: 28,
+          minWidth: 260,
         }}
       >
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>CITYx token burned on-chain</div>
-        <div style={{ fontSize: 12, color: "rgba(52,238,182,0.7)", fontFamily: "monospace" }}>
-          txn: 0x{Math.random().toString(16).slice(2, 18)}…
-        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>Redemption Offering</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{offerTitle}</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>CITY Burned</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#d4ffe9" }}>-{costCity} CITYx</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.66)", marginTop: 6 }}>Onchain redemption confirmed</div>
       </div>
 
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Closing in {count}s</div>
+      <button
+        onClick={onDone}
+        style={{
+          background: "#d4ffe9",
+          color: "#0f4a37",
+          border: "none",
+          borderRadius: 12,
+          padding: "10px 16px",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+          marginBottom: 14,
+        }}
+      >
+        Continue
+      </button>
+
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)" }}>Auto-closing in {count}s</div>
 
       <style>{`
         @keyframes burnPulse {
@@ -794,43 +825,41 @@ function RedeemModal({
   return (
     <div
       style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 180,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
+        ...APP_CONTENT_OVERLAY_FRAME,
+        zIndex: 220,
       }}
     >
       <div
         style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
+          position: "absolute",
+          inset: 0,
+          background: "rgba(8,10,18,0.76)",
           pointerEvents: "auto",
+        }}
+        onClick={onClose}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 12,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
         }}
       >
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(13,13,20,0.62)",
-          }}
-        />
-        <div
-          style={{
             ...card,
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: 92,
-            borderRadius: 22,
-            border: "1px solid rgba(255,255,255,0.1)",
-            padding: "24px 20px 24px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
+            width: "100%",
+            maxWidth: 392,
+            maxHeight: "100%",
             overflowY: "auto",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+            background: "#1b1f33",
+            border: "1px solid rgba(255,255,255,0.16)",
+            borderRadius: 22,
+            boxShadow: "0 18px 42px rgba(0,0,0,0.48)",
+            pointerEvents: "auto",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
@@ -852,8 +881,8 @@ function RedeemModal({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                background: "rgba(52,238,182,0.1)",
-                border: "1px solid rgba(52,238,182,0.25)",
+                background: "rgba(52,238,182,0.12)",
+                border: "1px solid rgba(52,238,182,0.32)",
                 borderRadius: 20,
                 padding: "6px 14px",
               }}
@@ -868,21 +897,21 @@ function RedeemModal({
               display: "flex",
               gap: 14,
               alignItems: "flex-start",
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: 10,
               padding: "14px",
               marginBottom: 20,
             }}
           >
-            <div style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0, marginTop: 2 }}>
+            <div style={{ color: "rgba(255,255,255,0.38)", flexShrink: 0, marginTop: 2 }}>
               <QRIcon />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.86)", marginBottom: 4 }}>
                 QR Code at Point of Sale
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.58)", lineHeight: 1.5 }}>
                 In production, a redemption QR code is generated for each offering that calls the &ldquo;Burn
                 Function&rdquo; on the token contract for the credit rate of that offering. In this demo, the function
                 is called instantly.
@@ -2862,7 +2891,9 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
   const [filter, setFilter] = useState<CreditFilter>("All");
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string } | null>(null);
+  const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string; costCity: number } | null>(
+    null,
+  );
 
   const filtered = state.offers.filter(o => {
     if (filter === "MCE") return o.mceOnly;
@@ -2875,7 +2906,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
     const offer = confirmOffer;
     redeemOffer(offer.id);
     setConfirmOffer(null);
-    setBurnConfirm({ offerTitle: offer.offerTitle, redeemerName: offer.redeemerName });
+    setBurnConfirm({ offerTitle: offer.offerTitle, redeemerName: offer.redeemerName, costCity: offer.costCity });
   };
 
   return (
@@ -3082,6 +3113,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
         <BurnConfirmOverlay
           offerTitle={burnConfirm.offerTitle}
           redeemerName={burnConfirm.redeemerName}
+          costCity={burnConfirm.costCity}
           onDone={() => setBurnConfirm(null)}
         />
       )}
