@@ -590,7 +590,7 @@ interface DemoContextValue {
   setCitizenName: (name: string) => void;
   claimTask: (taskId: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   unclaimTask: (taskId: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
-  startVerify: (taskId: string, taskTitle: string) => void;
+  startVerify: (taskId: string, taskTitle: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   allocateMceVote: (mceId: string, amount: number) => void;
   likePost: (postId: string) => void;
   likeEpoch2: (proposalId: string) => void;
@@ -1008,29 +1008,42 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const startVerify = useCallback(
     (taskId: string, taskTitle: string) => {
       dispatch({ type: "START_VERIFY", taskId, taskTitle });
-      let remaining = VERIFY_DURATION;
-      const interval = setInterval(() => {
-        remaining -= 1;
-        dispatch({ type: "TICK_VERIFY" });
-        if (remaining <= 0) {
-          clearInterval(interval);
+      return new Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>(resolve => {
+        let remaining = VERIFY_DURATION;
+        const interval = window.setInterval(() => {
+          remaining -= 1;
+          dispatch({ type: "TICK_VERIFY" });
+          if (remaining <= 0) {
+            window.clearInterval(interval);
 
-          const opportunityId = parseTaskOpportunityId(taskId);
-          if (opportunityId) {
+            const opportunityId = parseTaskOpportunityId(taskId);
+            if (!opportunityId) {
+              dispatch({ type: "COMPLETE_VERIFY" });
+              resolve({ ok: false, error: "Invalid opportunity id." });
+              return;
+            }
+
             const proofHash = keccak256(stringToHex(`${taskId}:${taskTitle}:${Date.now()}`));
-            void writeContractAsync({
-              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-              abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-              functionName: "submitCompletion",
-              args: [opportunityId, proofHash],
-            }).catch(() => undefined);
+            void (async () => {
+              try {
+                const result = await writeContractAsync({
+                  address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+                  abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+                  functionName: "submitCompletion",
+                  args: [opportunityId, proofHash],
+                });
+                dispatch({ type: "COMPLETE_VERIFY" });
+                resolve({ ok: true, hash: getResultHash(result) });
+              } catch (error) {
+                dispatch({ type: "COMPLETE_VERIFY" });
+                resolve({ ok: false, error: normalizeWriteError(error, "Submit completion failed") });
+              }
+            })();
           }
-
-          dispatch({ type: "COMPLETE_VERIFY" });
-        }
-      }, 1000);
+        }, 1000);
+      });
     },
-    [writeContractAsync],
+    [getResultHash, normalizeWriteError, writeContractAsync],
   );
 
   const allocateMceVote = useCallback(

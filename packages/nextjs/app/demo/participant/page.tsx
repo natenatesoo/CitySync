@@ -2207,7 +2207,16 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     setPendingVerificationIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
     setPendingTaskSnapshots(prev => ({ ...prev, [task.id]: task }));
     setToast("Submitted. Pending verification by issuer.");
-    startVerify(task.id, task.title);
+    void startVerify(task.id, task.title).then(result => {
+      if (result.ok) return;
+      setPendingVerificationIds(prev => prev.filter(id => id !== task.id));
+      setPendingTaskSnapshots(prev => {
+        const next = { ...prev };
+        delete next[task.id];
+        return next;
+      });
+      setToast(result.error ?? "Submit completion failed onchain.");
+    });
   };
 
   const openExploreLearnMore = () => {

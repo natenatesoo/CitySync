@@ -293,7 +293,7 @@ const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RedeemerApp() {
-  const { state, setRole, redeemerProcessRedemption, redeemerAddOffer, dispatch } = useDemo();
+  const { state, setRole, redeemerAddOffer, dispatch } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
@@ -529,11 +529,6 @@ export default function RedeemerApp() {
     }
   };
 
-  const handleProcess = (queueId: string) => {
-    redeemerProcessRedemption(queueId);
-    setToast("Redemption processed — on-chain confirmed!");
-  };
-
   const handleCreatePost = (post: Post) => {
     setLocalPosts(prev => [post, ...prev]);
     setComposeOpen(false);
@@ -560,7 +555,6 @@ export default function RedeemerApp() {
         {activeTab === "profile" && <ProfileTab redeemer={redeemer} dispatch={dispatch} onLearnMore={openLearnMore} />}
         {activeTab === "offerings" && (
           <OfferingsTab
-            redeemer={redeemer}
             committedOfferings={committedOfferings}
             mceOfferings={mceOfferings}
             committedCatalog={committedCatalog}
@@ -573,7 +567,6 @@ export default function RedeemerApp() {
             onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
             onShowQR={setQrTarget}
             onRemoveAttempt={id => setRemoveTarget(id)}
-            onProcess={handleProcess}
             orgName={redeemer.orgName}
             offerWriteStatus={offerWriteStatus}
             onLearnMore={openLearnMore}
@@ -1020,7 +1013,6 @@ function ProfileTab({
 // ─── Offerings Tab ─────────────────────────────────────────────────────────────
 
 function OfferingsTab({
-  redeemer,
   committedOfferings,
   mceOfferings,
   committedCatalog,
@@ -1033,12 +1025,10 @@ function OfferingsTab({
   onModifyMCE,
   onShowQR,
   onRemoveAttempt,
-  onProcess,
   orgName,
   offerWriteStatus,
   onLearnMore,
 }: {
-  redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
   committedOfferings: CustomOffering[];
   mceOfferings: MCECustomOffering[];
   committedCatalog: CustomOffering[];
@@ -1051,7 +1041,6 @@ function OfferingsTab({
   onModifyMCE: (catalogId: string) => void;
   onShowQR: (data: QROfferingData) => void;
   onRemoveAttempt: (id: string) => void;
-  onProcess: (queueId: string) => void;
   orgName: string;
   offerWriteStatus: OfferWriteStatus;
   onLearnMore: (key: RedeemerLearnCardKey) => void;
@@ -1338,99 +1327,6 @@ function OfferingsTab({
               ))}
             </div>
           )}
-
-          {/* Redemption queue */}
-          {redeemer.redemptionQueue.length > 0 && (
-            <>
-              <SectionLabel text={`Redemption Queue (${redeemer.redemptionQueue.length})`} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {redeemer.redemptionQueue.map(r => (
-                  <div
-                    key={r.id}
-                    style={{
-                      background: SURFACE,
-                      border: "1px solid rgba(52,238,182,0.15)",
-                      borderRadius: 16,
-                      padding: 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>
-                          {r.offerTitle}
-                        </div>
-                        <div style={{ fontFamily: "monospace", fontSize: 11, color: MUTED }}>{r.citizenAddress}</div>
-                        <div style={{ fontSize: 11, color: DIMMED, marginTop: 2 }}>
-                          {new Date(r.timestamp).toLocaleTimeString()}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>{r.costCity}</div>
-                        <div style={{ fontSize: 11, color: DIMMED }}>CITYx</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => onProcess(r.id)}
-                      style={{
-                        width: "100%",
-                        background: ACCENT,
-                        border: "none",
-                        borderRadius: 12,
-                        padding: "11px 0",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: BG,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Process Redemption
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Processed history */}
-          {redeemer.processedRedemptions.length > 0 && (
-            <>
-              <SectionLabel text="Processed" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {redeemer.processedRedemptions.map(r => (
-                  <div
-                    key={r.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      ...surfaceCard,
-                      padding: "12px 16px",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "#fff" }}>{r.offerTitle}</div>
-                      <div style={{ fontFamily: "monospace", fontSize: 11, color: DIMMED }}>{r.citizenAddress}</div>
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: ACCENT, flexShrink: 0 }}>
-                      +{r.costCity} CITYx
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {committedOfferings.length === 0 &&
-            redeemer.redemptionQueue.length === 0 &&
-            redeemer.processedRedemptions.length === 0 &&
-            null}
 
           {pendingCommittedCatalogCommitId && (
             <ConfirmDialog
