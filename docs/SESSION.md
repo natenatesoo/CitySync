@@ -804,3 +804,22 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Refactored Civic Participant `Profile` tab to align profile-card structure with Issuer/Redeemer style:
   - added a standardized top card (`Registered Civic Participant`) with editable participant name, account address, and role/network status pills.
 - Moved CITY/VOTE/MCE amounts out of the header card into a dedicated `Token Balances` subsection below the role information card.
+
+## 2026-03-10 — In-App Bottom Sheet Behavior (Issuer Task Issue Popup)
+
+- Updated `+ Issue Task from Catalog` popup to behave like an in-app mobile bottom sheet:
+  - popup now renders inside the app frame content area (not full-window overlay)
+  - constrained to phone container boundaries
+  - appears above bottom navigation/footer area and uses sheet styling (top drag handle + bottom-anchored panel).
+- `AppShell` main content container was set to `position: relative` to support frame-scoped overlays.
+
+## 2026-03-10 — In-App Popup Confinement Pass (Issuer/Redeemer/Participant)
+
+- Extended frame-scoped popup behavior across major demo overlays:
+  - moved role modal/sheet mounts inside each role `AppShell` content tree
+  - converted local popup overlays from viewport-fixed to app-frame-scoped absolute positioning
+  - preserved bottom-sheet interaction pattern where applicable (anchored above footer/nav, within app borders).
+- Roles covered:
+  - Issuer: create/propose/modify task sheets, compose sheet, verify confirm overlay, MCE proposal sheet
+  - Redeemer: catalog add/edit sheets, confirmation overlays, QR modal, compose sheet, MCE proposal sheet
+  - Participant: execution/redeem overlays and verify overlay now render in-app.

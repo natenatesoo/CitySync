@@ -239,7 +239,7 @@ function SuccessToast({ message, onDone }: { message: string; onDone: () => void
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         bottom: 90,
         left: "50%",
         transform: "translateX(-50%)",
@@ -317,6 +317,10 @@ export default function IssuerApp() {
   const openLearnMore = React.useCallback((key: IssuerLearnCardKey) => {
     setOpenInfoCards(prev => (prev.includes(key) ? prev : [...prev, key]));
   }, []);
+
+  React.useEffect(() => {
+    setOpenInfoCards([]);
+  }, [activeTab]);
 
   React.useEffect(() => {
     setRole("issuer");
@@ -555,54 +559,54 @@ export default function IssuerApp() {
           />
         )}
         {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} onLearnMore={openLearnMore} />}
+
+        {issueTaskId &&
+          (() => {
+            const task = approvedCatalogTasks.find(t => t.id === issueTaskId);
+            return task ? (
+              <IssueTaskPopup
+                task={task}
+                onClose={() => setIssueTaskId(null)}
+                onIssue={slots => handleIssueTask(task, slots)}
+              />
+            ) : null;
+          })()}
+
+        {createSheet && (
+          <CreateTaskSheet
+            onClose={() => setCreateSheet(false)}
+            approvedCatalogTasks={approvedCatalogTasks}
+            onIssueTask={id => {
+              setIssueTaskId(id);
+              setCreateSheet(false);
+            }}
+          />
+        )}
+
+        {proposeSheet && (
+          <ProposeTaskSheet
+            onClose={() => setProposeSheet(false)}
+            onPropose={handleProposeTask}
+            creditsCommitted={creditsCommitted}
+          />
+        )}
+
+        {composeOpen && (
+          <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
+        )}
+
+        {catalogModifyTaskId &&
+          (() => {
+            const task = approvedCatalogTasks.find(t => t.id === catalogModifyTaskId);
+            return task ? (
+              <ModifyTaskSheet
+                task={task}
+                onClose={() => setCatalogModifyTaskId(null)}
+                onSave={updates => handleModifyApproved(task.id, updates)}
+              />
+            ) : null;
+          })()}
       </AppShell>
-
-      {createSheet && (
-        <CreateTaskSheet
-          onClose={() => setCreateSheet(false)}
-          approvedCatalogTasks={approvedCatalogTasks}
-          onIssueTask={id => {
-            setIssueTaskId(id);
-            setCreateSheet(false);
-          }}
-        />
-      )}
-
-      {proposeSheet && (
-        <ProposeTaskSheet
-          onClose={() => setProposeSheet(false)}
-          onPropose={handleProposeTask}
-          creditsCommitted={creditsCommitted}
-        />
-      )}
-
-      {composeOpen && (
-        <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
-      )}
-
-      {issueTaskId &&
-        (() => {
-          const task = approvedCatalogTasks.find(t => t.id === issueTaskId);
-          return task ? (
-            <IssueTaskPopup
-              task={task}
-              onClose={() => setIssueTaskId(null)}
-              onIssue={slots => handleIssueTask(task, slots)}
-            />
-          ) : null;
-        })()}
-
-      {catalogModifyTaskId &&
-        (() => {
-          const task = approvedCatalogTasks.find(t => t.id === catalogModifyTaskId);
-          return task ? (
-            <ModifyTaskSheet
-              task={task}
-              onClose={() => setCatalogModifyTaskId(null)}
-              onSave={updates => handleModifyApproved(task.id, updates)}
-            />
-          ) : null;
-        })()}
 
       {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
     </>
@@ -1629,7 +1633,7 @@ function CreateTaskSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",
@@ -1822,7 +1826,7 @@ function ProposeTaskSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",
@@ -2203,7 +2207,7 @@ function ComposePostSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",
@@ -2869,7 +2873,7 @@ function VerifyTab({
       {confirmVerify && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
             zIndex: 220,
             background: "rgba(0,0,0,0.75)",
@@ -3294,7 +3298,7 @@ function MCEsTab({
       {proposeOpen && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
             zIndex: 50,
             display: "flex",
@@ -3439,29 +3443,39 @@ function IssueTaskPopup({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 60,
+        zIndex: 40,
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.8)",
-        backdropFilter: "blur(4px)",
-        padding: "0 16px",
+        background: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(3px)",
+        padding: "0 0 0",
       }}
       onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 420,
+          maxWidth: 480,
           background: SURFACE,
-          borderRadius: 20,
-          padding: "28px 24px",
+          borderRadius: "22px 22px 0 0",
+          padding: "22px 20px 28px",
           border: "1px solid rgba(255,255,255,0.1)",
+          borderBottom: "none",
         }}
         onClick={e => e.stopPropagation()}
       >
+        <div
+          style={{
+            width: 40,
+            height: 4,
+            background: "rgba(255,255,255,0.15)",
+            borderRadius: 2,
+            margin: "0 auto 14px",
+          }}
+        />
         <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Issue Task</div>
         <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
         <div style={{ fontSize: 12, color: DIMMED, marginBottom: 20 }}>
@@ -3601,7 +3615,7 @@ function ModifyTaskSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",

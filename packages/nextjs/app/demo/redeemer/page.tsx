@@ -203,7 +203,7 @@ function SuccessToast({ message, onDone }: { message: string; onDone: () => void
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         bottom: 90,
         left: "50%",
         transform: "translateX(-50%)",
@@ -328,6 +328,10 @@ export default function RedeemerApp() {
   const openLearnMore = React.useCallback((key: RedeemerLearnCardKey) => {
     setOpenInfoCards(prev => (prev.includes(key) ? prev : [...prev, key]));
   }, []);
+
+  React.useEffect(() => {
+    setOpenInfoCards([]);
+  }, [activeTab]);
 
   React.useEffect(() => {
     setRole("redeemer");
@@ -598,74 +602,80 @@ export default function RedeemerApp() {
           />
         )}
         {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} onLearnMore={openLearnMore} />}
+
+        {catalogEditor?.type === "committed" && (
+          <AddOfferingSheet
+            type="committed"
+            mces={mces}
+            onClose={() => setCatalogEditor(null)}
+            onSubmitCommitted={handleCreateCommittedOffering}
+            onSubmitMCE={handleCreateMCEOffering}
+            initialCommitted={
+              catalogEditor.editId ? (committedCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
+            }
+          />
+        )}
+        {catalogEditor?.type === "mce" && (
+          <AddOfferingSheet
+            type="mce"
+            mces={mces}
+            onClose={() => setCatalogEditor(null)}
+            onSubmitCommitted={handleCreateCommittedOffering}
+            onSubmitMCE={handleCreateMCEOffering}
+            initialMCE={
+              catalogEditor.editId ? (mceCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
+            }
+          />
+        )}
+
+        {catalogIssueSheet === "committed" && (
+          <IssueOfferingFromCatalogSheet
+            type="committed"
+            committedCatalog={committedCatalog}
+            mceCatalog={mceCatalog}
+            canCommitOnchain={canCommitOnchain}
+            onIssueCommitted={handleIssueCommittedFromCatalog}
+            onIssueMCE={handleIssueMceFromCatalog}
+            onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+            onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
+            onClose={() => setCatalogIssueSheet(null)}
+          />
+        )}
+        {catalogIssueSheet === "mce" && (
+          <IssueOfferingFromCatalogSheet
+            type="mce"
+            committedCatalog={committedCatalog}
+            mceCatalog={mceCatalog}
+            canCommitOnchain={canCommitOnchain}
+            onIssueCommitted={handleIssueCommittedFromCatalog}
+            onIssueMCE={handleIssueMceFromCatalog}
+            onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+            onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
+            onClose={() => setCatalogIssueSheet(null)}
+          />
+        )}
+
+        {qrTarget && <QRModal offering={qrTarget} onClose={() => setQrTarget(null)} />}
+
+        {removeTarget && (
+          <ConfirmDialog
+            title="Committed Offering Locked"
+            message="This is a Committed Offering. It cannot be removed until the end of the current Epoch. All modifications to offerings and rates must occur after the Epoch ends or after the expiration of your offer."
+            confirmLabel="Got it"
+            onConfirm={() => setRemoveTarget(null)}
+            onCancel={() => setRemoveTarget(null)}
+            warningOnly
+          />
+        )}
+
+        {composeOpen && (
+          <ComposePostSheet
+            orgName={redeemer.orgName}
+            onClose={() => setComposeOpen(false)}
+            onPost={handleCreatePost}
+          />
+        )}
       </AppShell>
-
-      {catalogEditor?.type === "committed" && (
-        <AddOfferingSheet
-          type="committed"
-          mces={mces}
-          onClose={() => setCatalogEditor(null)}
-          onSubmitCommitted={handleCreateCommittedOffering}
-          onSubmitMCE={handleCreateMCEOffering}
-          initialCommitted={
-            catalogEditor.editId ? (committedCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
-          }
-        />
-      )}
-      {catalogEditor?.type === "mce" && (
-        <AddOfferingSheet
-          type="mce"
-          mces={mces}
-          onClose={() => setCatalogEditor(null)}
-          onSubmitCommitted={handleCreateCommittedOffering}
-          onSubmitMCE={handleCreateMCEOffering}
-          initialMCE={catalogEditor.editId ? (mceCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null}
-        />
-      )}
-
-      {catalogIssueSheet === "committed" && (
-        <IssueOfferingFromCatalogSheet
-          type="committed"
-          committedCatalog={committedCatalog}
-          mceCatalog={mceCatalog}
-          canCommitOnchain={canCommitOnchain}
-          onIssueCommitted={handleIssueCommittedFromCatalog}
-          onIssueMCE={handleIssueMceFromCatalog}
-          onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
-          onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
-          onClose={() => setCatalogIssueSheet(null)}
-        />
-      )}
-      {catalogIssueSheet === "mce" && (
-        <IssueOfferingFromCatalogSheet
-          type="mce"
-          committedCatalog={committedCatalog}
-          mceCatalog={mceCatalog}
-          canCommitOnchain={canCommitOnchain}
-          onIssueCommitted={handleIssueCommittedFromCatalog}
-          onIssueMCE={handleIssueMceFromCatalog}
-          onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
-          onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
-          onClose={() => setCatalogIssueSheet(null)}
-        />
-      )}
-
-      {qrTarget && <QRModal offering={qrTarget} onClose={() => setQrTarget(null)} />}
-
-      {removeTarget && (
-        <ConfirmDialog
-          title="Committed Offering Locked"
-          message="This is a Committed Offering. It cannot be removed until the end of the current Epoch. All modifications to offerings and rates must occur after the Epoch ends or after the expiration of your offer."
-          confirmLabel="Got it"
-          onConfirm={() => setRemoveTarget(null)}
-          onCancel={() => setRemoveTarget(null)}
-          warningOnly
-        />
-      )}
-
-      {composeOpen && (
-        <ComposePostSheet orgName={redeemer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
-      )}
 
       {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
     </>
@@ -1763,7 +1773,7 @@ function AddOfferingSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",
@@ -1973,7 +1983,7 @@ function IssueOfferingFromCatalogSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 52,
         display: "flex",
@@ -2145,7 +2155,7 @@ function ConfirmDialog({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 60,
         display: "flex",
@@ -2249,7 +2259,7 @@ function QRModal({ offering, onClose }: { offering: QROfferingData; onClose: () 
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",
@@ -2559,7 +2569,7 @@ function ComposePostSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 50,
         display: "flex",
@@ -3175,7 +3185,7 @@ function MCEsTab({
       {proposeOpen && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
             zIndex: 50,
             display: "flex",
