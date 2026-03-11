@@ -900,6 +900,45 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     },
     [address, state.issuer.registered, state.redeemer.registered, writeContractAsync],
   );
+
+  // Keep demo redeemer onboarding smooth:
+  // if the first register write happened before session readiness (or failed transiently),
+  // keep retrying while user is in Redeemer role until onchain registry reflects active status.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!address || !client) return;
+    if (state.role !== "redeemer") return;
+    if (state.redeemer.registered) return;
+
+    let cancelled = false;
+    const attemptRegister = async () => {
+      if (cancelled || roleRegisterInFlight.current.redeemer) return;
+      roleRegisterInFlight.current.redeemer = true;
+      try {
+        await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "register",
+          args: [],
+        });
+      } catch {
+        // Keep retry loop alive until registration succeeds or user leaves role.
+      } finally {
+        roleRegisterInFlight.current.redeemer = false;
+      }
+    };
+
+    void attemptRegister();
+    const id = window.setInterval(() => {
+      void attemptRegister();
+    }, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [address, client, state.redeemer.registered, state.role, writeContractAsync]);
+
   const setCitizenName = useCallback((name: string) => dispatch({ type: "SET_CITIZEN_NAME", name }), []);
   const claimTask = useCallback(
     async (taskId: string) => {

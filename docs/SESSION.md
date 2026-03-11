@@ -895,3 +895,13 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Validation:
   - lint: `yarn next:lint --file app/demo/participant/page.tsx --file app/demo/_context/DemoContext.tsx --file app/demo/_data/mockData.ts`
   - types: `yarn next:check-types`
+
+## 2026-03-11 — Redeemer Auto-Registration Reliability
+
+- Added a redeemer auto-registration retry effect in `DemoContext` to ensure new demo testers are added to `DemoRedeemerRegistry` even if the first register attempt happens before wallet/session readiness.
+- Behavior:
+  - only runs when user is in `redeemer` role
+  - requires connected address + smart-account client availability
+  - retries `register()` every 10 seconds until onchain `isActiveRedeemer` sync flips `state.redeemer.registered` true
+  - stops automatically when role changes or registration is confirmed.
+- This removes the one-shot registration failure mode where users had to manually retry after initial session timing issues.
