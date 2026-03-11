@@ -225,7 +225,7 @@ export default function DemoHome() {
         style={{ background: "linear-gradient(180deg, #0D0D14 0%, #111128 50%, #0D0D14 100%)" }}
       >
         <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-          <div className="mb-6" style={{ transform: "translate(calc(clamp(28px, 4vw, 60px) - 2px), 2px)" }}>
+          <div className="mb-6" style={{ transform: "translate(calc(clamp(28px, 4vw, 60px) - 14px), 2px)" }}>
             <Image
               src="/citysync-wordmark-frame3.png"
               alt="City/Sync"
