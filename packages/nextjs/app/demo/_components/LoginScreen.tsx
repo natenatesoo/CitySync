@@ -2,7 +2,6 @@
 
 import { useAuthModal, useSignerStatus } from "@account-kit/react";
 import Image from "next/image";
-import frame2Wordmark from "../../../../../docs/brand/logos/Frame 2.png";
 
 export function LoginScreen() {
   const { openAuthModal } = useAuthModal();
@@ -26,9 +25,10 @@ export function LoginScreen() {
       <div style={{ marginBottom: 48, textAlign: "center" }}>
         <div style={{ marginBottom: 16, display: "inline-flex", justifyContent: "center" }}>
           <Image
-            src={frame2Wordmark}
+            src="/citysync-wordmark-frame2.png"
             alt="City/Sync"
             width={240}
+            height={64}
             style={{ width: "min(240px, 72vw)", height: "auto" }}
             priority
           />
