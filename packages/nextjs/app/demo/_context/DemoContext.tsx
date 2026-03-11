@@ -801,64 +801,72 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     };
   }, [address]);
 
+  const syncOnchainOffers = useCallback(async () => {
+    try {
+      const redeemers = (await baseSepoliaPublicClient.readContract({
+        address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+        abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+        functionName: "getAllRedeemers",
+        args: [],
+      })) as `0x${string}`[];
+
+      const discovered: RedemptionOffer[] = [];
+
+      for (const redeemer of redeemers) {
+        const profile = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "getProfile",
+          args: [redeemer],
+        })) as { orgName: string; registeredAt: bigint; active: boolean; acceptsMCECredits: boolean };
+
+        if (!profile.active || profile.registeredAt === 0n) continue;
+
+        const nextOfferId = (await baseSepoliaPublicClient.readContract({
+          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+          functionName: "nextOfferId",
+          args: [redeemer],
+        })) as bigint;
+
+        for (let i = 1n; i <= nextOfferId; i++) {
+          const offer = (await baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "getOffer",
+            args: [redeemer, i],
+          })) as { name: string; description: string; costCity: bigint; active: boolean; mceOnly: boolean };
+
+          if (!offer.active || !offer.name) continue;
+
+          discovered.push({
+            id: `onchain:${redeemer}:${i.toString()}`,
+            redeemerName: profile.orgName || `${redeemer.slice(0, 6)}...${redeemer.slice(-4)}`,
+            redeemerId: redeemer,
+            offerTitle: offer.name,
+            description: offer.description,
+            costCity: Math.floor(Number(formatUnits(offer.costCity, 18))),
+            acceptsMCE: profile.acceptsMCECredits,
+            mceOnly: offer.mceOnly,
+            category: offer.mceOnly ? "Culture" : "Essentials",
+            emoji: offer.mceOnly ? "🏆" : "🛒",
+          });
+        }
+      }
+
+      dispatch({ type: "SYNC_ONCHAIN_OFFERS", offers: discovered });
+    } catch {
+      // Keep last-known offer state if discovery fails.
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
     const syncOffers = async () => {
       try {
-        const redeemers = (await baseSepoliaPublicClient.readContract({
-          address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-          abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-          functionName: "getAllRedeemers",
-          args: [],
-        })) as `0x${string}`[];
-
-        const discovered: RedemptionOffer[] = [];
-
-        for (const redeemer of redeemers) {
-          const profile = (await baseSepoliaPublicClient.readContract({
-            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-            functionName: "getProfile",
-            args: [redeemer],
-          })) as { orgName: string; registeredAt: bigint; active: boolean; acceptsMCECredits: boolean };
-
-          if (!profile.active || profile.registeredAt === 0n) continue;
-
-          const nextOfferId = (await baseSepoliaPublicClient.readContract({
-            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-            functionName: "nextOfferId",
-            args: [redeemer],
-          })) as bigint;
-
-          for (let i = 1n; i <= nextOfferId; i++) {
-            const offer = (await baseSepoliaPublicClient.readContract({
-              address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
-              abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-              functionName: "getOffer",
-              args: [redeemer, i],
-            })) as { name: string; description: string; costCity: bigint; active: boolean; mceOnly: boolean };
-
-            if (!offer.active || !offer.name) continue;
-
-            discovered.push({
-              id: `onchain:${redeemer}:${i.toString()}`,
-              redeemerName: profile.orgName || `${redeemer.slice(0, 6)}...${redeemer.slice(-4)}`,
-              redeemerId: redeemer,
-              offerTitle: offer.name,
-              description: offer.description,
-              costCity: Math.floor(Number(formatUnits(offer.costCity, 18))),
-              acceptsMCE: profile.acceptsMCECredits,
-              mceOnly: offer.mceOnly,
-              category: offer.mceOnly ? "Culture" : "Essentials",
-              emoji: offer.mceOnly ? "🏆" : "🛒",
-            });
-          }
-        }
-
         if (cancelled) return;
-        dispatch({ type: "SYNC_ONCHAIN_OFFERS", offers: discovered });
+        await syncOnchainOffers();
       } catch {
         // Keep last-known offer state if discovery fails.
       }
@@ -873,7 +881,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, []);
+  }, [syncOnchainOffers]);
 
   const setRole = useCallback(
     (role: Role) => {
@@ -1312,13 +1320,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
             offer.mceOnly,
           ],
         });
+        void syncOnchainOffers();
         return { ok: true, hash: getResultHash(result) };
       } catch (error) {
         const message = normalizeWriteError(error, "Offer creation failed");
         return { ok: false, error: message };
       }
     },
-    [address, getResultHash, normalizeWriteError, state.redeemer.acceptsMCE, writeContractAsync],
+    [address, getResultHash, normalizeWriteError, state.redeemer.acceptsMCE, syncOnchainOffers, writeContractAsync],
   );
 
   const redeemerRemoveOffer = useCallback(
