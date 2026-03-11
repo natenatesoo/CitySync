@@ -2,61 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useLogout, useSignerStatus } from "@account-kit/react";
 import { LoginScreen } from "./_components/LoginScreen";
 import { useDemo } from "./_context/DemoContext";
-
-// ─── Double-slash logo (matches CITY//SYNC website logo) ─────────────────────
-
-function SlashIcon({ width = 20, height = 22 }: { width?: number; height?: number }) {
-  return (
-    <svg viewBox="47 2 30 32" xmlns="http://www.w3.org/2000/svg" width={width} height={height} aria-hidden="true">
-      <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
-      <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="#DD9E33" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function HeroLogo() {
-  return (
-    <>
-      {/* Load Rajdhani so the SVG font matches the landing page exactly */}
-      {}
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');`}</style>
-      <svg
-        viewBox="-8 0 215 35"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-label="CITY//SYNC"
-        style={{ width: 280, height: 46 }}
-      >
-        <text
-          x="-6"
-          y="30"
-          fontFamily="'Rajdhani','Arial Black',sans-serif"
-          fontWeight="700"
-          fontSize="28"
-          letterSpacing="2"
-          fill="#FFFFFF"
-        >
-          CITY
-        </text>
-        <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#FFFFFF" strokeWidth="1" />
-        <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="#DD9E33" strokeWidth="1" />
-        <text
-          x="75"
-          y="26"
-          fontFamily="'Rajdhani','Arial Black',sans-serif"
-          fontWeight="700"
-          fontSize="28"
-          letterSpacing="2"
-          fill="#DD9E33"
-        >
-          SYNC
-        </text>
-      </svg>
-    </>
-  );
-}
 
 // ─── Role definitions ─────────────────────────────────────────────────────────
 
@@ -250,7 +199,7 @@ export default function DemoHome() {
       >
         <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none" }}>
           <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "#23128F" }}>
-            <SlashIcon width={20} height={22} />
+            <Image src="/favicon.png" alt="City/Sync Symbol" width={20} height={20} style={{ borderRadius: 4 }} />
           </div>
           <span className="text-base font-bold text-white">City/Sync DEMO</span>
         </Link>
@@ -277,7 +226,14 @@ export default function DemoHome() {
       >
         <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
           <div className="mb-6" style={{ transform: "translate(calc(clamp(28px, 4vw, 60px) - 2px), 2px)" }}>
-            <HeroLogo />
+            <Image
+              src="/citysync-wordmark-frame3.png"
+              alt="City/Sync"
+              width={320}
+              height={72}
+              priority
+              style={{ width: "min(320px, 85vw)", height: "auto" }}
+            />
           </div>
           <p className="mb-2 text-sm font-semibold uppercase tracking-widest" style={{ color: "#4169E1" }}>
             Programmable Civic Coordination Infrastructure
