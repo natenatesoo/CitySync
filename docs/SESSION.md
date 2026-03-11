@@ -866,3 +866,32 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - dim background layer
   - centered, bounded card panel.
 - Keeps the green success styling/content while matching popup behavior and width constraints.
+
+## 2026-03-10 — Wallet Sheet Aligned to In-App Popup Rules
+
+- Refactored `WalletModal` to use the same in-app popup framework used across role modals:
+  - viewport-anchored app frame (bounded width)
+  - local dim backdrop layer
+  - bounded sheet/card container within app content bounds.
+- Wallet no longer renders as full-window fixed overlay; it now behaves consistently with other in-app popup interactions.
+
+## 2026-03-10 — Participant IA Cleanup (Explore/Redeem/Profile)
+
+- Completed Civic Participant information architecture cleanup focused on reducing tab clutter and improving transaction traceability.
+- `Explore` tab:
+  - simplified sections to `Browse Tasks` and `Claimed Tasks` only
+  - retained onboarding gating and claim/unclaim/execute flow
+  - removed in-tab completed-task section.
+- `Profile` tab:
+  - completed tasks now live under a dedicated `Completed Tasks` subview
+  - completed history includes timestamp formatting and optional tx link to Base Sepolia explorer
+  - removed token-balance and active-votes profile blocks from this area to keep profile cleaner.
+- `Redeem` tab:
+  - added top switch: `Browse Offerings` / `Redemption History`
+  - kept shared token-type filters (`All`, `CITYx`, `MCE`) and applied them to both offerings and history
+  - added compact redemption-history rows with redeemer, timestamp, burned amount, token-type badge, and transaction link.
+- Data model update:
+  - extended `PastRedemption` to include `offerId` and `mceOnly` metadata for reliable history filtering and labeling.
+- Validation:
+  - lint: `yarn next:lint --file app/demo/participant/page.tsx --file app/demo/_context/DemoContext.tsx --file app/demo/_data/mockData.ts`
+  - types: `yarn next:check-types`

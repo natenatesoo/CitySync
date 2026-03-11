@@ -10,7 +10,7 @@ import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 import { useDemo } from "../_context/DemoContext";
-import { FAKE_WALLETS, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
+import { FAKE_WALLETS, PastRedemption, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
@@ -219,21 +219,6 @@ const IconHeart = ({ filled }: { filled: boolean }) => (
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
-const IconArrow = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-);
 const IconLock = () => (
   <svg
     width="13"
@@ -287,8 +272,13 @@ function timeAgo(iso: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 // ─── Shared card style ────────────────────────────────────────────────────────
@@ -1020,10 +1010,29 @@ function ProfileTab({
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState(p.citizenName);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [section, setSection] = useState<"overview" | "completed">("overview");
+  const [localCompletedTasks, setLocalCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
   }, [editing]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const walletKey = participantAddress.toLowerCase();
+    const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
+    try {
+      const rawCompleted = window.localStorage.getItem(completedKey);
+      if (!rawCompleted) {
+        setLocalCompletedTasks([]);
+        return;
+      }
+      const parsed = JSON.parse(rawCompleted) as Array<Task & { completedAt: string }>;
+      setLocalCompletedTasks(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setLocalCompletedTasks([]);
+    }
+  }, [participantAddress]);
 
   const saveEdit = () => {
     const trimmed = nameInput.trim();
@@ -1035,11 +1044,48 @@ function ProfileTab({
     setEditing(false);
   };
 
-  const totalAllocated = Object.values(p.mceVoteAllocations).reduce((a, b) => a + b, 0);
-  const votedMceIds = Object.entries(p.mceVoteAllocations)
-    .filter(([, v]) => v > 0)
-    .map(([id]) => id);
-  const activeMces = state.mces.filter(m => votedMceIds.includes(m.id));
+  const completedHistory = React.useMemo(() => {
+    type CompletedHistoryItem = {
+      key: string;
+      title: string;
+      credits: number;
+      voteTokens: number;
+      completedAt: string;
+      issuerName: string;
+      txHash?: string;
+    };
+    const fromOnchain: CompletedHistoryItem[] = p.completedTasks.map(t => ({
+      key: t.taskId,
+      title: t.title,
+      credits: t.credits,
+      voteTokens: t.voteTokens,
+      completedAt: t.completedAt,
+      issuerName: t.issuerName,
+      txHash: t.txHash,
+    }));
+    const fromLocal: CompletedHistoryItem[] = localCompletedTasks.map(t => ({
+      key: t.id,
+      title: t.title,
+      credits: t.credits,
+      voteTokens: t.voteTokens,
+      completedAt: t.completedAt,
+      issuerName: t.issuerName,
+    }));
+    const dedup = new Map<string, CompletedHistoryItem>();
+    [...fromLocal, ...fromOnchain].forEach(item => {
+      const existing = dedup.get(item.key);
+      if (!existing) {
+        dedup.set(item.key, item);
+        return;
+      }
+      if (new Date(item.completedAt).getTime() > new Date(existing.completedAt).getTime()) {
+        dedup.set(item.key, item);
+      }
+    });
+    return Array.from(dedup.values()).sort(
+      (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+    );
+  }, [localCompletedTasks, p.completedTasks]);
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
@@ -1194,7 +1240,6 @@ function ProfileTab({
         </div>
       </div>
 
-      {/* Role description */}
       <div
         style={{
           background: "rgba(65,105,225,0.08)",
@@ -1214,47 +1259,38 @@ function ProfileTab({
         </p>
       </div>
 
-      {/* Token balances */}
-      <div style={{ ...card, marginBottom: 14 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: "rgba(255,255,255,0.5)",
-            marginBottom: 12,
-            textTransform: "uppercase",
-            letterSpacing: "0.07em",
-          }}
-        >
-          Token Balances
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {[
-            { label: "CITYx", value: p.cityBalance, color: TEAL },
-            { label: "VOTE", value: p.voteBalance, color: ACCENT },
-            { label: "MCE", value: p.mceBalance, color: GOLD },
-            { label: "Tasks Completed", value: p.completedTasks.length, color: "white" },
-          ].map(b => (
-            <div
-              key={b.label}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 10,
-                padding: "12px 0",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 20, fontWeight: 700, color: b.color }}>{b.value.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{b.label}</div>
-            </div>
-          ))}
-        </div>
+      <div
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
+          marginBottom: 14,
+        }}
+      >
+        {(["overview", "completed"] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setSection(tab)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+              background: section === tab ? ACCENT : "transparent",
+              color: section === tab ? "white" : "rgba(255,255,255,0.45)",
+            }}
+          >
+            {tab === "overview" ? "Overview" : `Completed Tasks (${completedHistory.length})`}
+          </button>
+        ))}
       </div>
 
-      {/* Recent completed tasks */}
-      {p.completedTasks.length > 0 && (
-        <div style={{ ...card, marginBottom: 14 }}>
+      {section === "overview" ? (
+        <div style={{ ...card }}>
           <div
             style={{
               fontSize: 12,
@@ -1265,97 +1301,107 @@ function ProfileTab({
               letterSpacing: "0.07em",
             }}
           >
-            Recent Tasks
+            Quick Actions
           </div>
-          {p.completedTasks.slice(0, 3).map((t, i) => (
-            <div
-              key={t.taskId}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button
+              onClick={() => onTabChange("explore")}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingBottom: i < Math.min(p.completedTasks.length, 3) - 1 ? 10 : 0,
-                marginBottom: i < Math.min(p.completedTasks.length, 3) - 1 ? 10 : 0,
-                borderBottom:
-                  i < Math.min(p.completedTasks.length, 3) - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+                padding: "12px 10px",
+                color: "white",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
               }}
             >
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{t.title}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
-                  {fmtDate(t.completedAt)}
-                </div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>+{t.credits} CITYx</div>
-                <div style={{ fontSize: 11, color: `${ACCENT}cc`, marginTop: 1 }}>+{t.voteTokens} VOTE</div>
-              </div>
-            </div>
-          ))}
+              Browse Tasks
+            </button>
+            <button
+              onClick={() => onTabChange("redeem")}
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+                padding: "12px 10px",
+                color: "white",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Browse Offerings
+            </button>
+          </div>
         </div>
-      )}
-
-      {/* Active vote allocations */}
-      <div style={{ ...card }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      ) : (
+        <div style={{ ...card }}>
           <div
             style={{
               fontSize: 12,
               fontWeight: 700,
               color: "rgba(255,255,255,0.5)",
+              marginBottom: 12,
               textTransform: "uppercase",
               letterSpacing: "0.07em",
             }}
           >
-            Active Votes
+            Completed Tasks
           </div>
-          <button
-            onClick={() => onTabChange("vote")}
-            style={{
-              background: "none",
-              border: "none",
-              color: ACCENT,
-              cursor: "pointer",
-              fontSize: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: 0,
-            }}
-          >
-            Vote tab <IconArrow />
-          </button>
-        </div>
-
-        {activeMces.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "12px 0 4px" }}>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
-              {p.voteBalance === 0
-                ? "Complete tasks to earn VOTE tokens, then allocate them to MCE proposals."
-                : `You have ${p.voteBalance} VOTE — head to the Vote tab to allocate.`}
+          {completedHistory.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "14px 0 8px",
+                fontSize: 13,
+                color: "rgba(255,255,255,0.32)",
+              }}
+            >
+              No completed tasks yet.
             </div>
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>
-              {totalAllocated} of {p.voteBalance} VOTE allocated
-            </div>
-            {activeMces.map(m => (
+          ) : (
+            completedHistory.map((t, i) => (
               <div
-                key={m.id}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
+                key={t.key}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingBottom: i < completedHistory.length - 1 ? 10 : 0,
+                  marginBottom: i < completedHistory.length - 1 ? 10 : 0,
+                  borderBottom: i < completedHistory.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                }}
               >
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", flex: 1, paddingRight: 12 }}>
-                  {m.title}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{t.title}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                    {t.issuerName} · {fmtDateTime(t.completedAt)}
+                    {t.txHash ? (
+                      <>
+                        {" · "}
+                        <a
+                          href={`https://sepolia.basescan.org/tx/${t.txHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: ACCENT, textDecoration: "none" }}
+                        >
+                          tx
+                        </a>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                  {p.mceVoteAllocations[m.id] ?? 0} VOTE
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>+{t.credits} CITYx</div>
+                  <div style={{ fontSize: 11, color: `${ACCENT}cc`, marginTop: 1 }}>+{t.voteTokens} VOTE</div>
                 </div>
               </div>
-            ))}
-          </>
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1707,7 +1753,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   type OnchainTask = Task & { claimedBy?: `0x${string}`; completionStatus?: number };
   const { state, claimTask, unclaimTask, startVerify } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const [view, setView] = useState<"open" | "claimed" | "completed">("open");
+  const [view, setView] = useState<"browse" | "claimed">("browse");
   const [catFilter, setCatFilter] = useState<TaskCategory | "All">("All");
   const [executeTask, setExecuteTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -2166,7 +2212,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
           <LearnMoreLink onClick={openExploreLearnMore} />
         </div>
       </div>
-      {/* Open / Claimed / Completed toggle */}
+      {/* Browse / Claimed toggle */}
       <div
         style={{
           display: "flex",
@@ -2176,7 +2222,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
           marginBottom: 16,
         }}
       >
-        {(["open", "claimed", "completed"] as const).map(v => (
+        {(["browse", "claimed"] as const).map(v => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -2193,16 +2239,14 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
               transition: "all 0.15s",
             }}
           >
-            {v === "open"
-              ? `Open Tasks${sortedOpenTasks.length > 0 ? ` (${sortedOpenTasks.length})` : ""}`
-              : v === "claimed"
-                ? `Claimed Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`
-                : `Completed Tasks${completedTasks.length > 0 ? ` (${completedTasks.length})` : ""}`}
+            {v === "browse"
+              ? `Browse Tasks${sortedOpenTasks.length > 0 ? ` (${sortedOpenTasks.length})` : ""}`
+              : `Claimed Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`}
           </button>
         ))}
       </div>
 
-      {!isOnboarded && view === "open" && (
+      {!isOnboarded && view === "browse" && (
         <div
           style={{
             background: "rgba(52,238,182,0.1)",
@@ -2220,8 +2264,8 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
         </div>
       )}
 
-      {/* Category filter — Open Tasks only */}
-      {view === "open" && (
+      {/* Category filter — Browse Tasks only */}
+      {view === "browse" && (
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             <div
@@ -2356,7 +2400,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       )}
 
       {/* Task list */}
-      {view === "open" ? (
+      {view === "browse" ? (
         filteredOpenTasks.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
             No tasks in this category
@@ -2374,39 +2418,26 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
             />
           ))
         )
-      ) : view === "claimed" ? (
-        myTasks.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0" }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No claimed tasks yet</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Head to Open Tasks to claim one</div>
-          </div>
-        ) : (
-          myTasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              isClaimed
-              locked={false}
-              showOnboardButton={!isOnboarded && task.isOnboarding && onboardingReadyIds.includes(task.id)}
-              pendingVerification={pendingVerificationIds.includes(task.id) || task.completionStatus === 1}
-              canUnclaim={task.completionStatus === 0 || task.completionStatus === 3}
-              showUnclaimButton
-              onOnboard={() => handleOnboardAccount(task)}
-              onUnclaim={() => handleUnclaim(task)}
-              onExecute={() => setExecuteTask(task)}
-            />
-          ))
-        )
-      ) : completedTasks.length === 0 ? (
+      ) : myTasks.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0" }}>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No completed tasks yet</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
-            Completed tasks will appear after issuer verification
-          </div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>No claimed tasks yet</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Head to Open Tasks to claim one</div>
         </div>
       ) : (
-        completedTasks.map(task => (
-          <TaskCard key={task.id} task={task} isClaimed={false} locked={false} pendingVerification={false} />
+        myTasks.map(task => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            isClaimed
+            locked={false}
+            showOnboardButton={!isOnboarded && task.isOnboarding && onboardingReadyIds.includes(task.id)}
+            pendingVerification={pendingVerificationIds.includes(task.id) || task.completionStatus === 1}
+            canUnclaim={task.completionStatus === 0 || task.completionStatus === 3}
+            showUnclaimButton
+            onOnboard={() => handleOnboardAccount(task)}
+            onUnclaim={() => handleUnclaim(task)}
+            onExecute={() => setExecuteTask(task)}
+          />
         ))
       )}
 
@@ -2909,22 +2940,46 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
 // ═════════════════════════════════════════════════════════════════════════════
 
 type CreditFilter = "All" | "CITYx" | "MCE";
+type RedeemView = "browse" | "history";
 
 function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
   const { state, redeemOffer } = useDemo();
   const p = state.participant;
+  const [view, setView] = useState<RedeemView>("browse");
   const [filter, setFilter] = useState<CreditFilter>("All");
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string; costCity: number } | null>(
     null,
   );
 
-  const filtered = state.offers.filter(o => {
+  const filteredOffers = state.offers.filter(o => {
     if (filter === "MCE") return o.mceOnly;
     if (filter === "CITYx") return !o.mceOnly;
     return true;
   });
+  const filteredRedemptions = React.useMemo(() => {
+    const resolveMceOnly = (redemption: PastRedemption): boolean => {
+      if (typeof redemption.mceOnly === "boolean") return redemption.mceOnly;
+      const matched = state.offers.find(offer =>
+        redemption.offerId
+          ? offer.id === redemption.offerId
+          : offer.offerTitle === redemption.offerTitle && offer.redeemerName === redemption.redeemerName,
+      );
+      return Boolean(matched?.mceOnly);
+    };
+    return [...state.pastRedemptions]
+      .sort((a, b) => new Date(b.redeemedAt).getTime() - new Date(a.redeemedAt).getTime())
+      .filter(redemption => {
+        const isMceOnly = resolveMceOnly(redemption);
+        if (filter === "MCE") return isMceOnly;
+        if (filter === "CITYx") return !isMceOnly;
+        return true;
+      })
+      .map(redemption => ({
+        ...redemption,
+        isMceOnly: resolveMceOnly(redemption),
+      }));
+  }, [filter, state.offers, state.pastRedemptions]);
 
   const handleConfirm = () => {
     if (!confirmOffer) return;
@@ -2952,6 +3007,43 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
         </div>
       </div>
 
+      {/* Browse / History toggle */}
+      <div
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 10,
+          padding: 4,
+          marginBottom: 12,
+        }}
+      >
+        {(
+          [
+            { key: "browse", label: "Browse Offerings" },
+            { key: "history", label: "Redemption History" },
+          ] as const
+        ).map(item => (
+          <button
+            key={item.key}
+            onClick={() => setView(item.key)}
+            style={{
+              flex: 1,
+              padding: "9px 0",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+              background: view === item.key ? ACCENT : "transparent",
+              color: view === item.key ? "white" : "rgba(255,255,255,0.45)",
+              transition: "all 0.15s",
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       {/* Credit filter pills + Scan QR */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
         {(["All", "CITYx", "MCE"] as CreditFilter[]).map(f => (
@@ -2974,129 +3066,138 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
             {f === "All" ? "All Offers" : f === "CITYx" ? "CITYx Only" : "MCE Only"}
           </button>
         ))}
-        <button
-          style={{
-            marginLeft: "auto",
-            display: "flex",
-            alignItems: "center",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 20,
-            padding: "7px 10px",
-            cursor: "default",
-            color: "rgba(255,255,255,0.5)",
-            flexShrink: 0,
-          }}
-        >
-          <QRIcon />
-        </button>
+        {view === "browse" ? (
+          <button
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 20,
+              padding: "7px 10px",
+              cursor: "default",
+              color: "rgba(255,255,255,0.5)",
+              flexShrink: 0,
+            }}
+          >
+            <QRIcon />
+          </button>
+        ) : null}
       </div>
 
-      {/* Offers */}
-      {filtered.map(offer => {
-        const canAfford = p.cityBalance >= offer.costCity;
-        const needsMce = offer.mceOnly && p.mceBalance < offer.costCity;
-        const disabled = !canAfford || needsMce;
+      {view === "browse" ? (
+        <>
+          {/* Offers */}
+          {filteredOffers.map(offer => {
+            const canAfford = p.cityBalance >= offer.costCity;
+            const needsMce = offer.mceOnly && p.mceBalance < offer.costCity;
+            const disabled = !canAfford || needsMce;
 
-        return (
-          <div key={offer.id} style={{ ...card, marginBottom: 10, opacity: disabled ? 0.55 : 1 }}>
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  flexShrink: 0,
-                  background: "rgba(255,255,255,0.06)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 24,
-                }}
-              >
-                {offer.emoji}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: 3,
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "white" }}>{offer.offerTitle}</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
-                      {offer.redeemerName}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right", paddingLeft: 8, flexShrink: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: offer.mceOnly ? GOLD : TEAL }}>
-                      {offer.costCity}
-                    </div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
-                      {offer.mceOnly ? "MCE" : "CITYx"}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.45, marginBottom: 10 }}>
-                  {offer.description}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {offer.mceOnly && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          padding: "2px 8px",
-                          borderRadius: 20,
-                          background: "rgba(221,158,51,0.15)",
-                          color: GOLD,
-                          border: "1px solid rgba(221,158,51,0.3)",
-                        }}
-                      >
-                        MCE Only
-                      </span>
-                    )}
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 20,
-                        background: "rgba(255,255,255,0.05)",
-                        color: "rgba(255,255,255,0.4)",
-                      }}
-                    >
-                      {offer.category}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => !disabled && setConfirmOffer(offer)}
-                    disabled={disabled}
+            return (
+              <div key={offer.id} style={{ ...card, marginBottom: 10, opacity: disabled ? 0.55 : 1 }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <div
                     style={{
-                      padding: "8px 18px",
-                      borderRadius: 10,
-                      border: "none",
-                      cursor: disabled ? "not-allowed" : "pointer",
-                      background: disabled ? "rgba(255,255,255,0.07)" : TEAL,
-                      color: disabled ? "rgba(255,255,255,0.3)" : "#15151E",
-                      fontSize: 13,
-                      fontWeight: 700,
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      flexShrink: 0,
+                      background: "rgba(255,255,255,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 24,
                     }}
                   >
-                    {!canAfford ? "Can't Afford" : needsMce ? "Need MCE" : "Redeem"}
-                  </button>
+                    {offer.emoji}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: 3,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "white" }}>{offer.offerTitle}</div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+                          {offer.redeemerName}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", paddingLeft: 8, flexShrink: 0 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: offer.mceOnly ? GOLD : TEAL }}>
+                          {offer.costCity}
+                        </div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
+                          {offer.mceOnly ? "MCE" : "CITYx"}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.45, marginBottom: 10 }}>
+                      {offer.description}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {offer.mceOnly && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              padding: "2px 8px",
+                              borderRadius: 20,
+                              background: "rgba(221,158,51,0.15)",
+                              color: GOLD,
+                              border: "1px solid rgba(221,158,51,0.3)",
+                            }}
+                          >
+                            MCE Only
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            fontSize: 11,
+                            padding: "2px 8px",
+                            borderRadius: 20,
+                            background: "rgba(255,255,255,0.05)",
+                            color: "rgba(255,255,255,0.4)",
+                          }}
+                        >
+                          {offer.category}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => !disabled && setConfirmOffer(offer)}
+                        disabled={disabled}
+                        style={{
+                          padding: "8px 18px",
+                          borderRadius: 10,
+                          border: "none",
+                          cursor: disabled ? "not-allowed" : "pointer",
+                          background: disabled ? "rgba(255,255,255,0.07)" : TEAL,
+                          color: disabled ? "rgba(255,255,255,0.3)" : "#15151E",
+                          fontSize: 13,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {!canAfford ? "Can't Afford" : needsMce ? "Need MCE" : "Redeem"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
+            );
+          })}
+          {filteredOffers.length === 0 && (
+            <div style={{ ...card, textAlign: "center", padding: "24px 16px" }}>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>No offers found.</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>Try changing your token filter.</div>
             </div>
-          </div>
-        );
-      })}
-
-      {/* Past Redemptions */}
-      {state.pastRedemptions.length > 0 && (
-        <div style={{ marginTop: 24 }}>
+          )}
+        </>
+      ) : (
+        <div style={{ marginTop: 4 }}>
           <div
             style={{
               fontSize: 12,
@@ -3107,27 +3208,64 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
               letterSpacing: "0.07em",
             }}
           >
-            Past Redemptions
+            Recent Redemptions
           </div>
-          {state.pastRedemptions.map(r => (
-            <div key={r.id} style={{ ...card, marginBottom: 8, padding: "12px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{r.offerTitle}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
-                    {r.redeemerName} · {fmtDate(r.redeemedAt)}
-                  </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "monospace", marginTop: 2 }}>
-                    {r.txHash.slice(0, 22)}…
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,100,100,0.85)" }}>−{r.costCity}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>CITYx</div>
-                </div>
+          {filteredRedemptions.length === 0 ? (
+            <div style={{ ...card, textAlign: "center", padding: "20px 16px" }}>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>
+                No redemptions yet for this filter.
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                Redeem an offering to populate history.
               </div>
             </div>
-          ))}
+          ) : (
+            filteredRedemptions.map(r => (
+              <div key={r.id} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "white" }}>{r.offerTitle}</div>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          background: r.isMceOnly ? "rgba(221,158,51,0.18)" : "rgba(52,238,182,0.16)",
+                          color: r.isMceOnly ? GOLD : TEAL,
+                          border: r.isMceOnly ? "1px solid rgba(221,158,51,0.28)" : "1px solid rgba(52,238,182,0.28)",
+                        }}
+                      >
+                        {r.isMceOnly ? "MCE" : "CITYx"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                      {r.redeemerName} · {fmtDateTime(r.redeemedAt)}
+                    </div>
+                    <a
+                      href={`https://sepolia.basescan.org/tx/${r.txHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-block",
+                        marginTop: 4,
+                        fontSize: 11,
+                        color: ACCENT,
+                        textDecoration: "none",
+                      }}
+                    >
+                      View transaction
+                    </a>
+                  </div>
+                  <div style={{ textAlign: "right", minWidth: 62 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,100,100,0.9)" }}>-{r.costCity}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>burned</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -3142,7 +3280,6 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
           onDone={() => setBurnConfirm(null)}
         />
       )}
-      {toast && <SuccessToast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 }

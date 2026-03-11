@@ -388,9 +388,11 @@ function reducer(state: DemoState, action: Action): DemoState {
 
       const redemption: PastRedemption = {
         id: `redemption-${Date.now()}`,
+        offerId: offer.id,
         offerTitle: offer.offerTitle,
         redeemerName: offer.redeemerName,
         costCity: offer.costCity,
+        mceOnly: offer.mceOnly,
         redeemedAt: new Date().toISOString(),
         txHash: action.txHash ?? randomTxHash(),
       };

@@ -93,9 +93,11 @@ export interface CompletedTask {
 
 export interface PastRedemption {
   id: string;
+  offerId?: string;
   offerTitle: string;
   redeemerName: string;
   costCity: number;
+  mceOnly?: boolean;
   redeemedAt: string;
   txHash: string;
 }
