@@ -1990,17 +1990,26 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   });
   const filteredOpenTasks =
     catFilter === "All" ? searchedOpenTasks : searchedOpenTasks.filter(t => t.category === catFilter);
-  const sortedOpenTasks = [...filteredOpenTasks].sort((a, b) => {
-    if (sortBy.highValue) return b.credits - a.credits;
-    if (sortBy.lowValue) return a.credits - b.credits;
-    if (sortBy.organization) return a.issuerName.localeCompare(b.issuerName);
-    if (sortBy.dateIssued) {
-      const aId = Number(a.id.match(/(\d+)$/)?.[1] ?? "0");
-      const bId = Number(b.id.match(/(\d+)$/)?.[1] ?? "0");
-      return bId - aId;
+  const sortedOpenTasks = React.useMemo(() => {
+    const sorted = [...filteredOpenTasks].sort((a, b) => {
+      if (sortBy.highValue) return b.credits - a.credits;
+      if (sortBy.lowValue) return a.credits - b.credits;
+      if (sortBy.organization) return a.issuerName.localeCompare(b.issuerName);
+      if (sortBy.dateIssued) {
+        const aId = Number(a.id.match(/(\d+)$/)?.[1] ?? "0");
+        const bId = Number(b.id.match(/(\d+)$/)?.[1] ?? "0");
+        return bId - aId;
+      }
+      return 0;
+    });
+
+    const onboardingIdx = sorted.findIndex(task => task.id === DEMO_LOCAL_ONBOARDING_TASK.id || task.isOnboarding);
+    if (onboardingIdx > 0) {
+      const [onboardingTask] = sorted.splice(onboardingIdx, 1);
+      sorted.unshift(onboardingTask);
     }
-    return 0;
-  });
+    return sorted;
+  }, [filteredOpenTasks, sortBy.dateIssued, sortBy.highValue, sortBy.lowValue, sortBy.organization]);
   const myTasksRaw = React.useMemo(
     () =>
       onchainTasks.filter(
