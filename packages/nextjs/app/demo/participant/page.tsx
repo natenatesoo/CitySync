@@ -435,6 +435,8 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
             left: 10,
             right: 10,
             bottom: 92,
+            background: "rgb(26, 29, 50)",
+            backdropFilter: "none",
             borderRadius: 22,
             border: "1px solid rgba(255,255,255,0.1)",
             padding: "24px 20px 24px",
@@ -1458,12 +1460,10 @@ function TaskCard({
   isClaimed,
   locked,
   pendingVerification,
-  showOnboardButton,
   canUnclaim,
   showClaimButton,
   showUnclaimButton,
   onClaim,
-  onOnboard,
   onUnclaim,
   onExecute,
 }: {
@@ -1471,12 +1471,10 @@ function TaskCard({
   isClaimed: boolean;
   locked: boolean;
   pendingVerification?: boolean;
-  showOnboardButton?: boolean;
   canUnclaim?: boolean;
   showClaimButton?: boolean;
   showUnclaimButton?: boolean;
   onClaim?: () => void;
-  onOnboard?: () => void;
   onUnclaim?: () => void;
   onExecute?: () => void;
 }) {
@@ -1669,42 +1667,7 @@ function TaskCard({
             ✓ Claimed — go to My Tasks
           </div>
         )}
-        {showOnboardButton && (
-          <>
-            <button
-              onClick={onUnclaim}
-              style={{
-                padding: "10px 18px",
-                background: "rgba(255,255,255,0.05)",
-                color: "rgba(255,255,255,0.55)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Unclaim
-            </button>
-            <button
-              onClick={onOnboard}
-              style={{
-                flex: 1,
-                padding: "10px 0",
-                background: TEAL,
-                color: "#0f141f",
-                border: "none",
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              Onboard Account
-            </button>
-          </>
-        )}
-        {showUnclaimButton && !showOnboardButton && !pendingVerification && canUnclaim !== false && (
+        {showUnclaimButton && !pendingVerification && canUnclaim !== false && (
           <>
             <button
               onClick={onUnclaim}
@@ -1739,7 +1702,7 @@ function TaskCard({
             </button>
           </>
         )}
-        {showUnclaimButton && !showOnboardButton && canUnclaim === false && (
+        {showUnclaimButton && canUnclaim === false && (
           <div
             style={{
               flex: 1,
@@ -1784,7 +1747,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     organization: false,
   });
   const [pendingVerificationIds, setPendingVerificationIds] = useState<string[]>([]);
-  const [onboardingReadyIds, setOnboardingReadyIds] = useState<string[]>([]);
   const [localOnboardingClaimed, setLocalOnboardingClaimed] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [pendingTaskSnapshots, setPendingTaskSnapshots] = useState<Record<string, Task>>({});
@@ -1795,7 +1757,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     if (typeof window === "undefined") return;
     const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
     const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
-    const onboardingReadyKey = `citysync:demo:participant:onboarding-ready:${walletKey}`;
     const onboardingClaimedKey = `citysync:demo:participant:onboarding-claimed:${walletKey}`;
     const onboardedKey = `citysync:demo:participant:onboarded:${walletKey}`;
     const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
@@ -1805,11 +1766,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       if (raw) {
         const parsed = JSON.parse(raw) as string[];
         if (Array.isArray(parsed)) setPendingVerificationIds(parsed);
-      }
-      const rawOnboardingReady = window.localStorage.getItem(onboardingReadyKey);
-      if (rawOnboardingReady) {
-        const parsed = JSON.parse(rawOnboardingReady) as string[];
-        if (Array.isArray(parsed)) setOnboardingReadyIds(parsed);
       }
       const rawOnboardingClaimed = window.localStorage.getItem(onboardingClaimedKey);
       if (rawOnboardingClaimed) {
@@ -1840,14 +1796,12 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     if (typeof window === "undefined") return;
     const walletKey = (address ?? FAKE_WALLETS.participant).toLowerCase();
     const pendingKey = `citysync:demo:participant:pending-verification:${walletKey}`;
-    const onboardingReadyKey = `citysync:demo:participant:onboarding-ready:${walletKey}`;
     const onboardingClaimedKey = `citysync:demo:participant:onboarding-claimed:${walletKey}`;
     const onboardedKey = `citysync:demo:participant:onboarded:${walletKey}`;
     const pendingSnapshotsKey = `citysync:demo:participant:pending-task-snapshots:${walletKey}`;
     const completedKey = `citysync:demo:participant:completed-tasks:${walletKey}`;
     try {
       window.localStorage.setItem(pendingKey, JSON.stringify(pendingVerificationIds));
-      window.localStorage.setItem(onboardingReadyKey, JSON.stringify(onboardingReadyIds));
       window.localStorage.setItem(onboardingClaimedKey, JSON.stringify(localOnboardingClaimed));
       window.localStorage.setItem(onboardedKey, JSON.stringify(isOnboarded));
       window.localStorage.setItem(pendingSnapshotsKey, JSON.stringify(pendingTaskSnapshots));
@@ -1855,15 +1809,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     } catch {
       // Ignore persistence failures.
     }
-  }, [
-    address,
-    pendingVerificationIds,
-    onboardingReadyIds,
-    localOnboardingClaimed,
-    isOnboarded,
-    pendingTaskSnapshots,
-    completedTasks,
-  ]);
+  }, [address, pendingVerificationIds, localOnboardingClaimed, isOnboarded, pendingTaskSnapshots, completedTasks]);
 
   useEffect(() => {
     // Keep legacy participants with existing CITY balances unlocked.
@@ -2136,7 +2082,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     }
     if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
       setLocalOnboardingClaimed(true);
-      setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
       setToast(`Claimed: ${task.title}`);
       return;
     }
@@ -2151,7 +2096,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   const handleUnclaim = async (task: Task) => {
     if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
       setLocalOnboardingClaimed(false);
-      setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
       setToast("Task returned to Open Tasks");
       return;
     }
@@ -2174,34 +2118,20 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     }
   };
 
-  const handleOnboardAccount = async (task: Task) => {
-    if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
-      setLocalOnboardingClaimed(false);
-    } else {
-      const result = await unclaimTask(task.id);
-      if (result.ok) {
-        setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
-      }
-    }
-    setOnboardingReadyIds(prev => prev.filter(id => id !== task.id));
-    setPendingVerificationIds(prev => prev.filter(id => id !== task.id));
-    setPendingTaskSnapshots(prev => {
-      const next = { ...prev };
-      delete next[task.id];
-      return next;
-    });
-    setIsOnboarded(true);
-    setToast("Now that you are onboarded your account can now interact with all City/Sync contracts.");
-  };
-
   const handleExecuteConfirm = () => {
     if (!executeTask) return;
     const task = executeTask;
     setExecuteTask(null);
-    if (task.isOnboarding) {
-      setOnboardingReadyIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
-      setPendingTaskSnapshots(prev => ({ ...prev, [task.id]: task }));
-      setToast("Onboarding execution complete. Click Onboard Account to activate access.");
+    if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
+      setLocalOnboardingClaimed(false);
+      setPendingVerificationIds(prev => prev.filter(id => id !== task.id));
+      setPendingTaskSnapshots(prev => {
+        const next = { ...prev };
+        delete next[task.id];
+        return next;
+      });
+      setIsOnboarded(true);
+      setToast("Now that you are onboarded your account can now interact with all City/Sync contracts.");
       return;
     }
     setPendingVerificationIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
@@ -2451,11 +2381,9 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
             task={task}
             isClaimed
             locked={false}
-            showOnboardButton={!isOnboarded && task.isOnboarding && onboardingReadyIds.includes(task.id)}
             pendingVerification={pendingVerificationIds.includes(task.id) || task.completionStatus === 1}
             canUnclaim={task.completionStatus === 0 || task.completionStatus === 3}
             showUnclaimButton
-            onOnboard={() => handleOnboardAccount(task)}
             onUnclaim={() => handleUnclaim(task)}
             onExecute={() => setExecuteTask(task)}
           />

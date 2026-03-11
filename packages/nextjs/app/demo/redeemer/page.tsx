@@ -152,10 +152,10 @@ const STATUS_COLOR: Record<string, string> = {
   Rejected: "#ff6b9d",
 };
 
-const REDEEMER_COMMITTED_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:committed-catalog:v2";
-const REDEEMER_MCE_CATALOG_STORAGE_KEY = "citysync:demo:redeemer:mce-catalog:v2";
-const REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY = "citysync:demo:redeemer:active-committed:v2";
-const REDEEMER_ACTIVE_MCE_STORAGE_KEY = "citysync:demo:redeemer:active-mce:v2";
+const REDEEMER_COMMITTED_CATALOG_STORAGE_PREFIX = "citysync:demo:redeemer:committed-catalog:v3";
+const REDEEMER_MCE_CATALOG_STORAGE_PREFIX = "citysync:demo:redeemer:mce-catalog:v3";
+const REDEEMER_ACTIVE_COMMITTED_STORAGE_PREFIX = "citysync:demo:redeemer:active-committed:v3";
+const REDEEMER_ACTIVE_MCE_STORAGE_PREFIX = "citysync:demo:redeemer:active-mce:v3";
 
 type OfferWriteStatus = {
   state: "idle" | "pending" | "confirmed" | "failed";
@@ -313,6 +313,23 @@ export default function RedeemerApp() {
 
   const { redeemer, mces } = state;
   const canCommitOnchain = Boolean(address && client);
+  const walletStorageSuffix = React.useMemo(() => (address ?? FAKE_WALLETS.redeemer).toLowerCase(), [address]);
+  const committedCatalogStorageKey = React.useMemo(
+    () => `${REDEEMER_COMMITTED_CATALOG_STORAGE_PREFIX}:${walletStorageSuffix}`,
+    [walletStorageSuffix],
+  );
+  const mceCatalogStorageKey = React.useMemo(
+    () => `${REDEEMER_MCE_CATALOG_STORAGE_PREFIX}:${walletStorageSuffix}`,
+    [walletStorageSuffix],
+  );
+  const activeCommittedStorageKey = React.useMemo(
+    () => `${REDEEMER_ACTIVE_COMMITTED_STORAGE_PREFIX}:${walletStorageSuffix}`,
+    [walletStorageSuffix],
+  );
+  const activeMceStorageKey = React.useMemo(
+    () => `${REDEEMER_ACTIVE_MCE_STORAGE_PREFIX}:${walletStorageSuffix}`,
+    [walletStorageSuffix],
+  );
   const allPosts = [...localPosts, ...state.posts];
   const rightPanel = <OnchainActivityPanel role="redeemer" accent={ACCENT} />;
   const leftPanel =
@@ -338,68 +355,76 @@ export default function RedeemerApp() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const rawCommitted = window.localStorage.getItem(REDEEMER_COMMITTED_CATALOG_STORAGE_KEY);
+      const rawCommitted = window.localStorage.getItem(committedCatalogStorageKey);
       if (rawCommitted) {
         const parsed = JSON.parse(rawCommitted) as CustomOffering[];
         if (Array.isArray(parsed)) setCommittedCatalog(parsed);
+      } else {
+        setCommittedCatalog([]);
       }
-      const rawMce = window.localStorage.getItem(REDEEMER_MCE_CATALOG_STORAGE_KEY);
+      const rawMce = window.localStorage.getItem(mceCatalogStorageKey);
       if (rawMce) {
         const parsed = JSON.parse(rawMce) as MCECustomOffering[];
         if (Array.isArray(parsed)) setMceCatalog(parsed);
+      } else {
+        setMceCatalog([]);
       }
 
-      const rawActiveCommitted = window.localStorage.getItem(REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY);
+      const rawActiveCommitted = window.localStorage.getItem(activeCommittedStorageKey);
       if (rawActiveCommitted) {
         const parsed = JSON.parse(rawActiveCommitted) as CustomOffering[];
         if (Array.isArray(parsed)) setCommittedOfferings(parsed);
+      } else {
+        setCommittedOfferings([]);
       }
 
-      const rawActiveMce = window.localStorage.getItem(REDEEMER_ACTIVE_MCE_STORAGE_KEY);
+      const rawActiveMce = window.localStorage.getItem(activeMceStorageKey);
       if (rawActiveMce) {
         const parsed = JSON.parse(rawActiveMce) as MCECustomOffering[];
         if (Array.isArray(parsed)) setMceOfferings(parsed);
+      } else {
+        setMceOfferings([]);
       }
     } catch {
       // Ignore hydration failures.
     }
-  }, []);
+  }, [activeCommittedStorageKey, activeMceStorageKey, committedCatalogStorageKey, mceCatalogStorageKey]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(REDEEMER_COMMITTED_CATALOG_STORAGE_KEY, JSON.stringify(committedCatalog));
+      window.localStorage.setItem(committedCatalogStorageKey, JSON.stringify(committedCatalog));
     } catch {
       // Ignore persistence failures.
     }
-  }, [committedCatalog]);
+  }, [committedCatalog, committedCatalogStorageKey]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(REDEEMER_MCE_CATALOG_STORAGE_KEY, JSON.stringify(mceCatalog));
+      window.localStorage.setItem(mceCatalogStorageKey, JSON.stringify(mceCatalog));
     } catch {
       // Ignore persistence failures.
     }
-  }, [mceCatalog]);
+  }, [mceCatalog, mceCatalogStorageKey]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(REDEEMER_ACTIVE_COMMITTED_STORAGE_KEY, JSON.stringify(committedOfferings));
+      window.localStorage.setItem(activeCommittedStorageKey, JSON.stringify(committedOfferings));
     } catch {
       // Ignore persistence failures.
     }
-  }, [committedOfferings]);
+  }, [activeCommittedStorageKey, committedOfferings]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(REDEEMER_ACTIVE_MCE_STORAGE_KEY, JSON.stringify(mceOfferings));
+      window.localStorage.setItem(activeMceStorageKey, JSON.stringify(mceOfferings));
     } catch {
       // Ignore persistence failures.
     }
-  }, [mceOfferings]);
+  }, [activeMceStorageKey, mceOfferings]);
 
   const handleCreateCommittedOffering = async (data: { name: string; costCity: number; stipulations: string }) => {
     const catalogId = catalogEditor?.type === "committed" ? catalogEditor.editId : undefined;
