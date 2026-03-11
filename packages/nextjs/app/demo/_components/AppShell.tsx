@@ -151,6 +151,7 @@ export default function AppShell({
         <main
           className="flex-1 overflow-y-auto"
           style={{
+            position: "relative",
             paddingBottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
             WebkitOverflowScrolling: "touch",
             overscrollBehaviorY: "contain",

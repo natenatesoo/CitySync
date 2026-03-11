@@ -544,18 +544,30 @@ export default function IssuerApp() {
           />
         )}
         {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} onLearnMore={openLearnMore} />}
-      </AppShell>
 
-      {createSheet && (
-        <CreateTaskSheet
-          onClose={() => setCreateSheet(false)}
-          approvedCatalogTasks={approvedCatalogTasks}
-          onIssueTask={id => {
-            setIssueTaskId(id);
-            setCreateSheet(false);
-          }}
-        />
-      )}
+        {createSheet && (
+          <CreateTaskSheet
+            onClose={() => setCreateSheet(false)}
+            approvedCatalogTasks={approvedCatalogTasks}
+            onIssueTask={id => {
+              setIssueTaskId(id);
+              setCreateSheet(false);
+            }}
+          />
+        )}
+
+        {issueTaskId &&
+          (() => {
+            const task = approvedCatalogTasks.find(t => t.id === issueTaskId);
+            return task ? (
+              <IssueTaskPopup
+                task={task}
+                onClose={() => setIssueTaskId(null)}
+                onIssue={slots => handleIssueTask(task, slots)}
+              />
+            ) : null;
+          })()}
+      </AppShell>
 
       {proposeSheet && (
         <ProposeTaskSheet
@@ -568,18 +580,6 @@ export default function IssuerApp() {
       {composeOpen && (
         <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
       )}
-
-      {issueTaskId &&
-        (() => {
-          const task = approvedCatalogTasks.find(t => t.id === issueTaskId);
-          return task ? (
-            <IssueTaskPopup
-              task={task}
-              onClose={() => setIssueTaskId(null)}
-              onIssue={slots => handleIssueTask(task, slots)}
-            />
-          ) : null;
-        })()}
 
       {catalogModifyTaskId &&
         (() => {
@@ -1618,9 +1618,9 @@ function CreateTaskSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 34,
         display: "flex",
         justifyContent: "center",
         pointerEvents: "none",
@@ -1640,8 +1640,7 @@ function CreateTaskSheet({
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(0,0,0,0.48)",
-            backdropFilter: "blur(1.5px)",
+            background: "rgba(0,0,0,0.34)",
           }}
         />
         <div
@@ -1649,8 +1648,8 @@ function CreateTaskSheet({
             position: "absolute",
             left: 10,
             right: 10,
-            bottom: "max(10px, env(safe-area-inset-bottom))",
-            maxHeight: "82vh",
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
             overflowY: "auto",
             background: SURFACE,
             borderRadius: 22,
@@ -3466,9 +3465,9 @@ function IssueTaskPopup({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 60,
+        zIndex: 35,
         display: "flex",
         justifyContent: "center",
         pointerEvents: "none",
@@ -3488,8 +3487,7 @@ function IssueTaskPopup({
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(0,0,0,0.48)",
-            backdropFilter: "blur(1.5px)",
+            background: "rgba(0,0,0,0.34)",
           }}
         />
         <div
@@ -3497,7 +3495,7 @@ function IssueTaskPopup({
             position: "absolute",
             left: 10,
             right: 10,
-            bottom: "max(10px, env(safe-area-inset-bottom))",
+            bottom: "92px",
             background: SURFACE,
             borderRadius: 22,
             padding: "10px 16px 14px",
