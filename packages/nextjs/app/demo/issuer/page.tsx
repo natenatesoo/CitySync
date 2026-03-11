@@ -3445,38 +3445,38 @@ function IssueTaskPopup({
       style={{
         position: "absolute",
         inset: 0,
+        bottom: 78,
         zIndex: 40,
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.22)",
+        background: "rgba(0,0,0,0.18)",
         backdropFilter: "blur(1.5px)",
-        padding: "0 0 0",
+        padding: "0 12px",
       }}
       onClick={onClose}
     >
       <style>{`
         @keyframes issueTaskSheetUp {
           from {
-            transform: translateY(28px);
-            opacity: 0.92;
+            transform: translateY(56px) scale(0.985);
+            opacity: 0.88;
           }
           to {
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
             opacity: 1;
           }
         }
       `}</style>
       <div
         style={{
-          width: "100%",
-          maxWidth: 480,
+          width: "min(456px, calc(100% - 6px))",
           background: SURFACE,
-          borderRadius: "22px 22px 0 0",
+          borderRadius: 22,
           padding: "22px 20px 28px",
           border: "1px solid rgba(255,255,255,0.1)",
-          borderBottom: "none",
-          animation: "issueTaskSheetUp 220ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+          boxShadow: "0 14px 36px rgba(0,0,0,0.4)",
+          animation: "issueTaskSheetUp 420ms cubic-bezier(0.22, 1, 0.36, 1)",
           transformOrigin: "bottom center",
         }}
         onClick={e => e.stopPropagation()}
