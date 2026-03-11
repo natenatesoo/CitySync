@@ -802,6 +802,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, [address]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const syncOffers = async () => {
       try {
         const redeemers = (await baseSepoliaPublicClient.readContract({
@@ -855,6 +857,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        if (cancelled) return;
         dispatch({ type: "SYNC_ONCHAIN_OFFERS", offers: discovered });
       } catch {
         // Keep last-known offer state if discovery fails.
@@ -862,6 +865,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     };
 
     void syncOffers();
+    const id = window.setInterval(() => {
+      void syncOffers();
+    }, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   const setRole = useCallback(
