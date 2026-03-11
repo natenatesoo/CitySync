@@ -598,74 +598,79 @@ export default function RedeemerApp() {
           />
         )}
         {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} onLearnMore={openLearnMore} />}
+        {catalogEditor?.type === "committed" && (
+          <AddOfferingSheet
+            type="committed"
+            mces={mces}
+            onClose={() => setCatalogEditor(null)}
+            onSubmitCommitted={handleCreateCommittedOffering}
+            onSubmitMCE={handleCreateMCEOffering}
+            initialCommitted={
+              catalogEditor.editId ? (committedCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
+            }
+          />
+        )}
+        {catalogEditor?.type === "mce" && (
+          <AddOfferingSheet
+            type="mce"
+            mces={mces}
+            onClose={() => setCatalogEditor(null)}
+            onSubmitCommitted={handleCreateCommittedOffering}
+            onSubmitMCE={handleCreateMCEOffering}
+            initialMCE={
+              catalogEditor.editId ? (mceCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
+            }
+          />
+        )}
+
+        {catalogIssueSheet === "committed" && (
+          <IssueOfferingFromCatalogSheet
+            type="committed"
+            committedCatalog={committedCatalog}
+            mceCatalog={mceCatalog}
+            canCommitOnchain={canCommitOnchain}
+            onIssueCommitted={handleIssueCommittedFromCatalog}
+            onIssueMCE={handleIssueMceFromCatalog}
+            onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+            onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
+            onClose={() => setCatalogIssueSheet(null)}
+          />
+        )}
+        {catalogIssueSheet === "mce" && (
+          <IssueOfferingFromCatalogSheet
+            type="mce"
+            committedCatalog={committedCatalog}
+            mceCatalog={mceCatalog}
+            canCommitOnchain={canCommitOnchain}
+            onIssueCommitted={handleIssueCommittedFromCatalog}
+            onIssueMCE={handleIssueMceFromCatalog}
+            onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
+            onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
+            onClose={() => setCatalogIssueSheet(null)}
+          />
+        )}
+
+        {qrTarget && <QRModal offering={qrTarget} onClose={() => setQrTarget(null)} />}
+
+        {removeTarget && (
+          <ConfirmDialog
+            title="Committed Offering Locked"
+            message="This is a Committed Offering. It cannot be removed until the end of the current Epoch. All modifications to offerings and rates must occur after the Epoch ends or after the expiration of your offer."
+            confirmLabel="Got it"
+            onConfirm={() => setRemoveTarget(null)}
+            onCancel={() => setRemoveTarget(null)}
+            warningOnly
+          />
+        )}
+
+        {composeOpen && (
+          <ComposePostSheet
+            orgName={redeemer.orgName}
+            onClose={() => setComposeOpen(false)}
+            onPost={handleCreatePost}
+          />
+        )}
       </AppShell>
-
-      {catalogEditor?.type === "committed" && (
-        <AddOfferingSheet
-          type="committed"
-          mces={mces}
-          onClose={() => setCatalogEditor(null)}
-          onSubmitCommitted={handleCreateCommittedOffering}
-          onSubmitMCE={handleCreateMCEOffering}
-          initialCommitted={
-            catalogEditor.editId ? (committedCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null
-          }
-        />
-      )}
-      {catalogEditor?.type === "mce" && (
-        <AddOfferingSheet
-          type="mce"
-          mces={mces}
-          onClose={() => setCatalogEditor(null)}
-          onSubmitCommitted={handleCreateCommittedOffering}
-          onSubmitMCE={handleCreateMCEOffering}
-          initialMCE={catalogEditor.editId ? (mceCatalog.find(item => item.id === catalogEditor.editId) ?? null) : null}
-        />
-      )}
-
-      {catalogIssueSheet === "committed" && (
-        <IssueOfferingFromCatalogSheet
-          type="committed"
-          committedCatalog={committedCatalog}
-          mceCatalog={mceCatalog}
-          canCommitOnchain={canCommitOnchain}
-          onIssueCommitted={handleIssueCommittedFromCatalog}
-          onIssueMCE={handleIssueMceFromCatalog}
-          onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
-          onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
-          onClose={() => setCatalogIssueSheet(null)}
-        />
-      )}
-      {catalogIssueSheet === "mce" && (
-        <IssueOfferingFromCatalogSheet
-          type="mce"
-          committedCatalog={committedCatalog}
-          mceCatalog={mceCatalog}
-          canCommitOnchain={canCommitOnchain}
-          onIssueCommitted={handleIssueCommittedFromCatalog}
-          onIssueMCE={handleIssueMceFromCatalog}
-          onModifyCommitted={catalogId => setCatalogEditor({ type: "committed", editId: catalogId })}
-          onModifyMCE={catalogId => setCatalogEditor({ type: "mce", editId: catalogId })}
-          onClose={() => setCatalogIssueSheet(null)}
-        />
-      )}
-
-      {qrTarget && <QRModal offering={qrTarget} onClose={() => setQrTarget(null)} />}
-
-      {removeTarget && (
-        <ConfirmDialog
-          title="Committed Offering Locked"
-          message="This is a Committed Offering. It cannot be removed until the end of the current Epoch. All modifications to offerings and rates must occur after the Epoch ends or after the expiration of your offer."
-          confirmLabel="Got it"
-          onConfirm={() => setRemoveTarget(null)}
-          onCancel={() => setRemoveTarget(null)}
-          warningOnly
-        />
-      )}
-
-      {composeOpen && (
-        <ComposePostSheet orgName={redeemer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
-      )}
 
       {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
     </>
@@ -1763,182 +1768,202 @@ function AddOfferingSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 40,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
+        pointerEvents: "none",
       }}
-      onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 480,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          background: SURFACE,
-          borderRadius: "24px 24px 0 0",
-          padding: "24px 20px 40px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
           style={{
-            width: 40,
-            height: 4,
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: 2,
-            margin: "0 auto 20px",
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.34)",
           }}
         />
+        <div
+          style={{
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            background: SURFACE,
+            borderRadius: 22,
+            padding: "24px 20px 24px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 4,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 2,
+              margin: "0 auto 20px",
+            }}
+          />
 
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
-          Add Offering to your Catalog
-        </div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
-          {type === "committed"
-            ? "Create or update your committed offering template."
-            : "Create or update your MCE offering template."}
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Offering Name */}
-          <div>
-            <label style={labelStyle}>Offering Name *</label>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g. 10% Grocery Discount"
-              style={inputStyle}
-            />
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
+            Add Offering to your Catalog
+          </div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+            {type === "committed"
+              ? "Create or update your committed offering template."
+              : "Create or update your MCE offering template."}
           </div>
 
-          {/* Cost */}
-          <div>
-            <label style={labelStyle}>Cost in CITYx *</label>
-            <input
-              type="number"
-              value={costCity}
-              onChange={e => setCostCity(e.target.value)}
-              placeholder="e.g. 30"
-              style={{ ...inputStyle, fontSize: 20, fontWeight: 700 }}
-            />
-          </div>
-
-          {/* MCE Selector (MCE type only) — multi-select checkboxes */}
-          {type === "mce" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Offering Name */}
             <div>
-              <label style={labelStyle}>Select MCE Events (choose all that apply) *</label>
-              <div style={{ fontSize: 11, color: DIMMED, marginBottom: 8, lineHeight: 1.4 }}>
-                Select the MCE proposals you would create this offering for. Your selection signals influence on voting.
-              </div>
-              {activeMces.length === 0 ? (
-                <div
-                  style={{
-                    ...inputStyle,
-                    color: DIMMED,
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  No active MCEs available
+              <label style={labelStyle}>Offering Name *</label>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. 10% Grocery Discount"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Cost */}
+            <div>
+              <label style={labelStyle}>Cost in CITYx *</label>
+              <input
+                type="number"
+                value={costCity}
+                onChange={e => setCostCity(e.target.value)}
+                placeholder="e.g. 30"
+                style={{ ...inputStyle, fontSize: 20, fontWeight: 700 }}
+              />
+            </div>
+
+            {/* MCE Selector (MCE type only) — multi-select checkboxes */}
+            {type === "mce" && (
+              <div>
+                <label style={labelStyle}>Select MCE Events (choose all that apply) *</label>
+                <div style={{ fontSize: 11, color: DIMMED, marginBottom: 8, lineHeight: 1.4 }}>
+                  Select the MCE proposals you would create this offering for. Your selection signals influence on
+                  voting.
                 </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {activeMces.map(mce => {
-                    const checked = selectedMceIds.includes(mce.id);
-                    return (
-                      <button
-                        key={mce.id}
-                        type="button"
-                        onClick={() => toggleMce(mce.id)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "12px 14px",
-                          borderRadius: 10,
-                          border: checked ? "1px solid rgba(221,158,51,0.5)" : "1px solid rgba(255,255,255,0.1)",
-                          background: checked ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.04)",
-                          cursor: "pointer",
-                          textAlign: "left",
-                        }}
-                      >
-                        {/* Checkbox indicator */}
-                        <div
+                {activeMces.length === 0 ? (
+                  <div
+                    style={{
+                      ...inputStyle,
+                      color: DIMMED,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    No active MCEs available
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {activeMces.map(mce => {
+                      const checked = selectedMceIds.includes(mce.id);
+                      return (
+                        <button
+                          key={mce.id}
+                          type="button"
+                          onClick={() => toggleMce(mce.id)}
                           style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: 4,
-                            border: checked ? "none" : "1.5px solid rgba(255,255,255,0.25)",
-                            background: checked ? "#DD9E33" : "transparent",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
+                            gap: 12,
+                            padding: "12px 14px",
+                            borderRadius: 10,
+                            border: checked ? "1px solid rgba(221,158,51,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                            background: checked ? "rgba(221,158,51,0.08)" : "rgba(255,255,255,0.04)",
+                            cursor: "pointer",
+                            textAlign: "left",
                           }}
                         >
-                          {checked && <span style={{ fontSize: 11, color: "#0d1117", fontWeight: 800 }}>✓</span>}
-                        </div>
-                        <span style={{ fontSize: 13, color: "#fff", fontWeight: 500, flex: 1 }}>{mce.title}</span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 600,
-                            background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
-                            color: STATUS_COLOR[mce.status] ?? ACCENT,
-                            borderRadius: 20,
-                            padding: "2px 8px",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {mce.status}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                          {/* Checkbox indicator */}
+                          <div
+                            style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: 4,
+                              border: checked ? "none" : "1.5px solid rgba(255,255,255,0.25)",
+                              background: checked ? "#DD9E33" : "transparent",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {checked && <span style={{ fontSize: 11, color: "#0d1117", fontWeight: 800 }}>✓</span>}
+                          </div>
+                          <span style={{ fontSize: 13, color: "#fff", fontWeight: 500, flex: 1 }}>{mce.title}</span>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              background: `${STATUS_COLOR[mce.status] ?? ACCENT}18`,
+                              color: STATUS_COLOR[mce.status] ?? ACCENT,
+                              borderRadius: 20,
+                              padding: "2px 8px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {mce.status}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Stipulations / Notes */}
+            <div>
+              <label style={labelStyle}>Stipulations / Notes</label>
+              <textarea
+                value={stipulations}
+                onChange={e => setStipulations(e.target.value)}
+                placeholder="e.g. Valid Mon–Fri only, not during peak hours, one redemption per visit..."
+                rows={3}
+                style={{ ...inputStyle, resize: "none", lineHeight: 1.55 }}
+              />
             </div>
-          )}
-
-          {/* Stipulations / Notes */}
-          <div>
-            <label style={labelStyle}>Stipulations / Notes</label>
-            <textarea
-              value={stipulations}
-              onChange={e => setStipulations(e.target.value)}
-              placeholder="e.g. Valid Mon–Fri only, not during peak hours, one redemption per visit..."
-              rows={3}
-              style={{ ...inputStyle, resize: "none", lineHeight: 1.55 }}
-            />
           </div>
-        </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={type === "committed" ? !canSubmitCommitted : !canSubmitMCE}
-          style={{
-            width: "100%",
-            background: (type === "committed" ? canSubmitCommitted : canSubmitMCE)
-              ? accentCol
-              : "rgba(255,255,255,0.08)",
-            border: "none",
-            borderRadius: 14,
-            padding: "14px 0",
-            fontSize: 14,
-            fontWeight: 700,
-            color: (type === "committed" ? canSubmitCommitted : canSubmitMCE) ? BG : MUTED,
-            cursor: (type === "committed" ? canSubmitCommitted : canSubmitMCE) ? "pointer" : "not-allowed",
-            marginTop: 20,
-          }}
-        >
-          Add To Catalog
-        </button>
+          <button
+            onClick={handleSubmit}
+            disabled={type === "committed" ? !canSubmitCommitted : !canSubmitMCE}
+            style={{
+              width: "100%",
+              background: (type === "committed" ? canSubmitCommitted : canSubmitMCE)
+                ? accentCol
+                : "rgba(255,255,255,0.08)",
+              border: "none",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              color: (type === "committed" ? canSubmitCommitted : canSubmitMCE) ? BG : MUTED,
+              cursor: (type === "committed" ? canSubmitCommitted : canSubmitMCE) ? "pointer" : "not-allowed",
+              marginTop: 20,
+            }}
+          >
+            Add To Catalog
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1973,153 +1998,174 @@ function IssueOfferingFromCatalogSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 52,
+        zIndex: 42,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
+        pointerEvents: "none",
       }}
-      onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 520,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          background: SURFACE,
-          borderRadius: "24px 24px 0 0",
-          padding: "22px 20px 36px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
           style={{
-            width: 40,
-            height: 4,
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: 2,
-            margin: "0 auto 18px",
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.34)",
           }}
         />
-
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-          {isCommitted ? "Committed Offerings Catalog" : "MCE Offerings Catalog"}
-        </div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 18 }}>
-          Select an offering to modify, or commit it onchain as an active offering.
-        </div>
-        {!canCommitOnchain && (
+        <div
+          style={{
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            background: SURFACE,
+            borderRadius: 22,
+            padding: "22px 20px 20px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+          }}
+          onClick={e => e.stopPropagation()}
+        >
           <div
             style={{
-              background: "rgba(255,107,157,0.08)",
-              border: "1px solid rgba(255,107,157,0.25)",
-              borderRadius: 10,
-              padding: "10px 12px",
-              fontSize: 12,
-              color: "rgba(255,255,255,0.8)",
-              marginBottom: 14,
+              width: 40,
+              height: 4,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 2,
+              margin: "0 auto 18px",
             }}
-          >
-            Wallet session is still initializing. Commit Offering will enable once ready.
-          </div>
-        )}
-
-        {list.length === 0 ? (
-          <EmptyState
-            emoji={isCommitted ? "🏪" : "⚡"}
-            title="Catalog is empty"
-            desc={isCommitted ? "Add a committed offering to catalog first." : "Add an MCE offering to catalog first."}
           />
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {list.map(item => (
-              <div
-                key={item.id}
-                style={{
-                  ...surfaceCard,
-                  border: `1px solid ${isCommitted ? "rgba(52,238,182,0.2)" : "rgba(221,158,51,0.22)"}`,
-                  background: isCommitted ? "rgba(52,238,182,0.04)" : "rgba(221,158,51,0.04)",
-                }}
-              >
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{item.name}</div>
-                {Array.isArray((item as MCECustomOffering).mceNames) &&
-                  (item as MCECustomOffering).mceNames.length > 0 && (
-                    <div style={{ fontSize: 11, color: DIMMED, marginBottom: 4 }}>
-                      Events: {(item as MCECustomOffering).mceNames.join(", ")}
+
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+            {isCommitted ? "Committed Offerings Catalog" : "MCE Offerings Catalog"}
+          </div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 18 }}>
+            Select an offering to modify, or commit it onchain as an active offering.
+          </div>
+          {!canCommitOnchain && (
+            <div
+              style={{
+                background: "rgba(255,107,157,0.08)",
+                border: "1px solid rgba(255,107,157,0.25)",
+                borderRadius: 10,
+                padding: "10px 12px",
+                fontSize: 12,
+                color: "rgba(255,255,255,0.8)",
+                marginBottom: 14,
+              }}
+            >
+              Wallet session is still initializing. Commit Offering will enable once ready.
+            </div>
+          )}
+
+          {list.length === 0 ? (
+            <EmptyState
+              emoji={isCommitted ? "🏪" : "⚡"}
+              title="Catalog is empty"
+              desc={
+                isCommitted ? "Add a committed offering to catalog first." : "Add an MCE offering to catalog first."
+              }
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {list.map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    ...surfaceCard,
+                    border: `1px solid ${isCommitted ? "rgba(52,238,182,0.2)" : "rgba(221,158,51,0.22)"}`,
+                    background: isCommitted ? "rgba(52,238,182,0.04)" : "rgba(221,158,51,0.04)",
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{item.name}</div>
+                  {Array.isArray((item as MCECustomOffering).mceNames) &&
+                    (item as MCECustomOffering).mceNames.length > 0 && (
+                      <div style={{ fontSize: 11, color: DIMMED, marginBottom: 4 }}>
+                        Events: {(item as MCECustomOffering).mceNames.join(", ")}
+                      </div>
+                    )}
+                  {item.stipulations && (
+                    <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6, lineHeight: 1.45 }}>
+                      {item.stipulations}
                     </div>
                   )}
-                {item.stipulations && (
-                  <div style={{ fontSize: 11, color: DIMMED, marginBottom: 6, lineHeight: 1.45 }}>
-                    {item.stipulations}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: accent, marginBottom: 8 }}>
+                    {item.costCity} CITYx
                   </div>
-                )}
-                <div style={{ fontSize: 13, fontWeight: 700, color: accent, marginBottom: 8 }}>
-                  {item.costCity} CITYx
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        if (isCommitted) onModifyCommitted(item.id);
+                        else onModifyMCE(item.id);
+                        onClose();
+                      }}
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Modify Offering
+                    </button>
+                    <button
+                      onClick={() => setPendingCommitId(item.id)}
+                      disabled={!canCommitOnchain}
+                      style={{
+                        background: canCommitOnchain ? accent : "rgba(255,255,255,0.08)",
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: canCommitOnchain ? BG : MUTED,
+                        cursor: canCommitOnchain ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      Commit Offering
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
-                  <button
-                    onClick={() => {
-                      if (isCommitted) onModifyCommitted(item.id);
-                      else onModifyMCE(item.id);
-                      onClose();
-                    }}
-                    style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      borderRadius: 10,
-                      padding: "8px 12px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Modify Offering
-                  </button>
-                  <button
-                    onClick={() => setPendingCommitId(item.id)}
-                    disabled={!canCommitOnchain}
-                    style={{
-                      background: canCommitOnchain ? accent : "rgba(255,255,255,0.08)",
-                      border: "none",
-                      borderRadius: 10,
-                      padding: "8px 12px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: canCommitOnchain ? BG : MUTED,
-                      cursor: canCommitOnchain ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    Commit Offering
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
-        {pendingCommitId && (
-          <ConfirmDialog
-            title="Commit Offering?"
-            message={
-              isCommitted
-                ? "This commitment will be locked, and your organization agrees to honor this commitment until the end of the Epoch."
-                : "This MCE commitment will be locked, and your organization agrees to honor this commitment until the end of the MCE Event."
-            }
-            confirmLabel="Confirm Commit"
-            onConfirm={() => {
-              if (isCommitted) onIssueCommitted(pendingCommitId);
-              else onIssueMCE(pendingCommitId);
-              setPendingCommitId(null);
-              onClose();
-            }}
-            onCancel={() => setPendingCommitId(null)}
-          />
-        )}
+          {pendingCommitId && (
+            <ConfirmDialog
+              title="Commit Offering?"
+              message={
+                isCommitted
+                  ? "This commitment will be locked, and your organization agrees to honor this commitment until the end of the Epoch."
+                  : "This MCE commitment will be locked, and your organization agrees to honor this commitment until the end of the MCE Event."
+              }
+              confirmLabel="Confirm Commit"
+              onConfirm={() => {
+                if (isCommitted) onIssueCommitted(pendingCommitId);
+                else onIssueMCE(pendingCommitId);
+                setPendingCommitId(null);
+                onClose();
+              }}
+              onCancel={() => setPendingCommitId(null)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -2145,14 +2191,13 @@ function ConfirmDialog({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 60,
+        zIndex: 46,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.85)",
-        backdropFilter: "blur(6px)",
+        background: "rgba(0,0,0,0.34)",
         padding: "0 20px",
       }}
       onClick={onCancel}
@@ -2249,14 +2294,13 @@ function QRModal({ offering, onClose }: { offering: QROfferingData; onClose: () 
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 44,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.85)",
-        backdropFilter: "blur(8px)",
+        background: "rgba(0,0,0,0.34)",
       }}
       onClick={onClose}
     >
@@ -2559,117 +2603,138 @@ function ComposePostSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 40,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
+        pointerEvents: "none",
       }}
-      onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 480,
-          background: SURFACE,
-          borderRadius: "24px 24px 0 0",
-          padding: "24px 20px 40px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
           style={{
-            width: 40,
-            height: 4,
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: 2,
-            margin: "0 auto 20px",
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.34)",
           }}
         />
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Post</div>
-
-        {/* Category picker */}
-        <div style={{ marginBottom: 14 }}>
+        <div
+          style={{
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            background: SURFACE,
+            borderRadius: 22,
+            padding: "24px 20px 24px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+          }}
+          onClick={e => e.stopPropagation()}
+        >
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: MUTED,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: 8,
+              width: 40,
+              height: 4,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 2,
+              margin: "0 auto 20px",
+            }}
+          />
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Post</div>
+
+          {/* Category picker */}
+          <div style={{ marginBottom: 14 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: MUTED,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                marginBottom: 8,
+              }}
+            >
+              Category
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {POST_CATEGORIES.map(cat => {
+                const c = CATEGORY_COLOR[cat];
+                const active = category === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    style={{
+                      border: active ? `1px solid ${c}` : "1px solid transparent",
+                      borderRadius: 8,
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      background: active ? `${c}22` : "rgba(255,255,255,0.06)",
+                      color: active ? c : MUTED,
+                    }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content */}
+          <textarea
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder="Share a deal, event, or announcement with the city..."
+            rows={5}
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 12,
+              color: "#fff",
+              fontSize: 13,
+              padding: "12px 14px",
+              lineHeight: 1.55,
+              resize: "none",
+              outline: "none",
+              boxSizing: "border-box",
+              marginBottom: 16,
+            }}
+          />
+
+          <button
+            onClick={submit}
+            disabled={!content.trim()}
+            style={{
+              width: "100%",
+              background: content.trim() ? ACCENT : "rgba(255,255,255,0.1)",
+              border: "none",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              color: content.trim() ? BG : MUTED,
+              cursor: content.trim() ? "pointer" : "not-allowed",
             }}
           >
-            Category
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {POST_CATEGORIES.map(cat => {
-              const c = CATEGORY_COLOR[cat];
-              const active = category === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  style={{
-                    border: active ? `1px solid ${c}` : "1px solid transparent",
-                    borderRadius: 8,
-                    padding: "5px 12px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    background: active ? `${c}22` : "rgba(255,255,255,0.06)",
-                    color: active ? c : MUTED,
-                  }}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
+            Publish Post
+          </button>
         </div>
-
-        {/* Content */}
-        <textarea
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          placeholder="Share a deal, event, or announcement with the city..."
-          rows={5}
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-            color: "#fff",
-            fontSize: 13,
-            padding: "12px 14px",
-            lineHeight: 1.55,
-            resize: "none",
-            outline: "none",
-            boxSizing: "border-box",
-            marginBottom: 16,
-          }}
-        />
-
-        <button
-          onClick={submit}
-          disabled={!content.trim()}
-          style={{
-            width: "100%",
-            background: content.trim() ? ACCENT : "rgba(255,255,255,0.1)",
-            border: "none",
-            borderRadius: 14,
-            padding: "14px 0",
-            fontSize: 14,
-            fontWeight: 700,
-            color: content.trim() ? BG : MUTED,
-            cursor: content.trim() ? "pointer" : "not-allowed",
-          }}
-        >
-          Publish Post
-        </button>
       </div>
     </div>
   );
@@ -3175,128 +3240,147 @@ function MCEsTab({
       {proposeOpen && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
-            zIndex: 50,
+            zIndex: 40,
             display: "flex",
-            alignItems: "flex-end",
             justifyContent: "center",
-            background: "rgba(0,0,0,0.75)",
-            backdropFilter: "blur(4px)",
+            pointerEvents: "none",
           }}
-          onClick={() => setProposeOpen(false)}
         >
           <div
             style={{
               width: "100%",
-              maxWidth: 480,
-              maxHeight: "90vh",
-              overflowY: "auto",
-              background: SURFACE,
-              borderRadius: "24px 24px 0 0",
-              padding: "24px 20px 40px",
+              maxWidth: 430,
+              height: "100%",
+              position: "relative",
+              pointerEvents: "auto",
             }}
-            onClick={e => e.stopPropagation()}
+            onClick={() => setProposeOpen(false)}
           >
             <div
               style={{
-                width: 40,
-                height: 4,
-                background: "rgba(255,255,255,0.15)",
-                borderRadius: 2,
-                margin: "0 auto 20px",
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.34)",
               }}
             />
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
-            <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
-              Submit a proposal for community consideration. Strong proposals include clear goals and measurable
-              benefits.
-            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 10,
+                right: 10,
+                bottom: "92px",
+                maxHeight: "min(74vh, calc(100% - 98px))",
+                overflowY: "auto",
+                background: SURFACE,
+                borderRadius: 22,
+                padding: "24px 20px 24px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  background: "rgba(255,255,255,0.15)",
+                  borderRadius: 2,
+                  margin: "0 auto 20px",
+                }}
+              />
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
+              <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+                Submit a proposal for community consideration. Strong proposals include clear goals and measurable
+                benefits.
+              </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div>
-                <label style={labelStyle}>Title *</label>
-                <input
-                  value={mceTitle}
-                  onChange={e => setMceTitle(e.target.value)}
-                  placeholder="e.g. Eastside Green Corridor Initiative"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Description *</label>
-                <textarea
-                  value={mceDesc}
-                  onChange={e => setMceDesc(e.target.value)}
-                  placeholder="What is this proposal about? Why does the city need it?"
-                  rows={3}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Goals</label>
-                <textarea
-                  value={mceGoals}
-                  onChange={e => setMceGoals(e.target.value)}
-                  placeholder="What specific outcomes will this achieve?"
-                  rows={2}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Community Benefits</label>
-                <textarea
-                  value={mceBenefits}
-                  onChange={e => setMceBenefits(e.target.value)}
-                  placeholder="Who benefits and how? Be specific about impact."
-                  rows={2}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Tags</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {MCE_TAGS.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleMceTag(tag)}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: 20,
-                        border: mceTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
-                        background: mceTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
-                        color: mceTags.includes(tag) ? ACCENT : MUTED,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={labelStyle}>Title *</label>
+                  <input
+                    value={mceTitle}
+                    onChange={e => setMceTitle(e.target.value)}
+                    placeholder="e.g. Eastside Green Corridor Initiative"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Description *</label>
+                  <textarea
+                    value={mceDesc}
+                    onChange={e => setMceDesc(e.target.value)}
+                    placeholder="What is this proposal about? Why does the city need it?"
+                    rows={3}
+                    style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Goals</label>
+                  <textarea
+                    value={mceGoals}
+                    onChange={e => setMceGoals(e.target.value)}
+                    placeholder="What specific outcomes will this achieve?"
+                    rows={2}
+                    style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Community Benefits</label>
+                  <textarea
+                    value={mceBenefits}
+                    onChange={e => setMceBenefits(e.target.value)}
+                    placeholder="Who benefits and how? Be specific about impact."
+                    rows={2}
+                    style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Tags</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {MCE_TAGS.map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleMceTag(tag)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 20,
+                          border: mceTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
+                          background: mceTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
+                          color: mceTags.includes(tag) ? ACCENT : MUTED,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={submitProposal}
-              disabled={!mceTitle.trim() || !mceDesc.trim()}
-              style={{
-                width: "100%",
-                background: mceTitle.trim() && mceDesc.trim() ? ACCENT : "rgba(255,255,255,0.08)",
-                border: "none",
-                borderRadius: 14,
-                padding: "14px 0",
-                fontSize: 14,
-                fontWeight: 700,
-                color: mceTitle.trim() && mceDesc.trim() ? BG : MUTED,
-                cursor: mceTitle.trim() && mceDesc.trim() ? "pointer" : "not-allowed",
-                marginTop: 20,
-              }}
-            >
-              Submit Proposal
-            </button>
+              <button
+                onClick={submitProposal}
+                disabled={!mceTitle.trim() || !mceDesc.trim()}
+                style={{
+                  width: "100%",
+                  background: mceTitle.trim() && mceDesc.trim() ? ACCENT : "rgba(255,255,255,0.08)",
+                  border: "none",
+                  borderRadius: 14,
+                  padding: "14px 0",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: mceTitle.trim() && mceDesc.trim() ? BG : MUTED,
+                  cursor: mceTitle.trim() && mceDesc.trim() ? "pointer" : "not-allowed",
+                  marginTop: 20,
+                }}
+              >
+                Submit Proposal
+              </button>
+            </div>
           </div>
         </div>
       )}

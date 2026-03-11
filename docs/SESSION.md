@@ -833,3 +833,12 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Result:
   - browser refresh no longer auto-launches Google login
   - session prompts now happen only on explicit sign-in or when users attempt protected onchain actions without a ready session.
+
+## 2026-03-10 — Full Role Popup Sweep (In-App Scoped Overlays)
+
+- Completed the cross-role popup standardization pass so popup UI stays inside the app container instead of full-viewport overlays.
+- Applied across Issuer, Redeemer, and Civic Participant flows:
+  - moved remaining popup mounts under each role `AppShell` content tree
+  - converted remaining popup/sheet overlays from `position: fixed` to app-scoped `position: absolute`
+  - kept bottom-sheet style sheets anchored above bottom tabs (`bottom: 92px`) with local dim layers.
+- Verified with lint/typecheck (`next:lint` + `next:check-types`), passing with only existing `no-img-element` warnings.

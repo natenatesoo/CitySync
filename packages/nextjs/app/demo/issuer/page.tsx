@@ -567,31 +567,30 @@ export default function IssuerApp() {
               />
             ) : null;
           })()}
+        {proposeSheet && (
+          <ProposeTaskSheet
+            onClose={() => setProposeSheet(false)}
+            onPropose={handleProposeTask}
+            creditsCommitted={creditsCommitted}
+          />
+        )}
+
+        {composeOpen && (
+          <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
+        )}
+
+        {catalogModifyTaskId &&
+          (() => {
+            const task = approvedCatalogTasks.find(t => t.id === catalogModifyTaskId);
+            return task ? (
+              <ModifyTaskSheet
+                task={task}
+                onClose={() => setCatalogModifyTaskId(null)}
+                onSave={updates => handleModifyApproved(task.id, updates)}
+              />
+            ) : null;
+          })()}
       </AppShell>
-
-      {proposeSheet && (
-        <ProposeTaskSheet
-          onClose={() => setProposeSheet(false)}
-          onPropose={handleProposeTask}
-          creditsCommitted={creditsCommitted}
-        />
-      )}
-
-      {composeOpen && (
-        <ComposePostSheet orgName={issuer.orgName} onClose={() => setComposeOpen(false)} onPost={handleCreatePost} />
-      )}
-
-      {catalogModifyTaskId &&
-        (() => {
-          const task = approvedCatalogTasks.find(t => t.id === catalogModifyTaskId);
-          return task ? (
-            <ModifyTaskSheet
-              task={task}
-              onClose={() => setCatalogModifyTaskId(null)}
-              onSave={updates => handleModifyApproved(task.id, updates)}
-            />
-          ) : null;
-        })()}
 
       {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
     </>
@@ -1834,198 +1833,217 @@ function ProposeTaskSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 40,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
+        pointerEvents: "none",
       }}
-      onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 480,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          background: SURFACE,
-          borderRadius: "24px 24px 0 0",
-          padding: "24px 20px 40px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
           style={{
-            width: 40,
-            height: 4,
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: 2,
-            margin: "0 auto 20px",
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.34)",
           }}
         />
-
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Propose New Task</div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
-          Submit a task for admin review. Once approved, it will enter the catalog for participants to claim.
-        </div>
-
-        {/* Budget indicator */}
         <div
           style={{
-            background: "rgba(221,158,51,0.07)",
-            border: "1px solid rgba(221,158,51,0.2)",
-            borderRadius: 10,
-            padding: "10px 14px",
-            marginBottom: 20,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontSize: 12,
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            background: SURFACE,
+            borderRadius: 22,
+            padding: "24px 20px 24px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
           }}
+          onClick={e => e.stopPropagation()}
         >
-          <span style={{ color: MUTED }}>Epoch budget remaining</span>
-          <span style={{ color: ACCENT, fontWeight: 700 }}>{Math.max(0, EPOCH1_CAP - creditsCommitted)} CITYx</span>
-        </div>
+          <div
+            style={{
+              width: 40,
+              height: 4,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 2,
+              margin: "0 auto 20px",
+            }}
+          />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div>
-            <label style={labelStyle}>Title of Task *</label>
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Community Garden Cleanup"
-              style={inputStyle}
-            />
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Propose New Task</div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+            Submit a task for admin review. Once approved, it will enter the catalog for participants to claim.
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {/* Budget indicator */}
+          <div
+            style={{
+              background: "rgba(221,158,51,0.07)",
+              border: "1px solid rgba(221,158,51,0.2)",
+              borderRadius: 10,
+              padding: "10px 14px",
+              marginBottom: 20,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 12,
+            }}
+          >
+            <span style={{ color: MUTED }}>Epoch budget remaining</span>
+            <span style={{ color: ACCENT, fontWeight: 700 }}>{Math.max(0, EPOCH1_CAP - creditsCommitted)} CITYx</span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
-              <label style={labelStyle}>Estimated Time *</label>
+              <label style={labelStyle}>Title of Task *</label>
               <input
-                value={estimatedTime}
-                onChange={e => setEstimatedTime(e.target.value)}
-                placeholder="e.g. 2 hours"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Community Garden Cleanup"
                 style={inputStyle}
               />
             </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Estimated Time *</label>
+                <input
+                  value={estimatedTime}
+                  onChange={e => setEstimatedTime(e.target.value)}
+                  placeholder="e.g. 2 hours"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Credit Rate / hr *</label>
+                <input
+                  type="number"
+                  value={creditRate}
+                  onChange={e => setCreditRate(e.target.value)}
+                  placeholder="e.g. 20"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {computedCredits > 0 && (
+              <div
+                style={{
+                  background: wouldExceedCap ? "rgba(255,107,157,0.08)" : "rgba(221,158,51,0.08)",
+                  border: `1px solid ${wouldExceedCap ? "rgba(255,107,157,0.3)" : "rgba(221,158,51,0.2)"}`,
+                  borderRadius: 10,
+                  padding: "8px 14px",
+                  fontSize: 12,
+                  color: wouldExceedCap ? "#ff6b9d" : ACCENT,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span>{wouldExceedCap ? "⚠️ Exceeds epoch budget" : "Estimated total credits"}</span>
+                <span style={{ fontWeight: 700 }}>{computedCredits} CITYx</span>
+              </div>
+            )}
+
             <div>
-              <label style={labelStyle}>Credit Rate / hr *</label>
+              <label style={labelStyle}>Location</label>
               <input
-                type="number"
-                value={creditRate}
-                onChange={e => setCreditRate(e.target.value)}
-                placeholder="e.g. 20"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="e.g. Riverside Park, District 4"
                 style={inputStyle}
               />
             </div>
-          </div>
 
-          {computedCredits > 0 && (
-            <div
-              style={{
-                background: wouldExceedCap ? "rgba(255,107,157,0.08)" : "rgba(221,158,51,0.08)",
-                border: `1px solid ${wouldExceedCap ? "rgba(255,107,157,0.3)" : "rgba(221,158,51,0.2)"}`,
-                borderRadius: 10,
-                padding: "8px 14px",
-                fontSize: 12,
-                color: wouldExceedCap ? "#ff6b9d" : ACCENT,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>{wouldExceedCap ? "⚠️ Exceeds epoch budget" : "Estimated total credits"}</span>
-              <span style={{ fontWeight: 700 }}>{computedCredits} CITYx</span>
+            <div>
+              <label style={labelStyle}>Date / Time of Activity</label>
+              <input
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                placeholder="e.g. Saturday, March 21, 2026 · 10am"
+                style={inputStyle}
+              />
             </div>
-          )}
 
-          <div>
-            <label style={labelStyle}>Location</label>
-            <input
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              placeholder="e.g. Riverside Park, District 4"
-              style={inputStyle}
-            />
-          </div>
+            <div>
+              <label style={labelStyle}>Success Criteria</label>
+              <textarea
+                value={successCriteria}
+                onChange={e => setSuccessCriteria(e.target.value)}
+                placeholder="How will completion be verified? What should participants submit as evidence?"
+                rows={3}
+                style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+              />
+            </div>
 
-          <div>
-            <label style={labelStyle}>Date / Time of Activity</label>
-            <input
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              placeholder="e.g. Saturday, March 21, 2026 · 10am"
-              style={inputStyle}
-            />
-          </div>
+            <div>
+              <label style={labelStyle}>Required Credentials or Skills</label>
+              <input
+                value={credentials}
+                onChange={e => setCredentials(e.target.value)}
+                placeholder="e.g. No prior experience needed"
+                style={inputStyle}
+              />
+            </div>
 
-          <div>
-            <label style={labelStyle}>Success Criteria</label>
-            <textarea
-              value={successCriteria}
-              onChange={e => setSuccessCriteria(e.target.value)}
-              placeholder="How will completion be verified? What should participants submit as evidence?"
-              rows={3}
-              style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Required Credentials or Skills</label>
-            <input
-              value={credentials}
-              onChange={e => setCredentials(e.target.value)}
-              placeholder="e.g. No prior experience needed"
-              style={inputStyle}
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Tags</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {TASK_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  style={{
-                    padding: "5px 12px",
-                    borderRadius: 20,
-                    border: selectedTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
-                    background: selectedTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
-                    color: selectedTags.includes(tag) ? ACCENT : MUTED,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
+            <div>
+              <label style={labelStyle}>Tags</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {TASK_TAGS.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: 20,
+                      border: selectedTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
+                      background: selectedTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
+                      color: selectedTags.includes(tag) ? ACCENT : MUTED,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit || wouldExceedCap}
+            style={{
+              width: "100%",
+              background: canSubmit && !wouldExceedCap ? ACCENT : "rgba(255,255,255,0.08)",
+              border: "none",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              color: canSubmit && !wouldExceedCap ? BG : MUTED,
+              cursor: canSubmit && !wouldExceedCap ? "pointer" : "not-allowed",
+              marginTop: 20,
+            }}
+          >
+            Submit for Review
+          </button>
         </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={!canSubmit || wouldExceedCap}
-          style={{
-            width: "100%",
-            background: canSubmit && !wouldExceedCap ? ACCENT : "rgba(255,255,255,0.08)",
-            border: "none",
-            borderRadius: 14,
-            padding: "14px 0",
-            fontSize: 14,
-            fontWeight: 700,
-            color: canSubmit && !wouldExceedCap ? BG : MUTED,
-            cursor: canSubmit && !wouldExceedCap ? "pointer" : "not-allowed",
-            marginTop: 20,
-          }}
-        >
-          Submit for Review
-        </button>
       </div>
     </div>
   );
@@ -2215,117 +2233,138 @@ function ComposePostSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 40,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
+        pointerEvents: "none",
       }}
-      onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 480,
-          background: SURFACE,
-          borderRadius: "24px 24px 0 0",
-          padding: "24px 20px 40px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
           style={{
-            width: 40,
-            height: 4,
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: 2,
-            margin: "0 auto 20px",
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.34)",
           }}
         />
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Post</div>
-
-        {/* Category picker */}
-        <div style={{ marginBottom: 14 }}>
+        <div
+          style={{
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            background: SURFACE,
+            borderRadius: 22,
+            padding: "24px 20px 24px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+          }}
+          onClick={e => e.stopPropagation()}
+        >
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: MUTED,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: 8,
+              width: 40,
+              height: 4,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 2,
+              margin: "0 auto 20px",
+            }}
+          />
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Post</div>
+
+          {/* Category picker */}
+          <div style={{ marginBottom: 14 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: MUTED,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                marginBottom: 8,
+              }}
+            >
+              Category
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {POST_CATEGORIES.map(cat => {
+                const c = CATEGORY_COLOR[cat];
+                const active = category === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    style={{
+                      border: active ? `1px solid ${c}` : "1px solid transparent",
+                      borderRadius: 8,
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      background: active ? `${c}22` : "rgba(255,255,255,0.06)",
+                      color: active ? c : MUTED,
+                    }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content */}
+          <textarea
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder="Share an update, event, or opportunity with the city..."
+            rows={5}
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 12,
+              color: "#fff",
+              fontSize: 13,
+              padding: "12px 14px",
+              lineHeight: 1.55,
+              resize: "none",
+              outline: "none",
+              boxSizing: "border-box",
+              marginBottom: 16,
+            }}
+          />
+
+          <button
+            onClick={submit}
+            disabled={!content.trim()}
+            style={{
+              width: "100%",
+              background: content.trim() ? ACCENT : "rgba(255,255,255,0.1)",
+              border: "none",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              color: content.trim() ? BG : MUTED,
+              cursor: content.trim() ? "pointer" : "not-allowed",
             }}
           >
-            Category
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {POST_CATEGORIES.map(cat => {
-              const c = CATEGORY_COLOR[cat];
-              const active = category === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  style={{
-                    border: active ? `1px solid ${c}` : "1px solid transparent",
-                    borderRadius: 8,
-                    padding: "5px 12px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    background: active ? `${c}22` : "rgba(255,255,255,0.06)",
-                    color: active ? c : MUTED,
-                  }}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
+            Publish Post
+          </button>
         </div>
-
-        {/* Content */}
-        <textarea
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          placeholder="Share an update, event, or opportunity with the city..."
-          rows={5}
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-            color: "#fff",
-            fontSize: 13,
-            padding: "12px 14px",
-            lineHeight: 1.55,
-            resize: "none",
-            outline: "none",
-            boxSizing: "border-box",
-            marginBottom: 16,
-          }}
-        />
-
-        <button
-          onClick={submit}
-          disabled={!content.trim()}
-          style={{
-            width: "100%",
-            background: content.trim() ? ACCENT : "rgba(255,255,255,0.1)",
-            border: "none",
-            borderRadius: 14,
-            padding: "14px 0",
-            fontSize: 14,
-            fontWeight: 700,
-            color: content.trim() ? BG : MUTED,
-            cursor: content.trim() ? "pointer" : "not-allowed",
-          }}
-        >
-          Publish Post
-        </button>
       </div>
     </div>
   );
@@ -2881,10 +2920,10 @@ function VerifyTab({
       {confirmVerify && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
-            zIndex: 220,
-            background: "rgba(0,0,0,0.75)",
+            zIndex: 46,
+            background: "rgba(0,0,0,0.34)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -3306,128 +3345,147 @@ function MCEsTab({
       {proposeOpen && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
-            zIndex: 50,
+            zIndex: 40,
             display: "flex",
-            alignItems: "flex-end",
             justifyContent: "center",
-            background: "rgba(0,0,0,0.75)",
-            backdropFilter: "blur(4px)",
+            pointerEvents: "none",
           }}
-          onClick={() => setProposeOpen(false)}
         >
           <div
             style={{
               width: "100%",
-              maxWidth: 480,
-              maxHeight: "90vh",
-              overflowY: "auto",
-              background: SURFACE,
-              borderRadius: "24px 24px 0 0",
-              padding: "24px 20px 40px",
+              maxWidth: 430,
+              height: "100%",
+              position: "relative",
+              pointerEvents: "auto",
             }}
-            onClick={e => e.stopPropagation()}
+            onClick={() => setProposeOpen(false)}
           >
             <div
               style={{
-                width: 40,
-                height: 4,
-                background: "rgba(255,255,255,0.15)",
-                borderRadius: 2,
-                margin: "0 auto 20px",
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.34)",
               }}
             />
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
-            <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
-              Submit a proposal for community consideration. Strong proposals include clear goals and measurable
-              benefits.
-            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 10,
+                right: 10,
+                bottom: "92px",
+                maxHeight: "min(74vh, calc(100% - 98px))",
+                overflowY: "auto",
+                background: SURFACE,
+                borderRadius: 22,
+                padding: "24px 20px 24px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  background: "rgba(255,255,255,0.15)",
+                  borderRadius: 2,
+                  margin: "0 auto 20px",
+                }}
+              />
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
+              <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
+                Submit a proposal for community consideration. Strong proposals include clear goals and measurable
+                benefits.
+              </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div>
-                <label style={labelStyle}>Title *</label>
-                <input
-                  value={mceTitle}
-                  onChange={e => setMceTitle(e.target.value)}
-                  placeholder="e.g. Eastside Green Corridor Initiative"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Description *</label>
-                <textarea
-                  value={mceDesc}
-                  onChange={e => setMceDesc(e.target.value)}
-                  placeholder="What is this proposal about? Why does the city need it?"
-                  rows={3}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Goals</label>
-                <textarea
-                  value={mceGoals}
-                  onChange={e => setMceGoals(e.target.value)}
-                  placeholder="What specific outcomes will this achieve?"
-                  rows={2}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Community Benefits</label>
-                <textarea
-                  value={mceBenefits}
-                  onChange={e => setMceBenefits(e.target.value)}
-                  placeholder="Who benefits and how? Be specific about impact."
-                  rows={2}
-                  style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Tags</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {MCE_TAGS.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleMceTag(tag)}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: 20,
-                        border: mceTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
-                        background: mceTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
-                        color: mceTags.includes(tag) ? ACCENT : MUTED,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={labelStyle}>Title *</label>
+                  <input
+                    value={mceTitle}
+                    onChange={e => setMceTitle(e.target.value)}
+                    placeholder="e.g. Eastside Green Corridor Initiative"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Description *</label>
+                  <textarea
+                    value={mceDesc}
+                    onChange={e => setMceDesc(e.target.value)}
+                    placeholder="What is this proposal about? Why does the city need it?"
+                    rows={3}
+                    style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Goals</label>
+                  <textarea
+                    value={mceGoals}
+                    onChange={e => setMceGoals(e.target.value)}
+                    placeholder="What specific outcomes will this achieve?"
+                    rows={2}
+                    style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Community Benefits</label>
+                  <textarea
+                    value={mceBenefits}
+                    onChange={e => setMceBenefits(e.target.value)}
+                    placeholder="Who benefits and how? Be specific about impact."
+                    rows={2}
+                    style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Tags</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {MCE_TAGS.map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleMceTag(tag)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 20,
+                          border: mceTags.includes(tag) ? `1px solid ${ACCENT}` : "1px solid rgba(255,255,255,0.12)",
+                          background: mceTags.includes(tag) ? `${ACCENT}22` : "rgba(255,255,255,0.04)",
+                          color: mceTags.includes(tag) ? ACCENT : MUTED,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              onClick={submitProposal}
-              disabled={!mceTitle.trim() || !mceDesc.trim()}
-              style={{
-                width: "100%",
-                background: mceTitle.trim() && mceDesc.trim() ? ACCENT : "rgba(255,255,255,0.08)",
-                border: "none",
-                borderRadius: 14,
-                padding: "14px 0",
-                fontSize: 14,
-                fontWeight: 700,
-                color: mceTitle.trim() && mceDesc.trim() ? BG : MUTED,
-                cursor: mceTitle.trim() && mceDesc.trim() ? "pointer" : "not-allowed",
-                marginTop: 20,
-              }}
-            >
-              Submit Proposal
-            </button>
+              <button
+                onClick={submitProposal}
+                disabled={!mceTitle.trim() || !mceDesc.trim()}
+                style={{
+                  width: "100%",
+                  background: mceTitle.trim() && mceDesc.trim() ? ACCENT : "rgba(255,255,255,0.08)",
+                  border: "none",
+                  borderRadius: 14,
+                  padding: "14px 0",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: mceTitle.trim() && mceDesc.trim() ? BG : MUTED,
+                  cursor: mceTitle.trim() && mceDesc.trim() ? "pointer" : "not-allowed",
+                  marginTop: 20,
+                }}
+              >
+                Submit Proposal
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -3700,90 +3758,111 @@ function ModifyTaskSheet({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
-        zIndex: 50,
+        zIndex: 40,
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
+        pointerEvents: "none",
       }}
-      onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 480,
-          background: SURFACE,
-          borderRadius: "24px 24px 0 0",
-          padding: "24px 20px 40px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
           style={{
-            width: 40,
-            height: 4,
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: 2,
-            margin: "0 auto 20px",
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.34)",
           }}
         />
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Modify Task</div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
         <div
           style={{
-            fontSize: 11,
-            color: DIMMED,
-            marginBottom: 20,
-            background: "rgba(255,255,255,0.04)",
-            borderRadius: 8,
-            padding: "8px 12px",
-            lineHeight: 1.5,
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: "92px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            background: SURFACE,
+            borderRadius: 22,
+            padding: "24px 20px 24px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
           }}
+          onClick={e => e.stopPropagation()}
         >
-          Only Location and Date &amp; Time of Activity can be changed on an approved task.
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Location</label>
-            <input
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              placeholder="e.g. Riverside Park, District 4"
-              style={inputStyle}
-            />
+          <div
+            style={{
+              width: 40,
+              height: 4,
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: 2,
+              margin: "0 auto 20px",
+            }}
+          />
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Modify Task</div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
+          <div
+            style={{
+              fontSize: 11,
+              color: DIMMED,
+              marginBottom: 20,
+              background: "rgba(255,255,255,0.04)",
+              borderRadius: 8,
+              padding: "8px 12px",
+              lineHeight: 1.5,
+            }}
+          >
+            Only Location and Date &amp; Time of Activity can be changed on an approved task.
           </div>
-          <div>
-            <label style={labelStyle}>Date &amp; Time of Activity</label>
-            <input
-              value={taskDate}
-              onChange={e => setTaskDate(e.target.value)}
-              placeholder="e.g. Saturday, March 21, 2026 · 10am"
-              style={inputStyle}
-            />
-          </div>
-        </div>
 
-        <button
-          onClick={() => onSave({ location: location.trim() || task.location, taskDate: taskDate.trim() })}
-          style={{
-            width: "100%",
-            background: ACCENT,
-            border: "none",
-            borderRadius: 14,
-            padding: "14px 0",
-            fontSize: 14,
-            fontWeight: 700,
-            color: BG,
-            cursor: "pointer",
-            marginTop: 20,
-          }}
-        >
-          Save Changes
-        </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Location</label>
+              <input
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="e.g. Riverside Park, District 4"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Date &amp; Time of Activity</label>
+              <input
+                value={taskDate}
+                onChange={e => setTaskDate(e.target.value)}
+                placeholder="e.g. Saturday, March 21, 2026 · 10am"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={() => onSave({ location: location.trim() || task.location, taskDate: taskDate.trim() })}
+            style={{
+              width: "100%",
+              background: ACCENT,
+              border: "none",
+              borderRadius: 14,
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              color: BG,
+              cursor: "pointer",
+              marginTop: 20,
+            }}
+          >
+            Save Changes
+          </button>
+        </div>
       </div>
     </div>
   );

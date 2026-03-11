@@ -333,7 +333,7 @@ function VerifyOverlay() {
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 200,
         display: "flex",
@@ -404,201 +404,220 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 180,
-        background: "rgba(13,13,20,0.88)",
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
+        pointerEvents: "none",
       }}
     >
       <div
         style={{
-          ...card,
           width: "100%",
-          maxWidth: 480,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          padding: "24px 20px 32px",
-          maxHeight: "85vh",
-          overflowY: "auto",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Submit for Verification</span>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
-          >
-            <IconXSmall size={18} />
-          </button>
-        </div>
-
         <div
           style={{
-            marginBottom: 16,
-            padding: "14px 16px",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 10,
+            position: "absolute",
+            inset: 0,
+            background: "rgba(13,13,20,0.62)",
+          }}
+        />
+        <div
+          style={{
+            ...card,
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: 92,
+            borderRadius: 22,
+            border: "1px solid rgba(255,255,255,0.1)",
+            padding: "24px 20px 24px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
           }}
         >
-          <div style={{ fontWeight: 600, fontSize: 14, color: "white", marginBottom: 4 }}>{task.title}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
-            {task.issuerName} · {task.estimatedTime}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Submit for Verification</span>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+            >
+              <IconXSmall size={18} />
+            </button>
           </div>
-        </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
           <div
             style={{
-              flex: 1,
-              background: "rgba(52,238,182,0.08)",
-              border: "1px solid rgba(52,238,182,0.2)",
-              borderRadius: 8,
-              padding: "10px 0",
-              textAlign: "center",
+              marginBottom: 16,
+              padding: "14px 16px",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 10,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 700, color: TEAL }}>+{task.credits}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>CITYx</div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "white", marginBottom: 4 }}>{task.title}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+              {task.issuerName} · {task.estimatedTime}
+            </div>
           </div>
-          <div
-            style={{
-              flex: 1,
-              background: "rgba(65,105,225,0.08)",
-              border: "1px solid rgba(65,105,225,0.2)",
-              borderRadius: 8,
-              padding: "10px 0",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>+{task.voteTokens}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>VOTE</div>
-          </div>
-          {task.isMCE && (
+
+          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
             <div
               style={{
                 flex: 1,
-                background: "rgba(221,158,51,0.08)",
-                border: "1px solid rgba(221,158,51,0.2)",
+                background: "rgba(52,238,182,0.08)",
+                border: "1px solid rgba(52,238,182,0.2)",
                 borderRadius: 8,
                 padding: "10px 0",
                 textAlign: "center",
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 700, color: GOLD }}>+{task.credits}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>MCE</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: TEAL }}>+{task.credits}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>CITYx</div>
             </div>
-          )}
-        </div>
-
-        {/* File upload */}
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
-            Proof of Completion (optional)
+            <div
+              style={{
+                flex: 1,
+                background: "rgba(65,105,225,0.08)",
+                border: "1px solid rgba(65,105,225,0.2)",
+                borderRadius: 8,
+                padding: "10px 0",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>+{task.voteTokens}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>VOTE</div>
+            </div>
+            {task.isMCE && (
+              <div
+                style={{
+                  flex: 1,
+                  background: "rgba(221,158,51,0.08)",
+                  border: "1px solid rgba(221,158,51,0.2)",
+                  borderRadius: 8,
+                  padding: "10px 0",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 18, fontWeight: 700, color: GOLD }}>+{task.credits}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>MCE</div>
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => fileRef.current?.click()}
+
+          {/* File upload */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
+              Proof of Completion (optional)
+            </div>
+            <button
+              onClick={() => fileRef.current?.click()}
+              style={{
+                width: "100%",
+                padding: "12px 0",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px dashed rgba(255,255,255,0.18)",
+                borderRadius: 10,
+                color: fileName ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.4)",
+                fontSize: 13,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {fileName ?? "Upload photo or document"}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,.pdf,.doc,.docx"
+              style={{ display: "none" }}
+              onChange={e => setFileName(e.target.files?.[0]?.name ?? null)}
+            />
+          </div>
+
+          {/* Notes */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
+              Notes to Issuer (optional)
+            </div>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Describe how you completed the task, any relevant context, or questions for the issuer..."
+              rows={3}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+                color: "white",
+                fontSize: 13,
+                lineHeight: 1.5,
+                resize: "none",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "inherit",
+              }}
+            />
+          </div>
+
+          <div
             style={{
-              width: "100%",
-              padding: "12px 0",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px dashed rgba(255,255,255,0.18)",
-              borderRadius: 10,
-              color: fileName ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.4)",
-              fontSize: 13,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.4)",
+              background: "rgba(255,255,255,0.03)",
+              borderRadius: 8,
+              padding: "10px 12px",
+              marginBottom: 20,
+              lineHeight: 1.5,
             }}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            {fileName ?? "Upload photo or document"}
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,.pdf,.doc,.docx"
-            style={{ display: "none" }}
-            onChange={e => setFileName(e.target.files?.[0]?.name ?? null)}
-          />
-        </div>
-
-        {/* Notes */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
-            Notes to Issuer (optional)
+            In production, the issuer reviews your submission before minting credits. In this DEMO, verification is
+            automatically approved — a 7-second countdown simulates on-chain activity.
           </div>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="Describe how you completed the task, any relevant context, or questions for the issuer..."
-            rows={3}
+
+          <button
+            onClick={onConfirm}
             style={{
               width: "100%",
-              padding: "12px 14px",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 10,
+              padding: "14px 0",
+              background: ACCENT,
               color: "white",
-              fontSize: 13,
-              lineHeight: 1.5,
-              resize: "none",
-              outline: "none",
-              boxSizing: "border-box",
-              fontFamily: "inherit",
+              border: "none",
+              borderRadius: 12,
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: "pointer",
             }}
-          />
+          >
+            Submit Proof for Verification
+          </button>
         </div>
-
-        <div
-          style={{
-            fontSize: 12,
-            color: "rgba(255,255,255,0.4)",
-            background: "rgba(255,255,255,0.03)",
-            borderRadius: 8,
-            padding: "10px 12px",
-            marginBottom: 20,
-            lineHeight: 1.5,
-          }}
-        >
-          In production, the issuer reviews your submission before minting credits. In this DEMO, verification is
-          automatically approved — a 7-second countdown simulates on-chain activity.
-        </div>
-
-        <button
-          onClick={onConfirm}
-          style={{
-            width: "100%",
-            padding: "14px 0",
-            background: ACCENT,
-            color: "white",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 15,
-            cursor: "pointer",
-          }}
-        >
-          Submit Proof for Verification
-        </button>
       </div>
     </div>
   );
@@ -652,13 +671,8 @@ function BurnConfirmOverlay({
   return (
     <div
       style={{
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "100%",
-        maxWidth: 480,
+        position: "absolute",
+        inset: 0,
         zIndex: 300,
         background: "rgba(10, 30, 24, 0.97)",
         display: "flex",
@@ -780,98 +794,119 @@ function RedeemModal({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         zIndex: 180,
-        background: "rgba(13,13,20,0.88)",
         display: "flex",
-        alignItems: "flex-end",
         justifyContent: "center",
+        pointerEvents: "none",
       }}
     >
       <div
         style={{
-          ...card,
           width: "100%",
-          maxWidth: 480,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          padding: "24px 20px 32px",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
+          pointerEvents: "auto",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Confirm Redemption</span>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
-          >
-            <IconXSmall size={18} />
-          </button>
-        </div>
-
-        <div style={{ textAlign: "center", padding: "20px 0 16px" }}>
-          <div style={{ fontSize: 40, marginBottom: 10 }}>{offer.emoji}</div>
-          <div style={{ fontWeight: 700, fontSize: 18, color: "white", marginBottom: 4 }}>{offer.offerTitle}</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>{offer.redeemerName}</div>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: "rgba(52,238,182,0.1)",
-              border: "1px solid rgba(52,238,182,0.25)",
-              borderRadius: 20,
-              padding: "6px 14px",
-            }}
-          >
-            <span style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{offer.costCity} CITYx</span>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>will be spent</span>
-          </div>
-        </div>
-
         <div
           style={{
-            display: "flex",
-            gap: 14,
-            alignItems: "flex-start",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 10,
-            padding: "14px",
-            marginBottom: 20,
+            position: "absolute",
+            inset: 0,
+            background: "rgba(13,13,20,0.62)",
           }}
-        >
-          <div style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0, marginTop: 2 }}>
-            <QRIcon />
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
-              QR Code at Point of Sale
-            </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
-              In production, a redemption QR code is generated for each offering that calls the &ldquo;Burn
-              Function&rdquo; on the token contract for the credit rate of that offering. In this demo, the function is
-              called instantly.
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={onConfirm}
+        />
+        <div
           style={{
-            width: "100%",
-            padding: "14px 0",
-            background: TEAL,
-            color: "#15151E",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 15,
-            cursor: "pointer",
+            ...card,
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: 92,
+            borderRadius: 22,
+            border: "1px solid rgba(255,255,255,0.1)",
+            padding: "24px 20px 24px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
           }}
         >
-          Redeem Now
-        </button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Confirm Redemption</span>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+            >
+              <IconXSmall size={18} />
+            </button>
+          </div>
+
+          <div style={{ textAlign: "center", padding: "20px 0 16px" }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>{offer.emoji}</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: "white", marginBottom: 4 }}>{offer.offerTitle}</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>{offer.redeemerName}</div>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(52,238,182,0.1)",
+                border: "1px solid rgba(52,238,182,0.25)",
+                borderRadius: 20,
+                padding: "6px 14px",
+              }}
+            >
+              <span style={{ fontSize: 16, fontWeight: 700, color: TEAL }}>{offer.costCity} CITYx</span>
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>will be spent</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 14,
+              alignItems: "flex-start",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 10,
+              padding: "14px",
+              marginBottom: 20,
+            }}
+          >
+            <div style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0, marginTop: 2 }}>
+              <QRIcon />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
+                QR Code at Point of Sale
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+                In production, a redemption QR code is generated for each offering that calls the &ldquo;Burn
+                Function&rdquo; on the token contract for the credit rate of that offering. In this demo, the function
+                is called instantly.
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onConfirm}
+            style={{
+              width: "100%",
+              padding: "14px 0",
+              background: TEAL,
+              color: "#15151E",
+              border: "none",
+              borderRadius: 12,
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: "pointer",
+            }}
+          >
+            Redeem Now
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -3105,10 +3140,8 @@ export default function ParticipantPage() {
         {activeTab === "mycity" && <MyCityTab onLearnMore={openLearnMore} />}
         {activeTab === "vote" && <VoteTab onLearnMore={openLearnMore} />}
         {activeTab === "redeem" && <RedeemTab onLearnMore={openLearnMore} />}
+        <VerifyOverlay />
       </AppShell>
-
-      {/* Verification overlay rendered outside AppShell so it covers all layers */}
-      <VerifyOverlay />
     </>
   );
 }
