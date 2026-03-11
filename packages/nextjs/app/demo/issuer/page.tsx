@@ -3421,9 +3421,23 @@ function IssueTaskPopup({
 }: {
   task: Task;
   onClose: () => void;
-  onIssue: (slots: number) => void;
+  onIssue: (slots: number) => void | Promise<void>;
 }) {
   const [slots, setSlots] = useState(1);
+  const [step, setStep] = useState<"select" | "confirm">("select");
+  const [submitting, setSubmitting] = useState(false);
+  const totalCity = slots * task.credits;
+  const totalVote = slots * task.voteTokens;
+
+  const submitIssue = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onIssue(slots);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -3432,119 +3446,176 @@ function IssueTaskPopup({
         inset: 0,
         zIndex: 60,
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.8)",
-        backdropFilter: "blur(4px)",
-        padding: "0 16px",
+        background: "rgba(0,0,0,0.58)",
+        backdropFilter: "blur(2px)",
+        padding: "0 10px max(10px, env(safe-area-inset-bottom))",
       }}
       onClick={onClose}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 420,
+          maxWidth: 430,
           background: SURFACE,
-          borderRadius: 20,
-          padding: "28px 24px",
+          borderRadius: 22,
+          padding: "10px 16px 14px",
           border: "1px solid rgba(255,255,255,0.1)",
+          boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Issue Task</div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
-        <div style={{ fontSize: 12, color: DIMMED, marginBottom: 20 }}>
-          {task.credits} CITYx + {task.voteTokens} VOTE per completion
+        <div className="mx-auto mb-3 h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Issue Task</div>
+          <div style={{ fontSize: 11, color: DIMMED, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            {step === "select" ? "Step 1 of 2" : "Step 2 of 2"}
+          </div>
         </div>
 
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 12 }}>
-          How many instances of this task do you want to offer?
-        </div>
+        {step === "select" ? (
+          <>
+            <div style={{ ...surfaceCard, marginBottom: 14, padding: "12px 14px" }}>
+              <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, marginBottom: 4 }}>{task.title}</div>
+              <div style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>
+                {task.location || "Location TBD"} · {task.taskDate || "Date/Time TBD"}
+              </div>
+              <div style={{ fontSize: 11, color: DIMMED }}>
+                {task.credits} CITYx + {task.voteTokens} VOTE per task completion
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, color: MUTED, marginBottom: 10 }}>
+              How many task slots do you want to issue?
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 16,
+                marginBottom: 14,
+              }}
+            >
+              <button
+                onClick={() => setSlots(s => Math.max(1, s - 1))}
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "rgba(255,255,255,0.06)",
+                  color: "white",
+                  fontSize: 24,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                −
+              </button>
+              <div style={{ textAlign: "center", minWidth: 88 }}>
+                <div style={{ fontSize: 38, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>{slots}</div>
+                <div style={{ fontSize: 11, color: DIMMED, marginTop: 4 }}>slot{slots !== 1 ? "s" : ""}</div>
+              </div>
+              <button
+                onClick={() => setSlots(s => s + 1)}
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: `${ACCENT}33`,
+                  color: ACCENT,
+                  fontSize: 24,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                +
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ ...surfaceCard, marginBottom: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{task.title}</div>
+              <div style={{ display: "grid", gap: 6, fontSize: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", color: MUTED }}>
+                  <span>Slots</span>
+                  <span style={{ color: "#fff", fontWeight: 600 }}>{slots}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", color: MUTED }}>
+                  <span>Total CITY</span>
+                  <span style={{ color: "#fff", fontWeight: 600 }}>{totalCity} CITYx</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", color: MUTED }}>
+                  <span>Total VOTE</span>
+                  <span style={{ color: "#fff", fontWeight: 600 }}>{totalVote} VOTE</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: DIMMED, lineHeight: 1.45, marginBottom: 10 }}>
+              This will create {slots} onchain task instance{slots !== 1 ? "s" : ""}. They will appear in Active Tasks
+              and become available to participants immediately.
+            </div>
+          </>
+        )}
 
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 20,
-            marginBottom: 24,
+            position: "sticky",
+            bottom: 0,
+            background: "linear-gradient(180deg, rgba(30,30,44,0) 0%, rgba(30,30,44,1) 24%)",
+            paddingTop: 10,
           }}
         >
-          <button
-            onClick={() => setSlots(s => Math.max(1, s - 1))}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.06)",
-              color: "white",
-              fontSize: 22,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            −
-          </button>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 36, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>{slots}</div>
-            <div style={{ fontSize: 11, color: DIMMED, marginTop: 4 }}>slots</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={step === "select" ? onClose : () => setStep("select")}
+              disabled={submitting}
+              style={{
+                flex: 1,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 12,
+                padding: "12px 0",
+                fontSize: 13,
+                fontWeight: 600,
+                color: MUTED,
+                cursor: submitting ? "not-allowed" : "pointer",
+                opacity: submitting ? 0.6 : 1,
+              }}
+            >
+              {step === "select" ? "Cancel" : "Back"}
+            </button>
+            <button
+              onClick={step === "select" ? () => setStep("confirm") : () => void submitIssue()}
+              disabled={submitting}
+              style={{
+                flex: 2,
+                background: ACCENT,
+                border: "none",
+                borderRadius: 12,
+                padding: "12px 0",
+                fontSize: 13,
+                fontWeight: 700,
+                color: BG,
+                cursor: submitting ? "not-allowed" : "pointer",
+                opacity: submitting ? 0.7 : 1,
+              }}
+            >
+              {step === "select"
+                ? "Continue"
+                : submitting
+                  ? "Submitting Onchain..."
+                  : `Issue ${slots} Slot${slots !== 1 ? "s" : ""}`}
+            </button>
           </div>
-          <button
-            onClick={() => setSlots(s => s + 1)}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: `${ACCENT}33`,
-              color: ACCENT,
-              fontSize: 22,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            +
-          </button>
-        </div>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 12,
-              padding: "12px 0",
-              fontSize: 13,
-              fontWeight: 600,
-              color: MUTED,
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onIssue(slots)}
-            style={{
-              flex: 2,
-              background: ACCENT,
-              border: "none",
-              borderRadius: 12,
-              padding: "12px 0",
-              fontSize: 13,
-              fontWeight: 700,
-              color: BG,
-              cursor: "pointer",
-            }}
-          >
-            Issue {slots} Slot{slots !== 1 ? "s" : ""}
-          </button>
         </div>
       </div>
     </div>
