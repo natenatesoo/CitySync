@@ -1,13 +1,7 @@
 "use client";
 
 import React, { ReactNode, createContext, useCallback, useContext, useEffect, useReducer, useRef } from "react";
-import {
-  useAccount,
-  useAuthModal,
-  useSendUserOperation,
-  useSignerStatus,
-  useSmartAccountClient,
-} from "@account-kit/react";
+import { useAccount, useAuthModal, useSendUserOperation, useSmartAccountClient } from "@account-kit/react";
 import { decodeEventLog, encodeFunctionData, formatUnits, keccak256, parseUnits, stringToHex } from "viem";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS, DEMO_OFFER_ROUTES } from "../_config/baseSepoliaContracts";
@@ -621,7 +615,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { address } = useAccount({ type: "ModularAccountV2" });
   const { openAuthModal } = useAuthModal();
-  const { isConnected, isAuthenticating } = useSignerStatus();
   const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
   const { sendUserOperationAsync } = useSendUserOperation({
     client,
@@ -629,7 +622,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
   const taskStateHydratedRef = useRef(false);
-  const reconnectPromptedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -672,16 +664,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     }
   }, [state.availableTasks, state.issuer.tasks, state.issuer.totalTasksIssued]);
 
-  useEffect(() => {
-    if (!isConnected || address || isAuthenticating) {
-      reconnectPromptedRef.current = false;
-      return;
-    }
-    if (reconnectPromptedRef.current) return;
-    reconnectPromptedRef.current = true;
-    openAuthModal();
-  }, [address, isAuthenticating, isConnected, openAuthModal]);
-
   const normalizeWriteError = useCallback((error: unknown, fallback: string) => {
     if (!(error instanceof Error)) return fallback;
     const lower = error.message.toLowerCase();
@@ -703,7 +685,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       args: readonly unknown[];
     }) => {
       if (!client) {
-        if (!isAuthenticating) openAuthModal();
+        openAuthModal();
         throw new Error("Session not ready. Finish sign-in and retry.");
       }
       const data = encodeFunctionData({
@@ -719,7 +701,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         },
       } as any);
     },
-    [client, isAuthenticating, openAuthModal, sendUserOperationAsync],
+    [client, openAuthModal, sendUserOperationAsync],
   );
 
   const getResultHash = useCallback((result: unknown): `0x${string}` | undefined => {

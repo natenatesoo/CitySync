@@ -123,7 +123,7 @@ export default function AppShell({
         </header>
 
         {/* Scrollable content area */}
-        <main className="relative flex-1 overflow-y-auto" style={{ paddingBottom: 80 }}>
+        <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 80 }}>
           {children}
         </main>
 

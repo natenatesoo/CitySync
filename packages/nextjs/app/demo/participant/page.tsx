@@ -333,7 +333,7 @@ function VerifyOverlay() {
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
         zIndex: 200,
         display: "flex",
@@ -404,7 +404,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
         zIndex: 180,
         background: "rgba(13,13,20,0.88)",
@@ -652,7 +652,7 @@ function BurnConfirmOverlay({
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         top: 0,
         bottom: 0,
         left: "50%",
@@ -780,7 +780,7 @@ function RedeemModal({
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
         zIndex: 180,
         background: "rgba(13,13,20,0.88)",
@@ -888,7 +888,7 @@ function SuccessToast({ message, onDismiss }: { message: string; onDismiss: () =
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         bottom: 90,
         left: "50%",
         transform: "translateX(-50%)",
@@ -3084,10 +3084,6 @@ export default function ParticipantPage() {
     setOpenInfoCards(prev => (prev.includes(key) ? prev : [...prev, key]));
   }, []);
 
-  useEffect(() => {
-    setOpenInfoCards([]);
-  }, [activeTab]);
-
   return (
     <>
       <AppShell
@@ -3109,10 +3105,10 @@ export default function ParticipantPage() {
         {activeTab === "mycity" && <MyCityTab onLearnMore={openLearnMore} />}
         {activeTab === "vote" && <VoteTab onLearnMore={openLearnMore} />}
         {activeTab === "redeem" && <RedeemTab onLearnMore={openLearnMore} />}
-
-        {/* Verification overlay rendered in-app so it stays within app frame */}
-        <VerifyOverlay />
       </AppShell>
+
+      {/* Verification overlay rendered outside AppShell so it covers all layers */}
+      <VerifyOverlay />
     </>
   );
 }

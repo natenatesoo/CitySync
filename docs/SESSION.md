@@ -823,3 +823,13 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - Issuer: create/propose/modify task sheets, compose sheet, verify confirm overlay, MCE proposal sheet
   - Redeemer: catalog add/edit sheets, confirmation overlays, QR modal, compose sheet, MCE proposal sheet
   - Participant: execution/redeem overlays and verify overlay now render in-app.
+
+## 2026-03-10 — Refresh Login Loop Fix (Demo Session Reconnect)
+
+- Removed automatic auth-modal popups that were firing during page refresh hydration and forcing Google sign-in dialogs.
+- Changes:
+  - removed global auto-reconnect modal effect from `app/demo/_context/DemoContext.tsx`
+  - removed issuer-page auto-reconnect modal effect from `app/demo/issuer/page.tsx`
+- Result:
+  - browser refresh no longer auto-launches Google login
+  - session prompts now happen only on explicit sign-in or when users attempt protected onchain actions without a ready session.
