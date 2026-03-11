@@ -565,8 +565,8 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             fallback: "createOffer",
           },
           {
-            address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
-            abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+            address: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi,
             fallback: "purchaseOffer",
           },
           {
@@ -748,7 +748,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
       const roleContracts = [
         { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, label: "Participant Task Activity" },
-        { address: BASE_SEPOLIA_CONTRACTS.Redemption.address, label: "Participant Redemption Activity" },
+        { address: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address, label: "Participant Redemption Activity" },
         { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address, label: "Participant MCE Activity" },
       ];
 

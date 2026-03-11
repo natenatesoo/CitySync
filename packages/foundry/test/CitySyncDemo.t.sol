@@ -19,6 +19,7 @@ import { DemoRedeemerRegistry } from "../contracts/demo/identity/DemoRedeemerReg
 import { MCERegistry } from "../contracts/demo/mce/MCERegistry.sol";
 import { MCETaskRegistry } from "../contracts/demo/mce/MCETaskRegistry.sol";
 import { MCERedemption } from "../contracts/demo/redeem/MCERedemption.sol";
+import { DemoCityRedemption } from "../contracts/demo/redeem/DemoCityRedemption.sol";
 import { FeedbackRegistry } from "../contracts/demo/feedback/FeedbackRegistry.sol";
 
 contract CitySyncDemoTest is Test {
@@ -36,6 +37,7 @@ contract CitySyncDemoTest is Test {
     VoteToken vote;
     OpportunityManager mgr;
     Redemption red;
+    RedemptionReceipt receipt;
 
     // Demo contracts
     MCECredit mceCredit;
@@ -44,6 +46,7 @@ contract CitySyncDemoTest is Test {
     MCERegistry mceReg;
     MCETaskRegistry mceTaskReg;
     MCERedemption mceRed;
+    DemoCityRedemption demoCityRed;
     FeedbackRegistry feedback;
 
     function setUp() external {
@@ -57,7 +60,7 @@ contract CitySyncDemoTest is Test {
         mgr = new OpportunityManager(admin, city, vote);
 
         RedeemerRegistry pilotReg = new RedeemerRegistry(admin);
-        RedemptionReceipt receipt = new RedemptionReceipt(admin);
+        receipt = new RedemptionReceipt(admin);
         red = new Redemption(admin, city, pilotReg, receipt);
 
         // ---- Deploy demo identity layer ----
@@ -71,6 +74,7 @@ contract CitySyncDemoTest is Test {
 
         // ---- Deploy demo redemption + feedback ----
         mceRed = new MCERedemption(admin, mceCredit, redeemerReg);
+        demoCityRed = new DemoCityRedemption(admin, city, redeemerReg, receipt);
         feedback = new FeedbackRegistry(admin, city);
 
         // ---- Wire up roles (deployment-time grants) ----
@@ -79,8 +83,10 @@ contract CitySyncDemoTest is Test {
         // Pilot: mgr may mint city + vote; red may burn city
         city.grantRole(city.MINTER_ROLE(), address(mgr));
         city.grantRole(city.BURNER_ROLE(), address(red));
+        city.grantRole(city.BURNER_ROLE(), address(demoCityRed));
         vote.grantRole(vote.MINTER_ROLE(), address(mgr));
         receipt.grantRole(receipt.MINTER_ROLE(), address(red));
+        receipt.grantRole(receipt.MINTER_ROLE(), address(demoCityRed));
 
         // Demo: mceTaskReg may mint mceCredit + vote; mceRed may burn mceCredit
         mceCredit.grantRole(mceCredit.MINTER_ROLE(), address(mceTaskReg));
@@ -412,6 +418,41 @@ contract CitySyncDemoTest is Test {
 
         assertEq(receiptId, 1);
         assertEq(mceCredit.balanceOf(citizen), 5 ether); // 5 burned
+    }
+
+    // =========================================================
+    // DemoCityRedemption
+    // =========================================================
+
+    function test_demoCityRedemption_burnsCityAndMintsReceipt() external {
+        vm.startPrank(redeemer);
+        redeemerReg.register();
+        uint256 offerId = redeemerReg.createOffer("Transit Pass", "One day transit", 5 ether, false);
+        vm.stopPrank();
+
+        vm.prank(admin);
+        city.mintTo(citizen, 10 ether);
+        assertEq(city.balanceOf(citizen), 10 ether);
+
+        vm.prank(citizen);
+        uint256 receiptId = demoCityRed.purchaseOffer(redeemer, offerId);
+
+        assertEq(city.balanceOf(citizen), 5 ether);
+        assertEq(receipt.ownerOf(receiptId), citizen);
+    }
+
+    function test_demoCityRedemption_rejectsMceOnlyOffer() external {
+        vm.startPrank(redeemer);
+        redeemerReg.register();
+        uint256 offerId = redeemerReg.createOffer("MCE Voucher", "MCE-only", 5 ether, true);
+        vm.stopPrank();
+
+        vm.prank(admin);
+        city.mintTo(citizen, 10 ether);
+
+        vm.prank(citizen);
+        vm.expectRevert(DemoCityRedemption.OfferNotCityEligible.selector);
+        demoCityRed.purchaseOffer(redeemer, offerId);
     }
 
     // =========================================================

@@ -1043,8 +1043,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           }
 
           const result = await writeContractAsync({
-            address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
-            abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+            address: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi,
             functionName: "purchaseOffer",
             args: [onchainRoute.redeemer, onchainRoute.offerId],
           });
@@ -1071,8 +1071,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         }
 
         const result = await writeContractAsync({
-          address: BASE_SEPOLIA_CONTRACTS.Redemption.address,
-          abi: BASE_SEPOLIA_CONTRACTS.Redemption.abi,
+          address: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address,
+          abi: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi,
           functionName: "purchaseOffer",
           args: [route.redeemer, route.offerId],
         });

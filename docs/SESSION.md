@@ -12,10 +12,39 @@ When major product, contract-integration, or deployment-impacting changes are ma
 ---
 
 ## Last Updated
-2026-03-08 (Session 17)
+2026-03-11 (Session 18)
 
 ## Current Branch
 `main`
+
+## Session 18 Summary (2026-03-11)
+
+### Completed This Session
+- Fixed CITY redemption contract mismatch that caused user-op reverts on participant redeem.
+- Added new contract: `packages/foundry/contracts/demo/redeem/DemoCityRedemption.sol`.
+  - Burns `CityToken` on `purchaseOffer`.
+  - Reads offers/profiles from `DemoRedeemerRegistry` (same source as demo offer commit flow).
+  - Rejects `mceOnly` offers on CITY path.
+  - Mints `RedemptionReceipt` to purchaser for redemption proof continuity.
+- Updated deployment script `packages/foundry/script/DeployDemo.s.sol`:
+  - Deploys `DemoCityRedemption`.
+  - Grants `CityToken.BURNER_ROLE` and `RedemptionReceipt.MINTER_ROLE` to `DemoCityRedemption`.
+  - Prints and exports `DemoCityRedemption` address.
+  - Adds env output line: `NEXT_PUBLIC_DEMO_CITY_REDEMPTION=...`.
+- Updated frontend contract config `packages/nextjs/app/demo/_config/baseSepoliaContracts.ts`:
+  - Added `DemoCityRedemption` contract entry with env override:
+    - `NEXT_PUBLIC_DEMO_CITY_REDEMPTION`
+  - Keeps fallback to current deployed redemption address for compatibility until redeploy.
+- Updated demo redemption writes in `packages/nextjs/app/demo/_context/DemoContext.tsx`:
+  - CITY redemptions now call `DemoCityRedemption.purchaseOffer` (onchain-route and env-route paths).
+- Updated onchain activity feed `packages/nextjs/app/demo/_components/OnchainActivityPanel.tsx`:
+  - Participant/redeemer redemption activity now tracks `DemoCityRedemption` for `purchaseOffer`.
+- Added foundry tests in `packages/foundry/test/CitySyncDemo.t.sol`:
+  - `test_demoCityRedemption_burnsCityAndMintsReceipt`
+  - `test_demoCityRedemption_rejectsMceOnlyOffer`
+
+### Deployment/Env Note
+- After redeploy, set `NEXT_PUBLIC_DEMO_CITY_REDEMPTION` in local/Vercel to the newly deployed `DemoCityRedemption` address.
 
 ## Session 17 Summary (2026-03-08)
 

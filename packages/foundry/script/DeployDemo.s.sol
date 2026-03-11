@@ -18,6 +18,7 @@ import { DemoOpportunityManager } from "../contracts/demo/opportunity/DemoOpport
 import { MCERegistry } from "../contracts/demo/mce/MCERegistry.sol";
 import { MCETaskRegistry } from "../contracts/demo/mce/MCETaskRegistry.sol";
 import { MCERedemption } from "../contracts/demo/redeem/MCERedemption.sol";
+import { DemoCityRedemption } from "../contracts/demo/redeem/DemoCityRedemption.sol";
 import { FeedbackRegistry } from "../contracts/demo/feedback/FeedbackRegistry.sol";
 
 /// @notice Full demo deployment script for Base Sepolia.
@@ -53,6 +54,7 @@ contract DeployDemo is Script {
     MCERegistry      public mceReg;
     MCETaskRegistry  public mceTaskReg;
     MCERedemption    public mceRed;
+    DemoCityRedemption public demoCityRed;
     FeedbackRegistry public feedback;
 
     function run() external {
@@ -125,8 +127,9 @@ contract DeployDemo is Script {
         // 5. DEMO REDEMPTION & FEEDBACK
         // ============================================================
 
-        mceRed   = new MCERedemption(admin, mceCredit, demoRedeemerReg);
-        feedback = new FeedbackRegistry(admin, city);
+        mceRed      = new MCERedemption(admin, mceCredit, demoRedeemerReg);
+        demoCityRed = new DemoCityRedemption(admin, city, demoRedeemerReg, receipt);
+        feedback    = new FeedbackRegistry(admin, city);
 
         // ============================================================
         // 6. WIRE ROLES
@@ -141,6 +144,8 @@ contract DeployDemo is Script {
         // --- Pilot: Redemption burns CityToken; mints RedemptionReceipts ---
         city.grantRole(city.BURNER_ROLE(), address(redemption));
         receipt.grantRole(receipt.MINTER_ROLE(), address(redemption));
+        city.grantRole(city.BURNER_ROLE(), address(demoCityRed));
+        receipt.grantRole(receipt.MINTER_ROLE(), address(demoCityRed));
 
         // --- Demo: MCETaskRegistry mints MCECredit + VoteToken ---
         mceCredit.grantRole(mceCredit.MINTER_ROLE(), address(mceTaskReg));
@@ -185,6 +190,7 @@ contract DeployDemo is Script {
         console2.log("MCERegistry:         ", address(mceReg));
         console2.log("MCETaskRegistry:     ", address(mceTaskReg));
         console2.log("MCERedemption:       ", address(mceRed));
+        console2.log("DemoCityRedemption:  ", address(demoCityRed));
         console2.log("FeedbackRegistry:    ", address(feedback));
         console2.log("");
         console2.log("-- Copy these into your frontend .env --");
@@ -197,6 +203,7 @@ contract DeployDemo is Script {
         console2.log("NEXT_PUBLIC_MCE_REGISTRY=    ", address(mceReg));
         console2.log("NEXT_PUBLIC_MCE_TASK_REGISTRY=", address(mceTaskReg));
         console2.log("NEXT_PUBLIC_MCE_REDEMPTION=  ", address(mceRed));
+        console2.log("NEXT_PUBLIC_DEMO_CITY_REDEMPTION=", address(demoCityRed));
         console2.log("NEXT_PUBLIC_FEEDBACK_REGISTRY=", address(feedback));
     }
 
@@ -217,6 +224,7 @@ contract DeployDemo is Script {
         vm.serializeAddress(json, "MCERegistry",          address(mceReg));
         vm.serializeAddress(json, "MCETaskRegistry",      address(mceTaskReg));
         vm.serializeAddress(json, "MCERedemption",        address(mceRed));
+        vm.serializeAddress(json, "DemoCityRedemption",   address(demoCityRed));
         json = vm.serializeAddress(json, "FeedbackRegistry", address(feedback));
 
         string memory outPath = string(
