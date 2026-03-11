@@ -3449,12 +3449,24 @@ function IssueTaskPopup({
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.6)",
-        backdropFilter: "blur(3px)",
+        background: "rgba(0,0,0,0.22)",
+        backdropFilter: "blur(1.5px)",
         padding: "0 0 0",
       }}
       onClick={onClose}
     >
+      <style>{`
+        @keyframes issueTaskSheetUp {
+          from {
+            transform: translateY(28px);
+            opacity: 0.92;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
       <div
         style={{
           width: "100%",
@@ -3464,6 +3476,8 @@ function IssueTaskPopup({
           padding: "22px 20px 28px",
           border: "1px solid rgba(255,255,255,0.1)",
           borderBottom: "none",
+          animation: "issueTaskSheetUp 220ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+          transformOrigin: "bottom center",
         }}
         onClick={e => e.stopPropagation()}
       >
