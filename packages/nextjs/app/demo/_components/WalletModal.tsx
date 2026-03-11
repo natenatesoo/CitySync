@@ -32,13 +32,18 @@ export default function WalletModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+      style={{ background: "rgba(0,0,0,0.42)", backdropFilter: "blur(2px)" }}
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
         className="w-full rounded-t-3xl p-6 pb-10"
-        style={{ background: "#1E1E2C", maxWidth: 480, borderTop: `3px solid ${color}` }}
+        style={{
+          background: "#1E1E2C",
+          maxWidth: 430,
+          borderTop: `3px solid ${color}`,
+          boxShadow: "0 -10px 30px rgba(0,0,0,0.35)",
+        }}
       >
         {/* Handle */}
         <div className="mx-auto mb-5 h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />

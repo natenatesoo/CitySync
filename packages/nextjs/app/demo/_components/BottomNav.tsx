@@ -17,13 +17,14 @@ interface BottomNavProps {
 export default function BottomNav({ tabs, active, onChange }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-end justify-around"
+      className="absolute left-3 right-3 z-40 flex items-center justify-around rounded-2xl"
       style={{
-        background: "#15151E",
-        borderTop: "1px solid rgba(255,255,255,0.08)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        maxWidth: 480,
-        margin: "0 auto",
+        bottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
+        background: "rgba(24,24,38,0.9)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+        backdropFilter: "blur(10px)",
+        padding: "6px",
       }}
     >
       {tabs.map(tab => {
@@ -32,17 +33,19 @@ export default function BottomNav({ tabs, active, onChange }: BottomNavProps) {
           <button
             key={tab.key}
             onClick={() => onChange(tab.key)}
-            className="flex flex-col items-center gap-0.5 py-2 px-3 transition-all"
+            className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-3 transition-all"
             style={{
               color: isActive ? "#4169E1" : "rgba(255,255,255,0.45)",
-              minWidth: 60,
+              minHeight: 52,
+              minWidth: 58,
               flex: 1,
+              background: isActive ? "rgba(65,105,225,0.14)" : "transparent",
             }}
           >
             <span
               className="transition-transform"
               style={{
-                transform: isActive ? "scale(1.15)" : "scale(1)",
+                transform: isActive ? "scale(1.08)" : "scale(1)",
                 display: "flex",
               }}
             >
@@ -50,7 +53,7 @@ export default function BottomNav({ tabs, active, onChange }: BottomNavProps) {
             </span>
             <span
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: isActive ? 600 : 400,
                 letterSpacing: "0.02em",
               }}

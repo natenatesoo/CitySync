@@ -43,22 +43,35 @@ export default function AppShell({
   return (
     <div
       className="fixed inset-0 z-50 flex justify-center"
-      style={{ background: "#0D0D14", fontFamily: "system-ui, -apple-system, sans-serif" }}
+      style={{
+        background: "radial-gradient(1100px 500px at 50% -120px, rgba(65,105,225,0.18), transparent 65%), #0D0D14",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
     >
       {/* Phone-width container */}
       <div
         className="relative flex h-full w-full flex-col overflow-hidden"
-        style={{ maxWidth: 480, background: "#15151E" }}
+        style={{
+          maxWidth: 430,
+          background: "#15151E",
+          borderLeft: "1px solid rgba(255,255,255,0.05)",
+          borderRight: "1px solid rgba(255,255,255,0.05)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+        }}
       >
         {/* Header */}
         <header
           style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 35,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "max(12px, env(safe-area-inset-top)) 16px 12px",
+            padding: "max(12px, env(safe-area-inset-top)) 14px 10px",
             borderBottom: "1px solid rgba(255,255,255,0.07)",
-            background: "#15151E",
+            background: "rgba(21,21,30,0.84)",
+            backdropFilter: "blur(10px)",
             flexShrink: 0,
           }}
         >
@@ -69,6 +82,8 @@ export default function AppShell({
               display: "flex",
               alignItems: "center",
               gap: 5,
+              minHeight: 42,
+              padding: "0 4px",
               color: "rgba(255,255,255,0.55)",
               textDecoration: "none",
             }}
@@ -93,7 +108,7 @@ export default function AppShell({
             style={{
               background: accentColor,
               borderRadius: 10,
-              padding: "5px 10px",
+              padding: "6px 10px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -108,8 +123,12 @@ export default function AppShell({
           {/* Right: Wallet button */}
           <button
             onClick={() => setWalletOpen(true)}
-            className="flex items-center gap-2 rounded-xl px-3 py-1.5 transition"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+            className="flex items-center gap-2 rounded-xl px-3 py-2 transition"
+            style={{
+              minHeight: 42,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
           >
             <div className="h-2 w-2 rounded-full" style={{ background: "#34eeb6" }} />
             <span className="font-mono text-xs text-white">{cityBalance.toLocaleString()} CITY</span>
@@ -123,7 +142,14 @@ export default function AppShell({
         </header>
 
         {/* Scrollable content area */}
-        <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 80 }}>
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{
+            paddingBottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehaviorY: "contain",
+          }}
+        >
           {children}
         </main>
 
