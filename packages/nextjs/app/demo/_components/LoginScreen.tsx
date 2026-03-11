@@ -25,7 +25,7 @@ export function LoginScreen() {
       <div style={{ marginBottom: 48, textAlign: "center" }}>
         <div style={{ marginBottom: 16, display: "inline-flex", justifyContent: "center" }}>
           <Image
-            src="/citysync-wordmark-frame2.png"
+            src="/citysync-wordmark-frame3.png"
             alt="City/Sync"
             width={240}
             height={64}
@@ -38,12 +38,13 @@ export function LoginScreen() {
           style={{
             fontSize: 15,
             color: "rgba(255,255,255,0.5)",
-            maxWidth: 280,
+            maxWidth: "none",
             lineHeight: 1.5,
             margin: "0 auto",
+            whiteSpace: "nowrap",
           }}
         >
-          Civic Coordination Infrastructure for Cities
+          Civic Coordination Infrastructure for the 21st Century.
         </p>
       </div>
 
