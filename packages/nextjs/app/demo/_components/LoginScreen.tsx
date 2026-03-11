@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuthModal, useSignerStatus } from "@account-kit/react";
+import Image from "next/image";
+import frame2Wordmark from "../../../../../docs/brand/logos/Frame 2.png";
 
 export function LoginScreen() {
   const { openAuthModal } = useAuthModal();
@@ -22,41 +24,14 @@ export function LoginScreen() {
     >
       {/* Logo */}
       <div style={{ marginBottom: 48, textAlign: "center" }}>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 16,
-            transform: "translateX(-2px)",
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: "linear-gradient(135deg, #4169E1 0%, #23128F 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 22,
-            }}
-          >
-            🏛
-          </div>
-          <span
-            style={{
-              fontSize: 26,
-              fontWeight: 800,
-              letterSpacing: "-0.5px",
-              color: "#fff",
-            }}
-          >
-            City
-            <span style={{ color: "#4169E1" }}>/</span>
-            Sync
-          </span>
+        <div style={{ marginBottom: 16, display: "inline-flex", justifyContent: "center" }}>
+          <Image
+            src={frame2Wordmark}
+            alt="City/Sync"
+            width={240}
+            style={{ width: "min(240px, 72vw)", height: "auto" }}
+            priority
+          />
         </div>
 
         <p
