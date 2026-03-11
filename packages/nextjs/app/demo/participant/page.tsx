@@ -19,26 +19,19 @@ const TEAL = "#34eeb6";
 const GOLD = "#DD9E33";
 
 type ParticipantLearnCardKey =
-  | "profile-account"
-  | "profile-identity"
+  | "profile-overview"
   | "explore-onboarding"
   | "explore-task-flow"
   | "explore-verify"
   | "mycity-feed"
-  | "vote-process"
-  | "vote-mce"
+  | "vote-overview"
   | "redeem-flow";
 
 const PARTICIPANT_LEARN_CARDS: Record<ParticipantLearnCardKey, LearnInfoCard> = {
-  "profile-account": {
-    title: "Account Provisioning",
-    subtitle: "How your account works",
-    body: "Your City/Sync sign-in provisions a smart account for onchain actions. The app syncs CITY, VOTE, and MCE balances from contract state and keeps your role session aligned.",
-  },
-  "profile-identity": {
-    title: "Participant Identity",
-    subtitle: "Profile and credibility",
-    body: "Your profile tracks participation history, completed tasks, and governance activity. Over time, this creates a civic reputation tied to verified community contributions.",
+  "profile-overview": {
+    title: "Participant Account and Identity",
+    subtitle: "How your profile works",
+    body: "Your City/Sync sign-in provisions a smart account for onchain actions and syncs CITY, VOTE, and MCE balances from contract state. Your profile tracks participation history, completed tasks, and governance activity, building a civic reputation tied to verified community contributions.",
   },
   "explore-onboarding": {
     title: "Onboarding Requirement",
@@ -60,20 +53,15 @@ const PARTICIPANT_LEARN_CARDS: Record<ParticipantLearnCardKey, LearnInfoCard> = 
     subtitle: "Local information layer",
     body: "MyCity is a role-shared civic feed where organizations publish events, announcements, and opportunities. It functions as coordination context around task participation.",
   },
-  "vote-process": {
-    title: "Voting Process",
+  "vote-overview": {
+    title: "Voting and MCE Governance",
     subtitle: "Using earned VOTE",
-    body: "VOTE is earned through civic contribution and used in time-bounded proposal rounds. Participants can allocate vote weight to proposals during open voting windows.",
-  },
-  "vote-mce": {
-    title: "MCE Governance",
-    subtitle: "Mass Coordination Events",
-    body: "MCEs are mission-oriented cycles where the community signals priorities and organizations execute coordinated tasks. This links governance outcomes to tangible civic execution.",
+    body: "VOTE is earned through civic contribution and used in time-bounded proposal rounds where participants allocate vote weight to proposals. MCEs are mission-oriented cycles where the community signals priorities and organizations execute coordinated tasks, linking governance outcomes to tangible civic execution.",
   },
   "redeem-flow": {
     title: "Redemption Flow",
     subtitle: "Using CITY credits",
-    body: "CITY credits are redeemed against partner offerings. Redemption calls contract logic onchain and updates available balance, creating a closed loop from contribution to utility.",
+    body: "CITY credits are redeemed against partner offerings. In production, participants scan the redeemer QR code at point of sale to initiate redemption, then confirm the transaction to execute contract logic onchain and update available balance.",
   },
 };
 
@@ -937,7 +925,9 @@ function ProfileTab({
   onLearnMore: (key: ParticipantLearnCardKey) => void;
 }) {
   const { state, setCitizenName } = useDemo();
+  const { address } = useAccount({ type: "ModularAccountV2" });
   const p = state.participant;
+  const participantAddress = address ?? FAKE_WALLETS.participant;
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState(p.citizenName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -961,131 +951,200 @@ function ProfileTab({
     .filter(([, v]) => v > 0)
     .map(([id]) => id);
   const activeMces = state.mces.filter(m => votedMceIds.includes(m.id));
-  const creditsEarned = p.completedTasks.reduce((sum, t) => sum + t.credits, 0);
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Participant Profile</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={() => onLearnMore("profile-account")} />
-          <LearnMoreLink onClick={() => onLearnMore("profile-identity")} />
+          <LearnMoreLink onClick={() => onLearnMore("profile-overview")} />
         </div>
       </div>
-      {/* Identity card */}
-      <div style={{ ...card, marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${ACCENT}, #6b8fff)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                fontWeight: 700,
-                color: "white",
-                flexShrink: 0,
-              }}
-            >
-              {p.citizenName ? p.citizenName[0].toUpperCase() : "?"}
-            </div>
-            <div>
-              {editing ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input
-                    ref={inputRef}
-                    value={nameInput}
-                    onChange={e => setNameInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") saveEdit();
-                      if (e.key === "Escape") cancelEdit();
-                    }}
-                    style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(65,105,225,0.5)",
-                      borderRadius: 8,
-                      padding: "6px 10px",
-                      color: "white",
-                      fontSize: 15,
-                      fontWeight: 600,
-                      outline: "none",
-                      width: 150,
-                    }}
-                  />
-                  <button
-                    onClick={saveEdit}
-                    style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", padding: 0 }}
-                  >
-                    <IconCheck size={16} />
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "rgba(255,255,255,0.4)",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    <IconXSmall size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span
-                    style={{ fontSize: 16, fontWeight: 700, color: p.citizenName ? "white" : "rgba(255,255,255,0.3)" }}
-                  >
-                    {p.citizenName || "Tap to set your name"}
-                  </span>
-                  <button
-                    onClick={() => {
-                      setNameInput(p.citizenName);
-                      setEditing(true);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "rgba(255,255,255,0.35)",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    <IconPencil size={14} />
-                  </button>
-                </div>
-              )}
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 3, fontFamily: "monospace" }}>
-                {FAKE_WALLETS.participant}
-              </div>
-            </div>
-          </div>
-          <span
+      {/* Profile card */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #0f1f42 0%, #1E1E2C 100%)",
+          border: "1px solid rgba(65,105,225,0.25)",
+          borderRadius: 20,
+          padding: "20px",
+          marginBottom: 14,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "rgba(65,105,225,0.75)",
+            marginBottom: 4,
+          }}
+        >
+          Registered Civic Participant
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div
             style={{
-              background: "rgba(52,238,182,0.1)",
-              border: "1px solid rgba(52,238,182,0.2)",
-              borderRadius: 20,
-              padding: "4px 12px",
-              fontSize: 12,
-              color: TEAL,
-              fontWeight: 600,
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: "rgba(65,105,225,0.15)",
+              border: "1px solid rgba(65,105,225,0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 20,
               flexShrink: 0,
             }}
           >
-            Citizen
-          </span>
+            👤
+          </div>
+          <div>
+            {editing ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  ref={inputRef}
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") saveEdit();
+                    if (e.key === "Escape") cancelEdit();
+                  }}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(65,105,225,0.5)",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    color: "white",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    outline: "none",
+                    width: 170,
+                  }}
+                />
+                <button
+                  onClick={saveEdit}
+                  style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", padding: 0 }}
+                >
+                  <IconCheck size={16} />
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(255,255,255,0.4)",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  <IconXSmall size={16} />
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span
+                  style={{ fontSize: 22, fontWeight: 700, color: p.citizenName ? "white" : "rgba(255,255,255,0.4)" }}
+                >
+                  {p.citizenName || "Set your name"}
+                </span>
+                <button
+                  onClick={() => {
+                    setNameInput(p.citizenName);
+                    setEditing(true);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "rgba(255,255,255,0.45)",
+                    padding: 4,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <IconPencil size={14} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Balances */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>
+          {participantAddress}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              background: "rgba(65,105,225,0.16)",
+              color: ACCENT,
+              borderRadius: 20,
+              padding: "3px 10px",
+              border: "1px solid rgba(65,105,225,0.3)",
+            }}
+          >
+            Civic Participant
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              background: "rgba(255,255,255,0.06)",
+              color: "rgba(255,255,255,0.45)",
+              borderRadius: 20,
+              padding: "3px 10px",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
+          >
+            Base Sepolia
+          </span>
+        </div>
+      </div>
+
+      {/* Role description */}
+      <div
+        style={{
+          background: "rgba(65,105,225,0.08)",
+          border: "1px solid rgba(65,105,225,0.2)",
+          borderRadius: 14,
+          padding: "14px 16px",
+          marginBottom: 14,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>
+          Your Role as a Civic Participant
+        </div>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.6, margin: 0 }}>
+          Civic Participants claim and execute tasks that support local priorities, then submit completion for issuer
+          verification. Verified contributions earn CITY and VOTE rewards onchain, creating a direct path from civic
+          action to governance influence and redemption utility.
+        </p>
+      </div>
+
+      {/* Token balances */}
+      <div style={{ ...card, marginBottom: 14 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "rgba(255,255,255,0.5)",
+            marginBottom: 12,
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+          }}
+        >
+          Token Balances
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {[
             { label: "CITYx", value: p.cityBalance, color: TEAL },
             { label: "VOTE", value: p.voteBalance, color: ACCENT },
             { label: "MCE", value: p.mceBalance, color: GOLD },
+            { label: "Tasks Completed", value: p.completedTasks.length, color: "white" },
           ].map(b => (
             <div
               key={b.label}
@@ -1101,18 +1160,6 @@ function ProfileTab({
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{b.label}</div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div style={{ ...card, marginBottom: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <div style={{ textAlign: "center", padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "white" }}>{p.completedTasks.length}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Tasks Completed</div>
-        </div>
-        <div style={{ textAlign: "center", padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: TEAL }}>{creditsEarned.toLocaleString()}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Credits Earned</div>
         </div>
       </div>
 
@@ -2016,14 +2063,18 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     startVerify(task.id, task.title);
   };
 
+  const openExploreLearnMore = () => {
+    onLearnMore("explore-onboarding");
+    onLearnMore("explore-task-flow");
+    onLearnMore("explore-verify");
+  };
+
   return (
     <div style={{ padding: "20px 16px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Task Marketplace</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={() => onLearnMore("explore-onboarding")} />
-          <LearnMoreLink onClick={() => onLearnMore("explore-task-flow")} />
-          <LearnMoreLink onClick={() => onLearnMore("explore-verify")} />
+          <LearnMoreLink onClick={openExploreLearnMore} />
         </div>
       </div>
       {/* Open / Claimed / Completed toggle */}
@@ -2445,8 +2496,7 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Governance Voting</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={() => onLearnMore("vote-process")} />
-          <LearnMoreLink onClick={() => onLearnMore("vote-mce")} />
+          <LearnMoreLink onClick={() => onLearnMore("vote-overview")} />
         </div>
       </div>
       {/* Epoch toggle */}

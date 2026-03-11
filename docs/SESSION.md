@@ -792,3 +792,15 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - why offerings are committed for the full Epoch/MCE duration,
   - that this supports participant predictability and stronger participation incentives,
   - and that redeemers must comply with Representative Redeemer Committee rules.
+
+## 2026-03-10 — Participant Profile: Role Information Card
+
+- Added a new role-description card in Civic Participant `Profile` tab:
+  - title: `Your Role as a Civic Participant`
+  - content explains claim/execute/verify flow and CITY+VOTE onchain reward outcomes.
+
+## 2026-03-10 — Participant Profile: Standardized Header Card + Balance Subsection
+
+- Refactored Civic Participant `Profile` tab to align profile-card structure with Issuer/Redeemer style:
+  - added a standardized top card (`Registered Civic Participant`) with editable participant name, account address, and role/network status pills.
+- Moved CITY/VOTE/MCE amounts out of the header card into a dedicated `Token Balances` subsection below the role information card.
