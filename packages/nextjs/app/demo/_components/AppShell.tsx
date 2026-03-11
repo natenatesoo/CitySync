@@ -65,9 +65,9 @@ export default function AppShell({
             position: "sticky",
             top: 0,
             zIndex: 35,
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "1fr auto 1fr",
             alignItems: "center",
-            justifyContent: "space-between",
             padding: "max(12px, env(safe-area-inset-top)) 14px 10px",
             borderBottom: "1px solid rgba(255,255,255,0.07)",
             background: "rgba(21,21,30,0.84)",
@@ -84,6 +84,7 @@ export default function AppShell({
               gap: 5,
               minHeight: 42,
               padding: "0 4px",
+              justifySelf: "start",
               color: "rgba(255,255,255,0.55)",
               textDecoration: "none",
             }}
@@ -106,6 +107,7 @@ export default function AppShell({
           {/* Center: // logo */}
           <div
             style={{
+              justifySelf: "center",
               background: accentColor,
               borderRadius: 10,
               padding: "6px 10px",
@@ -123,16 +125,20 @@ export default function AppShell({
           {/* Right: Wallet button */}
           <button
             onClick={() => setWalletOpen(true)}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 transition"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2 transition"
             style={{
+              justifySelf: "end",
               minHeight: 42,
+              padding: "8px 12px 8px 10px",
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.1)",
             }}
           >
             <div className="h-2 w-2 rounded-full" style={{ background: "#34eeb6" }} />
-            <span className="font-mono text-xs text-white">{cityBalance.toLocaleString()} CITY</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <span className="font-mono text-white" style={{ fontSize: 11, lineHeight: 1, whiteSpace: "nowrap" }}>
+              {cityBalance.toLocaleString()} CITY
+            </span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ color: "rgba(255,255,255,0.4)" }}>
               <rect x="2" y="7" width="20" height="15" rx="2" stroke="currentColor" strokeWidth="2" />
               <path d="M16 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor" />
               <path d="M2 11h20" stroke="currentColor" strokeWidth="2" />
