@@ -852,3 +852,17 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
 - Added explicit burn summary to checkout confirmation:
   - offering name
   - exact `CITYx` amount burned.
+
+## 2026-03-10 — Participant Redeem Overlay Width + Countdown Cleanup
+
+- Adjusted participant in-app redeem overlay frame width to better match app-shell boundaries and avoid spill beyond the app container.
+- Updated burn-confirm screen styling to feel like a full in-app screen (solid green panel, rounded/clipped frame) rather than a translucent overlay.
+- Removed visible countdown text below `Continue` while keeping automatic close behavior.
+
+## 2026-03-10 — Participant Burn Confirmation Uses Standard Popup Rules
+
+- Refactored Civic Participant `BurnConfirmOverlay` to use the same in-app popup frame/layer model as other modals:
+  - viewport-anchored app frame
+  - dim background layer
+  - centered, bounded card panel.
+- Keeps the green success styling/content while matching popup behavior and width constraints.

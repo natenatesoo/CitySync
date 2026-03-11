@@ -304,8 +304,7 @@ const APP_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
   position: "fixed",
   left: "50%",
   transform: "translateX(-50%)",
-  width: "100%",
-  maxWidth: 520,
+  width: "min(calc(100% - 32px), 520px)",
   top: 68,
   bottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
   pointerEvents: "none",
@@ -647,8 +646,6 @@ function BurnConfirmOverlay({
   costCity: number;
   onDone: () => void;
 }) {
-  const [count, setCount] = React.useState(5);
-
   React.useEffect(() => {
     // Play a two-tone success chime via Web Audio API
     try {
@@ -672,11 +669,8 @@ function BurnConfirmOverlay({
       // Audio not available — silent fallback
     }
 
-    // Countdown
-    const interval = setInterval(() => setCount(c => c - 1), 1000);
     const timeout = setTimeout(onDone, 5000);
     return () => {
-      clearInterval(interval);
       clearTimeout(timeout);
     };
   }, [onDone]);
@@ -686,104 +680,135 @@ function BurnConfirmOverlay({
       style={{
         ...APP_CONTENT_OVERLAY_FRAME,
         zIndex: 300,
-        background: "#0f4a37",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 28px",
-        textAlign: "center",
       }}
     >
-      {/* Animated checkmark circle */}
       <div
         style={{
-          width: 100,
-          height: 100,
-          borderRadius: "50%",
-          background: "rgba(52,238,182,0.12)",
-          border: "3px solid #34eeb6",
+          position: "absolute",
+          inset: 0,
+          background: "rgba(8,10,18,0.76)",
+          pointerEvents: "auto",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 12,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 28,
-          animation: "burnPulse 0.6s ease-out",
+          pointerEvents: "none",
         }}
       >
-        <svg
-          width="48"
-          height="48"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#34eeb6"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 392,
+            maxHeight: "100%",
+            overflowY: "auto",
+            background: "#0f4a37",
+            border: "1px solid rgba(212,255,233,0.3)",
+            borderRadius: 22,
+            boxShadow: "0 18px 42px rgba(0,0,0,0.48)",
+            padding: "32px 22px",
+            textAlign: "center",
+            pointerEvents: "auto",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
         >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
+          {/* Animated checkmark circle */}
+          <div
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: "50%",
+              background: "rgba(52,238,182,0.12)",
+              border: "3px solid #34eeb6",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 28,
+              animation: "burnPulse 0.6s ease-out",
+            }}
+          >
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#34eeb6"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              color: "#34eeb6",
+              marginBottom: 8,
+            }}
+          >
+            Burn Confirmed
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 6, lineHeight: 1.3 }}>
+            {offerTitle}
+          </div>
+          <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginBottom: 24 }}>{redeemerName}</div>
+
+          <div
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.28)",
+              borderRadius: 14,
+              padding: "14px 20px",
+              marginBottom: 22,
+            }}
+          >
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>Redemption Offering</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{offerTitle}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>CITY Burned</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#d4ffe9" }}>-{costCity} CITYx</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.66)", marginTop: 6 }}>
+              Onchain redemption confirmed
+            </div>
+          </div>
+
+          <button
+            onClick={onDone}
+            style={{
+              width: "100%",
+              background: "#d4ffe9",
+              color: "#0f4a37",
+              border: "none",
+              borderRadius: 12,
+              padding: "12px 16px",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Continue
+          </button>
+
+          <style>{`
+            @keyframes burnPulse {
+              0% { transform: scale(0.6); opacity: 0; }
+              60% { transform: scale(1.1); }
+              100% { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+        </div>
       </div>
-
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: "0.15em",
-          textTransform: "uppercase",
-          color: "#34eeb6",
-          marginBottom: 8,
-        }}
-      >
-        Burn Confirmed
-      </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 6, lineHeight: 1.3 }}>
-        {offerTitle}
-      </div>
-      <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginBottom: 32 }}>{redeemerName}</div>
-
-      <div
-        style={{
-          background: "rgba(255,255,255,0.12)",
-          border: "1px solid rgba(255,255,255,0.28)",
-          borderRadius: 14,
-          padding: "14px 20px",
-          marginBottom: 28,
-          minWidth: 260,
-        }}
-      >
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>Redemption Offering</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{offerTitle}</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>CITY Burned</div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: "#d4ffe9" }}>-{costCity} CITYx</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.66)", marginTop: 6 }}>Onchain redemption confirmed</div>
-      </div>
-
-      <button
-        onClick={onDone}
-        style={{
-          background: "#d4ffe9",
-          color: "#0f4a37",
-          border: "none",
-          borderRadius: 12,
-          padding: "10px 16px",
-          fontSize: 13,
-          fontWeight: 700,
-          cursor: "pointer",
-          marginBottom: 14,
-        }}
-      >
-        Continue
-      </button>
-
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)" }}>Auto-closing in {count}s</div>
-
-      <style>{`
-        @keyframes burnPulse {
-          0% { transform: scale(0.6); opacity: 0; }
-          60% { transform: scale(1.1); }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }
