@@ -103,11 +103,9 @@ const IconHeart = () => (
 // ─── Constants & Styles ───────────────────────────────────────────────────────
 
 const TABS = [
-  { key: "profile", label: "Profile", icon: <IconBuilding /> },
-  { key: "tasks", label: "Tasks", icon: <IconClipboard /> },
-  { key: "mycity", label: "MyCity", icon: <IconCity /> },
-  { key: "verify", label: "Verify", icon: <IconVerify /> },
-  { key: "mces", label: "MCEs", icon: <IconBolt /> },
+  { key: "profile",    label: "Profile",    icon: <IconBuilding /> },
+  { key: "tasks",      label: "Tasks",      icon: <IconClipboard /> },
+  { key: "community",  label: "Community",  icon: <IconCity /> },
 ];
 
 const EPOCH1_CAP = 312;
@@ -141,9 +139,16 @@ function getIssuerRightPanel(_activeTab: string): React.ReactNode {
 
 const surfaceCard: React.CSSProperties = {
   background: SURFACE,
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.07)",
   borderRadius: 16,
   padding: "16px",
+};
+
+/** Card with a faint gold left accent — for primary content cards */
+const accentCard: React.CSSProperties = {
+  ...surfaceCard,
+  borderLeft: `3px solid rgba(221,158,51,0.35)`,
+  paddingLeft: 13,
 };
 
 const POST_CATEGORIES: PostCategory[] = ["Announcement", "Event", "Update", "Opportunity"];
@@ -228,36 +233,61 @@ const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, LearnInfoCard> = {
   },
 };
 
-// ─── Success Toast ────────────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
-function SuccessToast({ message, onDone }: { message: string; onDone: () => void }) {
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  const isError = /fail|error|not ready/i.test(message);
+  const isInfo  = /submitting|approving|pending/i.test(message);
+
   React.useEffect(() => {
-    const t = setTimeout(onDone, 3000);
+    const t = setTimeout(onDone, isInfo ? 8000 : 3500);
     return () => clearTimeout(t);
-  }, [onDone]);
+  }, [onDone, isInfo]);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 90,
-        left: "50%",
-        transform: "translateX(-50%)",
-        background: "#1a2e1a",
-        border: "1px solid rgba(52,238,182,0.35)",
-        borderRadius: 12,
-        padding: "12px 20px",
-        color: "#34eeb6",
-        fontSize: 14,
-        fontWeight: 600,
-        zIndex: 300,
-        whiteSpace: "nowrap",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        maxWidth: 440,
-      }}
-    >
-      ✓ {message}
-    </div>
+    <>
+      <style>{`
+        @keyframes toastSlide {
+          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
+      <div
+        style={{
+          position: "fixed",
+          top: "env(safe-area-inset-top, 0px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          marginTop: 14,
+          animation: "toastSlide 0.22s cubic-bezier(0.34,1.36,0.64,1) both",
+          background: isError
+            ? "rgba(30,14,20,0.96)"
+            : isInfo
+              ? "rgba(14,18,36,0.96)"
+              : "rgba(14,22,20,0.96)",
+          border: `1px solid ${isError ? "rgba(255,107,157,0.4)" : isInfo ? "rgba(65,105,225,0.4)" : `${ACCENT}55`}`,
+          borderRadius: 40,
+          padding: "9px 18px 9px 14px",
+          color: isError ? "#ff6b9d" : isInfo ? "#8aa8ff" : ACCENT,
+          fontSize: 13,
+          fontWeight: 600,
+          zIndex: 400,
+          whiteSpace: "nowrap",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          maxWidth: "calc(100vw - 40px)",
+        }}
+      >
+        <span style={{ fontSize: 15, lineHeight: 1 }}>
+          {isError ? "✕" : isInfo ? "⋯" : "✓"}
+        </span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{message}</span>
+      </div>
+    </>
   );
 }
 
@@ -561,26 +591,21 @@ export default function IssuerApp() {
             }}
             onModifyCatalogTask={taskId => setCatalogModifyTaskId(taskId)}
             taskWriteStatus={taskWriteStatus}
-            onLearnMore={openLearnMore}
-          />
-        )}
-        {activeTab === "mycity" && (
-          <MyCityTab
-            posts={allPosts}
-            orgName={issuer.orgName}
-            onCompose={() => setComposeOpen(true)}
-            onLearnMore={openLearnMore}
-          />
-        )}
-        {activeTab === "verify" && (
-          <VerifyTab
             onVerify={handleVerify}
             onSetTaskActive={issuerSetTaskActive}
             verifyWriteStatus={verifyWriteStatus}
             onLearnMore={openLearnMore}
           />
         )}
-        {activeTab === "mces" && <MCEsTab state={state} orgName={issuer.orgName} onLearnMore={openLearnMore} />}
+        {activeTab === "community" && (
+          <CommunityTab
+            posts={allPosts}
+            orgName={issuer.orgName}
+            state={state}
+            onCompose={() => setComposeOpen(true)}
+            onLearnMore={openLearnMore}
+          />
+        )}
 
         {createSheet && (
           <CreateTaskSheet
@@ -629,7 +654,7 @@ export default function IssuerApp() {
           })()}
       </AppShell>
 
-      {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </>
   );
 }
@@ -785,13 +810,28 @@ function ProfileTab({
       {/* Welcome banner */}
       <div
         style={{
-          background: "linear-gradient(135deg, #2a2000 0%, #1E1E2C 100%)",
-          border: "1px solid rgba(221,158,51,0.3)",
+          background: "linear-gradient(145deg, #26200a 0%, #1f1d2b 55%, #151520 100%)",
+          border: "1px solid rgba(221,158,51,0.22)",
           borderRadius: 20,
           padding: "20px",
           marginBottom: 20,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        {/* Subtle radial glow */}
+        <div
+          style={{
+            position: "absolute",
+            top: -30,
+            right: -30,
+            width: 140,
+            height: 140,
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(221,158,51,0.12) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
         <div
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}
         >
@@ -974,7 +1014,7 @@ function ProfileTab({
 
       {/* Stats */}
       <SectionLabel text="Issuance Stats" right={<LearnMoreLink onClick={() => onLearnMore("activity-stats")} />} />
-      <div style={{ ...surfaceCard, padding: 0, marginBottom: 20, overflow: "hidden" }}>
+      <div style={{ ...surfaceCard, padding: 0, marginBottom: 20, overflow: "hidden", background: "linear-gradient(135deg, #1e1c2e 0%, #1E1E2C 100%)" }}>
         <StatRow label="Tasks Created" value={issuer.totalTasksIssued} />
         <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border />
         <StatRow label="Pending Verifications" value={totalPending} border accent={totalPending > 0} />
@@ -1040,11 +1080,11 @@ function ProfileTab({
               <div
                 key={t.id}
                 style={{
-                  ...surfaceCard,
+                  ...accentCard,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "12px 16px",
+                  padding: "12px 13px",
                 }}
               >
                 <div>
@@ -1081,6 +1121,9 @@ function TasksTab({
   onRemoveCatalogTask,
   onModifyCatalogTask,
   taskWriteStatus,
+  onVerify,
+  onSetTaskActive,
+  verifyWriteStatus,
   onLearnMore,
 }: {
   creditsCommitted: number;
@@ -1092,10 +1135,13 @@ function TasksTab({
   onRemoveCatalogTask: (taskId: string) => void;
   onModifyCatalogTask: (taskId: string) => void;
   taskWriteStatus: TaskWriteStatus;
+  onVerify: (taskId: string, citizen: string) => Promise<void>;
+  onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
+  verifyWriteStatus: TaskWriteStatus;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const [view, setView] = useState<"issue" | "catalog">("issue");
+  const [view, setView] = useState<"issue" | "catalog" | "verify">("issue");
   const [onchainTasks, setOnchainTasks] = useState<
     Array<{
       id: string;
@@ -1273,28 +1319,36 @@ function TasksTab({
         </div>
       </div>
 
-      {/* Segment control */}
-      <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
-        {(["issue", "catalog"] as const).map(v => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              flex: 1,
-              border: "none",
-              borderRadius: 12,
-              padding: "9px 0",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              background: view === v ? ACCENT : "transparent",
-              color: view === v ? BG : MUTED,
-            }}
-          >
-            {v === "issue" ? `Issue Tasks (${onchainTasks.length})` : `Task Catalog (${approvedCatalogTasks.length})`}
-          </button>
-        ))}
+      {/* Segment control — Issue / Catalog / Verify */}
+      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, display: "flex", marginBottom: 20, gap: 2 }}>
+        {(["issue", "catalog", "verify"] as const).map(v => {
+          const labels: Record<string, string> = {
+            issue:   `Issue (${onchainTasks.length})`,
+            catalog: `Catalog (${approvedCatalogTasks.length})`,
+            verify:  "Verify",
+          };
+          return (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "8px 0",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.18s",
+                background: view === v ? ACCENT : "transparent",
+                color: view === v ? BG : MUTED,
+                letterSpacing: view === v ? "0.01em" : 0,
+              }}
+            >
+              {labels[v]}
+            </button>
+          );
+        })}
       </div>
       {loadingOnchain && <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Syncing onchain tasks...</div>}
 
@@ -1408,7 +1462,7 @@ function TasksTab({
                 <SectionLabel text={`Active Tasks (${openPoolTasks.length})`} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {openPoolTasks.map(t => (
-                    <div key={t.id} style={{ ...surfaceCard }}>
+                    <div key={t.id} style={{ ...accentCard }}>
                       <div
                         style={{
                           display: "flex",
@@ -1568,7 +1622,7 @@ function TasksTab({
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {approvedCatalogTasks.map(task => (
-                <div key={task.id} style={{ ...surfaceCard }}>
+                <div key={task.id} style={{ ...accentCard }}>
                   <div
                     style={{
                       display: "flex",
@@ -1635,6 +1689,15 @@ function TasksTab({
             </div>
           )}
         </>
+      )}
+
+      {view === "verify" && (
+        <VerifyTab
+          onVerify={onVerify}
+          onSetTaskActive={onSetTaskActive}
+          verifyWriteStatus={verifyWriteStatus}
+          onLearnMore={onLearnMore}
+        />
       )}
     </div>
   );
@@ -2082,6 +2145,68 @@ function ProposeTaskSheet({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Community Tab (MyCity + MCEs combined) ───────────────────────────────────
+
+function CommunityTab({
+  posts,
+  orgName,
+  state,
+  onCompose,
+  onLearnMore,
+}: {
+  posts: Post[];
+  orgName: string;
+  state: ReturnType<typeof useDemo>["state"];
+  onCompose: () => void;
+  onLearnMore: (key: IssuerLearnCardKey) => void;
+}) {
+  const [section, setSection] = useState<"feed" | "mces">("feed");
+
+  return (
+    <div>
+      {/* Sub-segment control */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: 14,
+          padding: 4,
+          display: "flex",
+          gap: 2,
+          margin: "0 20px 20px",
+        }}
+      >
+        {(["feed", "mces"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setSection(s)}
+            style={{
+              flex: 1,
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 0",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.18s",
+              background: section === s ? ACCENT : "transparent",
+              color: section === s ? BG : MUTED,
+            }}
+          >
+            {s === "feed" ? "MyCity Feed" : "MCE Proposals"}
+          </button>
+        ))}
+      </div>
+
+      {section === "feed" && (
+        <MyCityTab posts={posts} orgName={orgName} onCompose={onCompose} onLearnMore={onLearnMore} />
+      )}
+      {section === "mces" && (
+        <MCEsTab state={state} orgName={orgName} onLearnMore={onLearnMore} />
+      )}
     </div>
   );
 }
@@ -3917,17 +4042,28 @@ function SectionLabel({ text, right }: { text: string; right?: React.ReactNode }
         marginBottom: 10,
       }}
     >
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          color: "rgba(255,255,255,0.35)",
-        }}
-      >
-        {text}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span
+          style={{
+            width: 3,
+            height: 12,
+            borderRadius: 2,
+            background: `linear-gradient(180deg, ${ACCENT}, ${ACCENT}55)`,
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "rgba(255,255,255,0.5)",
+          }}
+        >
+          {text}
+        </span>
+      </div>
       {right}
     </div>
   );
@@ -3939,16 +4075,17 @@ function StatusPill({ label, color }: { label: string; color: string }) {
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 4,
-        background: `${color}20`,
+        gap: 5,
+        background: `${color}18`,
         color,
+        border: `1px solid ${color}35`,
         borderRadius: 20,
-        padding: "3px 10px",
+        padding: "3px 10px 3px 8px",
         fontSize: 11,
         fontWeight: 600,
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: color, flexShrink: 0 }} />
       {label}
     </span>
   );
@@ -3973,15 +4110,17 @@ function StatRow({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "12px 16px",
-        borderTop: border ? "1px solid rgba(255,255,255,0.06)" : undefined,
+        padding: "13px 16px",
+        borderTop: border ? "1px solid rgba(255,255,255,0.05)" : undefined,
       }}
     >
       <span style={{ fontSize: 13, color: MUTED }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: accent ? ACCENT : "#fff" }}>
-        {value.toLocaleString()}
-        {suffix && <span style={{ fontSize: 11, color: DIMMED, marginLeft: 4 }}>{suffix}</span>}
-      </span>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: accent ? ACCENT : "#fff" }}>
+          {value.toLocaleString()}
+        </span>
+        {suffix && <span style={{ fontSize: 11, color: DIMMED }}>{suffix}</span>}
+      </div>
     </div>
   );
 }
@@ -3993,13 +4132,28 @@ function EmptyState({ emoji, title, desc }: { emoji: string; title: string; desc
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "48px 0",
+        padding: "40px 20px",
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 48, marginBottom: 14 }}>{emoji}</div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: "#fff", marginBottom: 8 }}>{title}</div>
-      <div style={{ fontSize: 13, color: MUTED, maxWidth: 240, lineHeight: 1.55 }}>{desc}</div>
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 20,
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 28,
+          marginBottom: 16,
+        }}
+      >
+        {emoji}
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 13, color: MUTED, maxWidth: 240, lineHeight: 1.6 }}>{desc}</div>
     </div>
   );
 }
