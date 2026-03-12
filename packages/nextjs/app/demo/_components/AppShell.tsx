@@ -12,7 +12,7 @@ const ROLES = [
   {
     key: "participant" as const,
     emoji: "🏙️",
-    label: "Participant",
+    label: "Civic Participant",
     tagline: "Earn · Vote · Redeem",
     accent: "#4169E1",
     href: "/demo/participant",
@@ -20,7 +20,7 @@ const ROLES = [
   {
     key: "issuer" as const,
     emoji: "📋",
-    label: "Issuer Org",
+    label: "Issuer Organization",
     tagline: "Create · Verify · Distribute",
     accent: "#DD9E33",
     href: "/demo/issuer",
@@ -28,7 +28,7 @@ const ROLES = [
   {
     key: "redeemer" as const,
     emoji: "🏪",
-    label: "Redeemer Org",
+    label: "Redeemer Organization",
     tagline: "Incentivize · Reward · Track",
     accent: "#34eeb6",
     href: "/demo/redeemer",
@@ -150,11 +150,12 @@ export default function AppShell({
             <span style={{ fontSize: 14, lineHeight: 1 }}>{currentRole.emoji}</span>
             <span
               style={{
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: "0.03em",
                 color: currentRole.accent,
                 lineHeight: 1,
+                whiteSpace: "nowrap",
               }}
             >
               {currentRole.label}
@@ -235,21 +236,23 @@ export default function AppShell({
         <BottomNav tabs={tabs} active={activeTab} onChange={onTabChange} accentColor={accentColor} />
 
         {/* ── Role Switcher Bottom Sheet ────────────────────────────────────── */}
-        {/* Backdrop */}
+        {/* Backdrop — subtle, app-tinted rather than heavy overlay */}
         <div
           onClick={() => setSwitcherOpen(false)}
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(0,0,0,0.55)",
+            background: "rgba(13,13,20,0.45)",
+            backdropFilter: "blur(2px)",
+            WebkitBackdropFilter: "blur(2px)",
             zIndex: 50,
             opacity: switcherOpen ? 1 : 0,
             pointerEvents: switcherOpen ? "auto" : "none",
-            transition: "opacity 0.22s ease",
+            transition: "opacity 0.2s ease",
           }}
         />
 
-        {/* Sheet */}
+        {/* Sheet — matches app surface so it feels embedded */}
         <div
           style={{
             position: "absolute",
@@ -257,23 +260,23 @@ export default function AppShell({
             right: 0,
             bottom: 0,
             zIndex: 51,
-            background: "#1A1A28",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "20px 20px 0 0",
+            background: "#15151E",
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "18px 18px 0 0",
             padding: "0 0 calc(16px + env(safe-area-inset-bottom, 0px))",
             transform: switcherOpen ? "translateY(0)" : "translateY(100%)",
-            transition: "transform 0.28s cubic-bezier(0.32,0.72,0,1)",
-            boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
+            transition: "transform 0.26s cubic-bezier(0.32,0.72,0,1)",
+            boxShadow: "0 -4px 24px rgba(0,0,0,0.3)",
           }}
         >
           {/* Drag handle */}
           <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
             <div
               style={{
-                width: 36,
-                height: 4,
+                width: 32,
+                height: 3,
                 borderRadius: 2,
-                background: "rgba(255,255,255,0.18)",
+                background: "rgba(255,255,255,0.12)",
               }}
             />
           </div>
@@ -281,20 +284,20 @@ export default function AppShell({
           {/* Sheet header */}
           <div
             style={{
-              padding: "4px 20px 14px",
-              borderBottom: "1px solid rgba(255,255,255,0.07)",
+              padding: "4px 20px 12px",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >
             <p
               style={{
                 fontSize: 11,
                 fontWeight: 600,
-                letterSpacing: "0.12em",
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.35)",
+                color: "rgba(255,255,255,0.3)",
               }}
             >
-              Switch Role
+              Switch Between Roles
             </p>
           </div>
 
