@@ -227,6 +227,90 @@ export const BASE_SEPOLIA_CONTRACTS = {
       },
     ] as const,
   },
+  TaskProposalRegistry: {
+    address: (
+      (process.env.NEXT_PUBLIC_TASK_PROPOSAL_REGISTRY as `0x${string}` | undefined) ??
+      "0x2cfbf7212375F687943596916441efcbe1dEc19e"
+    ) as `0x${string}`,
+    abi: [
+      {
+        type: "function",
+        name: "proposeTask",
+        stateMutability: "nonpayable",
+        inputs: [
+          { name: "title",           type: "string",  internalType: "string"  },
+          { name: "description",     type: "string",  internalType: "string"  },
+          { name: "successCriteria", type: "string",  internalType: "string"  },
+          { name: "estimatedTime",   type: "string",  internalType: "string"  },
+          { name: "location",        type: "string",  internalType: "string"  },
+          { name: "creditReward",    type: "uint256", internalType: "uint256" },
+          { name: "voteReward",      type: "uint256", internalType: "uint256" },
+        ],
+        outputs: [{ name: "proposalId", type: "uint256", internalType: "uint256" }],
+      },
+      {
+        type: "function",
+        name: "approveTask",
+        stateMutability: "nonpayable",
+        inputs: [{ name: "proposalId", type: "uint256", internalType: "uint256" }],
+        outputs: [],
+      },
+      {
+        type: "function",
+        name: "getProposal",
+        stateMutability: "view",
+        inputs: [{ name: "proposalId", type: "uint256", internalType: "uint256" }],
+        outputs: [
+          {
+            name: "",
+            type: "tuple",
+            internalType: "struct TaskProposalRegistry.Proposal",
+            components: [
+              { name: "proposer",        type: "address", internalType: "address" },
+              { name: "title",           type: "string",  internalType: "string"  },
+              { name: "description",     type: "string",  internalType: "string"  },
+              { name: "successCriteria", type: "string",  internalType: "string"  },
+              { name: "estimatedTime",   type: "string",  internalType: "string"  },
+              { name: "location",        type: "string",  internalType: "string"  },
+              { name: "creditReward",    type: "uint256", internalType: "uint256" },
+              { name: "voteReward",      type: "uint256", internalType: "uint256" },
+              { name: "proposedAt",      type: "uint64",  internalType: "uint64"  },
+              { name: "reviewedAt",      type: "uint64",  internalType: "uint64"  },
+              { name: "reviewedBy",      type: "address", internalType: "address" },
+              { name: "status",          type: "uint8",   internalType: "enum TaskProposalRegistry.ProposalStatus" },
+            ],
+          },
+        ],
+      },
+      {
+        type: "function",
+        name: "getProposalsByIssuer",
+        stateMutability: "view",
+        inputs: [{ name: "issuer", type: "address", internalType: "address" }],
+        outputs: [{ name: "", type: "uint256[]", internalType: "uint256[]" }],
+      },
+      {
+        type: "event",
+        name: "TaskProposed",
+        inputs: [
+          { name: "proposalId",  type: "uint256", indexed: true,  internalType: "uint256" },
+          { name: "proposer",    type: "address", indexed: true,  internalType: "address" },
+          { name: "title",       type: "string",  indexed: false, internalType: "string"  },
+          { name: "creditReward",type: "uint256", indexed: false, internalType: "uint256" },
+        ],
+        anonymous: false,
+      },
+      {
+        type: "event",
+        name: "TaskApproved",
+        inputs: [
+          { name: "proposalId", type: "uint256", indexed: true, internalType: "uint256" },
+          { name: "approver",   type: "address", indexed: true, internalType: "address" },
+        ],
+        anonymous: false,
+      },
+    ] as const,
+  },
 } as const;
 
 export type DemoOfferRoute = {

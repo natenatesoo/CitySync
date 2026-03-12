@@ -595,6 +595,16 @@ interface DemoContextValue {
   likePost: (postId: string) => void;
   likeEpoch2: (proposalId: string) => void;
   redeemOffer: (offerId: string) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
+  issuerProposeTask: (args: {
+    title: string;
+    description: string;
+    successCriteria: string;
+    estimatedTime: string;
+    location: string;
+    creditReward: number;
+    voteReward?: number;
+  }) => Promise<{ ok: boolean; hash?: `0x${string}`; proposalId?: bigint; error?: string }>;
+  issuerApproveTask: (proposalId: bigint) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   issuerCreateTask: (task: Task) => Promise<{ ok: boolean; hash?: `0x${string}`; taskId: string; error?: string }>;
   issuerVerifyCompletion: (
     taskId: string,
@@ -1154,6 +1164,86 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     [getResultHash, normalizeWriteError, state.offers, writeContractAsync],
   );
 
+  // ── Proposal helpers ─────────────────────────────────────────────────────────
+
+  const getProposalIdFromReceipt = useCallback(async (hash?: `0x${string}`): Promise<bigint | undefined> => {
+    if (!hash) return undefined;
+    try {
+      const receipt = await baseSepoliaPublicClient.getTransactionReceipt({ hash });
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.abi as any,
+            data: log.data,
+            topics: log.topics,
+            eventName: "TaskProposed",
+          });
+          const maybeId = (decoded.args as { proposalId?: bigint }).proposalId;
+          if (typeof maybeId === "bigint") return maybeId;
+        } catch {
+          // Ignore non-matching logs.
+        }
+      }
+    } catch {
+      // Ignore receipt parsing errors.
+    }
+    return undefined;
+  }, []);
+
+  const issuerProposeTask = useCallback(
+    async (args: {
+      title: string;
+      description: string;
+      successCriteria: string;
+      estimatedTime: string;
+      location: string;
+      creditReward: number;
+      voteReward?: number;
+    }) => {
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.abi,
+          functionName: "proposeTask",
+          args: [
+            args.title,
+            args.description,
+            args.successCriteria,
+            args.estimatedTime,
+            args.location,
+            BigInt(Math.max(1, args.creditReward)),
+            BigInt(Math.max(0, args.voteReward ?? 0)),
+          ],
+        });
+        const hash = getResultHash(result);
+        const proposalId = await getProposalIdFromReceipt(hash);
+        return { ok: true, hash, proposalId };
+      } catch (error) {
+        return { ok: false, error: normalizeWriteError(error, "Task proposal failed") };
+      }
+    },
+    [getProposalIdFromReceipt, getResultHash, normalizeWriteError, writeContractAsync],
+  );
+
+  const issuerApproveTask = useCallback(
+    async (proposalId: bigint) => {
+      try {
+        const result = await writeContractAsync({
+          address: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.address,
+          abi: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.abi,
+          functionName: "approveTask",
+          args: [proposalId],
+        });
+        return { ok: true, hash: getResultHash(result) };
+      } catch (error) {
+        return { ok: false, error: normalizeWriteError(error, "Task approval failed") };
+      }
+    },
+    [getResultHash, normalizeWriteError, writeContractAsync],
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+
   const issuerCreateTask = useCallback(
     async (task: Task) => {
       const rewardCity = parseUnits(String(Math.max(0, task.credits)), 18);
@@ -1378,6 +1468,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         likePost,
         likeEpoch2,
         redeemOffer,
+        issuerProposeTask,
+        issuerApproveTask,
         issuerCreateTask,
         issuerVerifyCompletion,
         issuerSetTaskActive,

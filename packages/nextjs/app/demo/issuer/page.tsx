@@ -274,6 +274,10 @@ interface ProposedTask {
   credentials: string;
   credits: number;
   tags: string[];
+  /** Onchain proposal ID returned from TaskProposalRegistry.proposeTask() */
+  onchainProposalId?: bigint;
+  /** Tx hash from the proposeTask() call */
+  proposeTxHash?: `0x${string}`;
 }
 
 type TaskWriteStatus = {
@@ -283,7 +287,7 @@ type TaskWriteStatus = {
 };
 
 export default function IssuerApp() {
-  const { state, setRole, issuerCreateTask, issuerVerifyCompletion, issuerSetTaskActive } = useDemo();
+  const { state, setRole, issuerProposeTask, issuerApproveTask, issuerCreateTask, issuerVerifyCompletion, issuerSetTaskActive } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const { openAuthModal } = useAuthModal();
   const { isConnected, isAuthenticating } = useSignerStatus();
@@ -372,20 +376,53 @@ export default function IssuerApp() {
     setToast("Verify & Mint failed onchain.");
   };
 
-  const handleProposeTask = (proposed: ProposedTask) => {
-    setProposedTasks(prev => [proposed, ...prev]);
+  const handleProposeTask = async (proposed: ProposedTask) => {
     setProposeSheet(false);
-    setToast("Task proposal submitted for review!");
+    setToast("Submitting proposal onchain…");
+    const result = await issuerProposeTask({
+      title:           proposed.title,
+      description:     proposed.successCriteria || "Community civic task.",
+      successCriteria: proposed.successCriteria || "",
+      estimatedTime:   proposed.estimatedTime,
+      location:        proposed.location || "TBD",
+      creditReward:    proposed.credits,
+      voteReward:      proposed.credits,
+    });
+    if (!result.ok) {
+      setToast(result.error ?? "Proposal failed onchain.");
+      return;
+    }
+    // Store locally with the onchain proposal ID so Approve can reference it
+    setProposedTasks(prev => [
+      { ...proposed, onchainProposalId: result.proposalId, proposeTxHash: result.hash },
+      ...prev,
+    ]);
+    setToast(
+      result.proposalId
+        ? `Proposal #${result.proposalId} submitted onchain ✓`
+        : "Proposal submitted onchain ✓",
+    );
   };
 
-  const handleApproveProposed = (proposed: ProposedTask) => {
-    // Dedup check: same title already in approved catalog or issued tasks
+  const handleApproveProposed = async (proposed: ProposedTask) => {
+    // Dedup check
     const dupInCatalog = approvedCatalogTasks.some(t => t.title.toLowerCase() === proposed.title.toLowerCase());
     const dupInIssued = issuer.tasks.some(t => t.title.toLowerCase() === proposed.title.toLowerCase());
     if (dupInCatalog || dupInIssued) {
       setToast("A task with this title already exists in the catalog.");
       return;
     }
+
+    // If we have an onchain proposal ID, call approveTask() on the contract
+    if (proposed.onchainProposalId !== undefined) {
+      setToast("Approving proposal onchain…");
+      const result = await issuerApproveTask(proposed.onchainProposalId);
+      if (!result.ok) {
+        setToast(result.error ?? "Approval failed onchain.");
+        return;
+      }
+    }
+
     const task: Task = {
       id: `task-approved-${Date.now()}`,
       title: proposed.title,
@@ -409,7 +446,7 @@ export default function IssuerApp() {
     };
     setApprovedCatalogTasks(prev => [task, ...prev]);
     setProposedTasks(prev => prev.filter(p => p.id !== proposed.id));
-    setToast("Task approved and added to your catalog!");
+    setToast("Task approved onchain and added to your catalog!");
   };
 
   const handleIssueTask = async (task: Task, slots: number) => {
