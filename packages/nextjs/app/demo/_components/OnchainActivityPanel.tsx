@@ -291,7 +291,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
       if (role === "participant") {
         if (participantCursorRef.current === null) {
-          participantCursorRef.current = latestBlock > 4_000n ? latestBlock - 4_000n : 0n;
+          participantCursorRef.current = latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
         }
 
         let from = participantCursorRef.current + 1n;
@@ -434,7 +434,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         }
 
         if (issuerCursorRef.current === null) {
-          issuerCursorRef.current = latestBlock > 4_000n ? latestBlock - 4_000n : 0n;
+          issuerCursorRef.current = latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
         }
 
         let from = issuerCursorRef.current + 1n;
@@ -593,7 +593,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         }
 
         if (redeemerCursorRef.current === null) {
-          redeemerCursorRef.current = latestBlock > 4_000n ? latestBlock - 4_000n : 0n;
+          redeemerCursorRef.current = latestBlock > 8_000n ? latestBlock - 8_000n : 0n;
         }
 
         let from = redeemerCursorRef.current + 1n;
@@ -639,6 +639,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
               let eventName: string = contract.fallback;
               let actorAddress: string | undefined;
+              let decodeOk = false;
 
               try {
                 const decoded = decodeEventLog({
@@ -647,13 +648,24 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                   data: log.data,
                 }) as { eventName: string; args: Record<string, unknown> };
                 eventName = decoded.eventName;
+                decodeOk = true;
                 // Extract the redeemer address — present in all three contracts' events
                 if (typeof decoded.args.redeemer === "string") {
                   actorAddress = decoded.args.redeemer;
                 }
               } catch {
-                continue;
+                // Event not in ABI (e.g. MCEOptInChanged, Paused, etc.).
+                // If decode failed we keep contract.fallback as eventName so
+                // relevant activity still surfaces; irrelevant admin events
+                // end up deduped because they share the same fallback key.
               }
+
+              // If decode succeeded but the event isn't one we surface, skip.
+              const redeemerRelevant = new Set([
+                "OfferCreated", "OfferRemoved", "RedeemerRegistered",
+                "CityOfferPurchased", "MCEOfferPurchased",
+              ]);
+              if (decodeOk && !redeemerRelevant.has(eventName)) continue;
 
               let actorLabel = "Redeemer Network";
               if (actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR) {
