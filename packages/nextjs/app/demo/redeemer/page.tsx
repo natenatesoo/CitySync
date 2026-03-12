@@ -116,9 +116,7 @@ const IconLock = () => (
 const TABS = [
   { key: "profile", label: "Profile", icon: <IconStore /> },
   { key: "offerings", label: "Offerings", icon: <IconCard /> },
-  { key: "mycity", label: "MyCity", icon: <IconCity /> },
-  { key: "dashboard", label: "Dashboard", icon: <IconDashboard /> },
-  { key: "mces", label: "MCEs", icon: <IconBolt /> },
+  { key: "community", label: "Community", icon: <IconCity /> },
 ];
 
 const ACCENT = "#34eeb6"; // teal — primary / committed
@@ -602,7 +600,15 @@ export default function RedeemerApp() {
         rightPanel={rightPanel}
         phoneFrame
       >
-        {activeTab === "profile" && <ProfileTab redeemer={redeemer} dispatch={dispatch} onLearnMore={openLearnMore} />}
+        {activeTab === "profile" && (
+          <ProfileTab
+            redeemer={redeemer}
+            dispatch={dispatch}
+            committedOfferings={committedOfferings}
+            mceOfferings={mceOfferings}
+            onLearnMore={openLearnMore}
+          />
+        )}
         {activeTab === "offerings" && (
           <OfferingsTab
             committedOfferings={committedOfferings}
@@ -622,23 +628,15 @@ export default function RedeemerApp() {
             onLearnMore={openLearnMore}
           />
         )}
-        {activeTab === "mycity" && (
-          <MyCityTab
+        {activeTab === "community" && (
+          <CommunityTab
             posts={allPosts}
             orgName={redeemer.orgName}
+            state={state}
             onCompose={() => setComposeOpen(true)}
             onLearnMore={openLearnMore}
           />
         )}
-        {activeTab === "dashboard" && (
-          <DashboardTab
-            redeemer={redeemer}
-            committedOfferings={committedOfferings}
-            mceOfferings={mceOfferings}
-            onLearnMore={openLearnMore}
-          />
-        )}
-        {activeTab === "mces" && <MCEsTab state={state} orgName={redeemer.orgName} onLearnMore={openLearnMore} />}
         {catalogEditor?.type === "committed" && (
           <AddOfferingSheet
             type="committed"
@@ -723,12 +721,17 @@ export default function RedeemerApp() {
 function ProfileTab({
   redeemer,
   dispatch,
+  committedOfferings,
+  mceOfferings,
   onLearnMore,
 }: {
   redeemer: ReturnType<typeof useDemo>["state"]["redeemer"];
   dispatch: ReturnType<typeof useDemo>["dispatch"];
+  committedOfferings: CustomOffering[];
+  mceOfferings: MCECustomOffering[];
   onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
+  const [section, setSection] = useState<"profile" | "dashboard">("profile");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(redeemer.orgName);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -781,110 +784,207 @@ function ProfileTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("profile-account")} />
-        <LearnMoreLink onClick={() => onLearnMore("profile-role")} />
+      {/* Profile / Dashboard segment toggle */}
+      <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
+        {(
+          [
+            { key: "profile" as const, label: "Profile", color: ACCENT },
+            { key: "dashboard" as const, label: "Dashboard", color: ACCENT_BLUE },
+          ] as const
+        ).map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => setSection(key)}
+            style={{
+              flex: 1,
+              border: "none",
+              borderRadius: 12,
+              padding: "9px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              background: section === key ? color : "transparent",
+              color: section === key ? BG : MUTED,
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-      {/* Welcome banner */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #001a14 0%, #1E1E2C 100%)",
-          border: "1px solid rgba(52,238,182,0.25)",
-          borderRadius: 20,
-          padding: "20px",
-          marginBottom: 20,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "rgba(52,238,182,0.6)",
-            marginBottom: 4,
-          }}
-        >
-          Registered Redeemer Venue
-        </div>
 
-        {editing ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <input
-              ref={inputRef}
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter") saveEdit();
-                if (e.key === "Escape") setEditing(false);
-              }}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(52,238,182,0.5)",
-                borderRadius: 8,
-                color: "#fff",
-                fontSize: 22,
-                fontWeight: 700,
-                padding: "4px 10px",
-                flex: 1,
-                outline: "none",
-              }}
-            />
-            <button
-              onClick={saveEdit}
-              style={{
-                background: ACCENT,
-                border: "none",
-                borderRadius: 8,
-                padding: "6px 10px",
-                cursor: "pointer",
-                color: BG,
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <IconCheck />
-            </button>
+      {section === "dashboard" && (
+        <DashboardTab
+          redeemer={redeemer}
+          committedOfferings={committedOfferings}
+          mceOfferings={mceOfferings}
+          onLearnMore={onLearnMore}
+        />
+      )}
+
+      {section === "profile" && (
+        <>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
+            <LearnMoreLink onClick={() => onLearnMore("profile-account")} />
+            <LearnMoreLink onClick={() => onLearnMore("profile-role")} />
           </div>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            {/* Logo upload */}
-            <input
-              ref={logoInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleLogoChange}
-            />
-            <button
-              onClick={() => logoInputRef.current?.click()}
-              title="Upload organization logo"
+          {/* Welcome banner */}
+          <div
+            style={{
+              background: "linear-gradient(135deg, #001a14 0%, #1E1E2C 100%)",
+              border: "1px solid rgba(52,238,182,0.25)",
+              borderRadius: 20,
+              padding: "20px",
+              marginBottom: 20,
+            }}
+          >
+            <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: logoUrl ? "transparent" : "rgba(52,238,182,0.1)",
-                border: `1px dashed ${logoUrl ? "transparent" : "rgba(52,238,182,0.4)"}`,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-                overflow: "hidden",
-                flexShrink: 0,
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "rgba(52,238,182,0.6)",
+                marginBottom: 4,
               }}
             >
-              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <span style={{ fontSize: 20 }}>🏪</span>
-              )}
-            </button>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{redeemer.orgName || "Your Venue"}</div>
+              Registered Redeemer Venue
+            </div>
+
+            {editing ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <input
+                  ref={inputRef}
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") saveEdit();
+                    if (e.key === "Escape") setEditing(false);
+                  }}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(52,238,182,0.5)",
+                    borderRadius: 8,
+                    color: "#fff",
+                    fontSize: 22,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    flex: 1,
+                    outline: "none",
+                  }}
+                />
                 <button
-                  onClick={startEdit}
+                  onClick={saveEdit}
+                  style={{
+                    background: ACCENT,
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    color: BG,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <IconCheck />
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                {/* Logo upload */}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleLogoChange}
+                />
+                <button
+                  onClick={() => logoInputRef.current?.click()}
+                  title="Upload organization logo"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    background: logoUrl ? "transparent" : "rgba(52,238,182,0.1)",
+                    border: `1px dashed ${logoUrl ? "transparent" : "rgba(52,238,182,0.4)"}`,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}
+                >
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span style={{ fontSize: 20 }}>🏪</span>
+                  )}
+                </button>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>
+                      {redeemer.orgName || "Your Venue"}
+                    </div>
+                    <button
+                      onClick={startEdit}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        color: MUTED,
+                        padding: 4,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <IconPencil />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(52,238,182,0.5)", marginTop: 1 }}>
+                    Tap icon to upload logo
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>
+              {FAKE_WALLETS.redeemer}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <StatusPill label="Registered Redeemer" color={ACCENT} />
+            </div>
+          </div>
+
+          {/* Role description */}
+          <div
+            style={{
+              background: "rgba(52,238,182,0.05)",
+              border: "1px solid rgba(52,238,182,0.12)",
+              borderRadius: 14,
+              padding: "14px 16px",
+              marginBottom: 20,
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Your Role as a Redeemer</div>
+            <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
+              Accept CITYx credits from civic participants in exchange for goods and services. Create committed
+              offerings for the current Epoch and MCE-linked offerings for city events. Generate QR codes for in-person
+              redemption and process incoming requests from your queue.
+            </p>
+          </div>
+
+          {/* Venue Information */}
+          <SectionLabel
+            text="Venue Information"
+            accentColor={ACCENT_BLUE}
+            right={
+              !editingVenue ? (
+                <button
+                  onClick={startVenueEdit}
                   style={{
                     background: "transparent",
                     border: "none",
@@ -897,168 +997,122 @@ function ProfileTab({
                 >
                   <IconPencil />
                 </button>
+              ) : undefined
+            }
+          />
+          <div
+            style={{
+              ...surfaceCard,
+              marginBottom: 20,
+            }}
+          >
+            {editingVenue ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  {
+                    label: "Address",
+                    value: draftAddress,
+                    setter: setDraftAddress,
+                    placeholder: "Street, City, State ZIP",
+                  },
+                  { label: "Phone Number", value: draftPhone, setter: setDraftPhone, placeholder: "(555) 555-5555" },
+                  {
+                    label: "Website",
+                    value: draftWebsite,
+                    setter: setDraftWebsite,
+                    placeholder: "https://yoursite.com",
+                  },
+                ].map(field => (
+                  <div key={field.label}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, marginBottom: 4 }}>{field.label}</div>
+                    <input
+                      value={field.value}
+                      onChange={e => field.setter(e.target.value)}
+                      placeholder={field.placeholder}
+                      style={{
+                        width: "100%",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(52,238,182,0.4)",
+                        borderRadius: 8,
+                        color: "#fff",
+                        fontSize: 13,
+                        padding: "8px 10px",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <button
+                    onClick={saveVenueEdit}
+                    style={{
+                      flex: 1,
+                      background: ACCENT,
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: BG,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingVenue(false)}
+                    style={{
+                      flex: 1,
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: MUTED,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: "rgba(52,238,182,0.5)", marginTop: 1 }}>Tap icon to upload logo</div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>
-          {FAKE_WALLETS.redeemer}
-        </div>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <StatusPill label="Registered Redeemer" color={ACCENT} />
-        </div>
-      </div>
-
-      {/* Role description */}
-      <div
-        style={{
-          background: "rgba(52,238,182,0.05)",
-          border: "1px solid rgba(52,238,182,0.12)",
-          borderRadius: 14,
-          padding: "14px 16px",
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>Your Role as a Redeemer</div>
-        <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, margin: 0 }}>
-          Accept CITYx credits from civic participants in exchange for goods and services. Create committed offerings
-          for the current Epoch and MCE-linked offerings for city events. Generate QR codes for in-person redemption and
-          process incoming requests from your queue.
-        </p>
-      </div>
-
-      {/* Venue Information */}
-      <SectionLabel
-        text="Venue Information"
-        accentColor={ACCENT_BLUE}
-        right={
-          !editingVenue ? (
-            <button
-              onClick={startVenueEdit}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: MUTED,
-                padding: 4,
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <IconPencil />
-            </button>
-          ) : undefined
-        }
-      />
-      <div
-        style={{
-          ...surfaceCard,
-          marginBottom: 20,
-        }}
-      >
-        {editingVenue ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              {
-                label: "Address",
-                value: draftAddress,
-                setter: setDraftAddress,
-                placeholder: "Street, City, State ZIP",
-              },
-              { label: "Phone Number", value: draftPhone, setter: setDraftPhone, placeholder: "(555) 555-5555" },
-              { label: "Website", value: draftWebsite, setter: setDraftWebsite, placeholder: "https://yoursite.com" },
-            ].map(field => (
-              <div key={field.label}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, marginBottom: 4 }}>{field.label}</div>
-                <input
-                  value={field.value}
-                  onChange={e => field.setter(e.target.value)}
-                  placeholder={field.placeholder}
-                  style={{
-                    width: "100%",
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(52,238,182,0.4)",
-                    borderRadius: 8,
-                    color: "#fff",
-                    fontSize: 13,
-                    padding: "8px 10px",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { label: "Address", value: venueAddress },
+                  { label: "Phone Number", value: venuePhone },
+                  { label: "Website", value: venueWebsite },
+                ].map((row, i) => (
+                  <div
+                    key={row.label}
+                    style={{
+                      ...(i > 0 ? { borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 } : {}),
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: MUTED, flexShrink: 0 }}>{row.label}</span>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: DIMMED,
+                        textAlign: "right",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-              <button
-                onClick={saveVenueEdit}
-                style={{
-                  flex: 1,
-                  background: ACCENT,
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "9px 0",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: BG,
-                  cursor: "pointer",
-                }}
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setEditingVenue(false)}
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 10,
-                  padding: "9px 0",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: MUTED,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+            )}
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[
-              { label: "Address", value: venueAddress },
-              { label: "Phone Number", value: venuePhone },
-              { label: "Website", value: venueWebsite },
-            ].map((row, i) => (
-              <div
-                key={row.label}
-                style={{
-                  ...(i > 0 ? { borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 } : {}),
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <span style={{ fontSize: 13, color: MUTED, flexShrink: 0 }}>{row.label}</span>
-                <span
-                  style={{
-                    fontSize: 13,
-                    color: DIMMED,
-                    textAlign: "right",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {row.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -2369,6 +2423,68 @@ function QRGrid({ seed }: { seed: string }) {
   );
 }
 
+// ─── Community Tab (Feed + MCEs) ──────────────────────────────────────────────
+
+function CommunityTab({
+  posts,
+  orgName,
+  state,
+  onCompose,
+  onLearnMore,
+}: {
+  posts: Post[];
+  orgName: string;
+  state: ReturnType<typeof useDemo>["state"];
+  onCompose: () => void;
+  onLearnMore: (key: RedeemerLearnCardKey) => void;
+}) {
+  const [section, setSection] = useState<"feed" | "mces">("feed");
+
+  return (
+    <div style={{ padding: "0 0 100px" }}>
+      {/* Segment toggle */}
+      <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", margin: "24px 20px 20px" }}>
+        {(
+          [
+            { key: "feed" as const, label: "City Feed", color: ACCENT },
+            { key: "mces" as const, label: "MCEs", color: ACCENT_PURPLE },
+          ] as const
+        ).map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => setSection(key)}
+            style={{
+              flex: 1,
+              border: "none",
+              borderRadius: 12,
+              padding: "9px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              background: section === key ? color : "transparent",
+              color: section === key ? BG : MUTED,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === "feed" && (
+        <div style={{ padding: "0 20px" }}>
+          <MyCityTab posts={posts} orgName={orgName} onCompose={onCompose} onLearnMore={onLearnMore} />
+        </div>
+      )}
+      {section === "mces" && (
+        <div style={{ padding: "0 20px" }}>
+          <MCEsTab state={state} orgName={orgName} onLearnMore={onLearnMore} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MyCity Tab ───────────────────────────────────────────────────────────────
 
 function MyCityTab({
@@ -2398,7 +2514,7 @@ function MyCityTab({
   };
 
   return (
-    <div style={{ padding: "24px 20px 100px" }}>
+    <div style={{ paddingBottom: 20 }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>MyCity Feed</div>
@@ -2725,7 +2841,7 @@ function DashboardTab({
   ];
 
   return (
-    <div style={{ padding: "24px 20px 100px" }}>
+    <div>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <LearnMoreLink onClick={() => onLearnMore("dashboard-metrics")} />
       </div>
@@ -2922,7 +3038,7 @@ function MCEsTab({
   };
 
   return (
-    <div style={{ padding: "24px 20px 100px" }}>
+    <div style={{ paddingBottom: 20 }}>
       {/* Epoch toggle */}
       <div
         style={{

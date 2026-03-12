@@ -364,8 +364,7 @@ const CAT_COLORS: Record<string, string> = {
 const TABS: NavTab[] = [
   { key: "profile", label: "Profile", icon: <IconUser /> },
   { key: "explore", label: "Explore", icon: <IconCompass /> },
-  { key: "mycity", label: "MyCity", icon: <IconCity /> },
-  { key: "vote", label: "Vote", icon: <IconVote /> },
+  { key: "community", label: "Community", icon: <IconCity /> },
   { key: "redeem", label: "Redeem", icon: <IconGift /> },
 ];
 
@@ -2467,6 +2466,66 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// COMMUNITY TAB  (Feed + Vote)
+// ═════════════════════════════════════════════════════════════════════════════
+
+function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
+  const [section, setSection] = useState<"feed" | "vote">("feed");
+
+  return (
+    <div style={{ paddingBottom: 20 }}>
+      {/* Segment toggle */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 16,
+          padding: 4,
+          display: "flex",
+          margin: "20px 16px 20px",
+        }}
+      >
+        {(
+          [
+            { key: "feed" as const, label: "City Feed", color: ACCENT },
+            { key: "vote" as const, label: "Vote", color: PURPLE },
+          ] as const
+        ).map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => setSection(key)}
+            style={{
+              flex: 1,
+              border: "none",
+              borderRadius: 12,
+              padding: "9px 0",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              background: section === key ? color : "transparent",
+              color: section === key ? "#15151E" : "rgba(255,255,255,0.45)",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === "feed" && (
+        <div style={{ padding: "0 16px" }}>
+          <MyCityTab onLearnMore={onLearnMore} />
+        </div>
+      )}
+      {section === "vote" && (
+        <div style={{ padding: "0 16px" }}>
+          <VoteTab onLearnMore={onLearnMore} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // MYCITY TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -2494,7 +2553,7 @@ function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
   };
 
   return (
-    <div style={{ padding: "20px 16px 24px" }}>
+    <div style={{ paddingBottom: 4 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>MyCity Feed</div>
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3 }}>
@@ -2629,7 +2688,7 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
   };
 
   return (
-    <div style={{ padding: "20px 16px 24px" }}>
+    <div style={{ paddingBottom: 4 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Governance Voting</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -3418,8 +3477,7 @@ export default function ParticipantPage() {
       >
         {activeTab === "profile" && <ProfileTab onTabChange={setActiveTab} onLearnMore={openLearnMore} />}
         {activeTab === "explore" && <ExploreTab onLearnMore={openLearnMore} />}
-        {activeTab === "mycity" && <MyCityTab onLearnMore={openLearnMore} />}
-        {activeTab === "vote" && <VoteTab onLearnMore={openLearnMore} />}
+        {activeTab === "community" && <CommunityTab onLearnMore={openLearnMore} />}
         {activeTab === "redeem" && <RedeemTab onLearnMore={openLearnMore} />}
         <VerifyOverlay />
       </AppShell>
