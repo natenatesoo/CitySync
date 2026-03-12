@@ -14,9 +14,10 @@ import { FAKE_WALLETS, PastRedemption, RedemptionOffer, Task, TaskCategory } fro
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
-const ACCENT = "#4169E1";
-const TEAL = "#34eeb6";
-const GOLD = "#DD9E33";
+const ACCENT = "#4169E1"; // blue — primary
+const TEAL = "#34eeb6"; // teal — tasks / rewards / verify
+const GOLD = "#DD9E33"; // gold — MCE / redemptions
+const PURPLE = "#a78bfa"; // purple — governance / vote
 
 type ParticipantLearnCardKey =
   | "profile-overview"
@@ -64,6 +65,53 @@ const PARTICIPANT_LEARN_CARDS: Record<ParticipantLearnCardKey, LearnInfoCard> = 
     body: "CITY credits are redeemed against partner offerings. In production, participants scan the redeemer QR code at point of sale to initiate redemption, then confirm the transaction to execute contract logic onchain and update available balance.",
   },
 };
+
+// ─── Micro-components ─────────────────────────────────────────────────────────
+
+function SectionLabel({
+  text,
+  right,
+  accentColor = ACCENT,
+}: {
+  text: string;
+  right?: React.ReactNode;
+  accentColor?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 10,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span
+          style={{
+            width: 3,
+            height: 12,
+            borderRadius: 2,
+            background: `linear-gradient(180deg, ${accentColor}, ${accentColor}55)`,
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.1em",
+            color: "rgba(255,255,255,0.5)",
+          }}
+        >
+          {text}
+        </span>
+      </div>
+      {right && <div>{right}</div>}
+    </div>
+  );
+}
 
 function getParticipantRightPanel(activeTab: string): React.ReactNode {
   const rightPanel = <OnchainActivityPanel role="participant" accent={ACCENT} />;
@@ -970,39 +1018,55 @@ function RedeemModal({
   );
 }
 
-// ─── Success Toast ────────────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
-function SuccessToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  const isError = /fail|error|not ready/i.test(message);
+  const isInfo = /submitting|approving|pending/i.test(message);
+
   useEffect(() => {
-    const t = setTimeout(onDismiss, 3000);
+    const t = setTimeout(onDismiss, isInfo ? 8000 : 3500);
     return () => clearTimeout(t);
-  }, [onDismiss]);
+  }, [onDismiss, isInfo]);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 90,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 300,
-        background: "#1a2e20",
-        border: "1px solid rgba(52,238,182,0.3)",
-        borderRadius: 12,
-        padding: "12px 20px",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
-        maxWidth: 340,
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span style={{ color: TEAL }}>
-        <IconCheck size={16} />
-      </span>
-      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{message}</span>
-    </div>
+    <>
+      <style>{`
+        @keyframes toastSlide {
+          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
+      <div
+        style={{
+          position: "fixed",
+          top: "env(safe-area-inset-top, 0px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          marginTop: 14,
+          animation: "toastSlide 0.22s cubic-bezier(0.34,1.36,0.64,1) both",
+          background: isError ? "rgba(30,14,20,0.96)" : isInfo ? "rgba(14,18,36,0.96)" : "rgba(10,14,30,0.96)",
+          border: `1px solid ${isError ? "rgba(255,107,157,0.4)" : isInfo ? "rgba(65,105,225,0.4)" : `${ACCENT}55`}`,
+          borderRadius: 40,
+          padding: "9px 18px 9px 14px",
+          color: isError ? "#ff6b9d" : isInfo ? "#8aa8ff" : TEAL,
+          fontSize: 13,
+          fontWeight: 600,
+          zIndex: 400,
+          whiteSpace: "nowrap",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          maxWidth: "calc(100vw - 40px)",
+        }}
+      >
+        <span style={{ fontSize: 15 }}>{isError ? "✗" : isInfo ? "⏳" : "✓"}</span>
+        {message}
+      </div>
+    </>
   );
 }
 
@@ -1282,10 +1346,15 @@ function ProfileTab({
           marginBottom: 14,
         }}
       >
-        {(["overview", "completed"] as const).map(tab => (
+        {(
+          [
+            { key: "overview" as const, label: "Overview", color: ACCENT },
+            { key: "completed" as const, label: `Completed Tasks (${completedHistory.length})`, color: TEAL },
+          ] as const
+        ).map(({ key, label, color }) => (
           <button
-            key={tab}
-            onClick={() => setSection(tab)}
+            key={key}
+            onClick={() => setSection(key)}
             style={{
               flex: 1,
               padding: "9px 0",
@@ -1294,29 +1363,19 @@ function ProfileTab({
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              background: section === tab ? ACCENT : "transparent",
-              color: section === tab ? "white" : "rgba(255,255,255,0.45)",
+              background: section === key ? color : "transparent",
+              color: section === key ? (key === "overview" ? "white" : "#15151E") : "rgba(255,255,255,0.45)",
             }}
           >
-            {tab === "overview" ? "Overview" : `Completed Tasks (${completedHistory.length})`}
+            {label}
           </button>
         ))}
       </div>
 
       {section === "overview" ? (
         <div style={{ ...card }}>
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 12,
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-            }}
-          >
-            Quick Actions
-          </div>
+          <SectionLabel text="Quick Actions" accentColor={ACCENT} />
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <button
               onClick={() => onTabChange("explore")}
@@ -1352,18 +1411,7 @@ function ProfileTab({
         </div>
       ) : (
         <div style={{ ...card }}>
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 12,
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-            }}
-          >
-            Completed Tasks
-          </div>
+          <SectionLabel text="Completed Tasks" accentColor={TEAL} />
           {completedHistory.length === 0 ? (
             <div
               style={{
@@ -2182,10 +2230,23 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
           marginBottom: 16,
         }}
       >
-        {(["browse", "claimed"] as const).map(v => (
+        {(
+          [
+            {
+              key: "browse" as const,
+              label: `Browse Tasks${sortedOpenTasks.length > 0 ? ` (${sortedOpenTasks.length})` : ""}`,
+              color: ACCENT,
+            },
+            {
+              key: "claimed" as const,
+              label: `Claimed Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`,
+              color: TEAL,
+            },
+          ] as const
+        ).map(({ key, label, color }) => (
           <button
-            key={v}
-            onClick={() => setView(v)}
+            key={key}
+            onClick={() => setView(key)}
             style={{
               flex: 1,
               padding: "9px 0",
@@ -2194,14 +2255,12 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              background: view === v ? ACCENT : "transparent",
-              color: view === v ? "white" : "rgba(255,255,255,0.45)",
+              background: view === key ? color : "transparent",
+              color: view === key ? (key === "browse" ? "white" : "#15151E") : "rgba(255,255,255,0.45)",
               transition: "all 0.15s",
             }}
           >
-            {v === "browse"
-              ? `Browse Tasks${sortedOpenTasks.length > 0 ? ` (${sortedOpenTasks.length})` : ""}`
-              : `Claimed Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`}
+            {label}
           </button>
         ))}
       </div>
@@ -2402,7 +2461,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       {executeTask && (
         <ExecuteModal task={executeTask} onConfirm={handleExecuteConfirm} onClose={() => setExecuteTask(null)} />
       )}
-      {toast && <SuccessToast message={toast} onDismiss={() => setToast(null)} />}
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 }
@@ -2589,8 +2648,8 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
       >
         {(
           [
-            { key: "epoch1", label: "Epoch 1 · Voting" },
-            { key: "epoch2", label: "Epoch 2 · Upcoming" },
+            { key: "epoch1", label: "Epoch 1 · Voting", color: PURPLE },
+            { key: "epoch2", label: "Epoch 2 · Upcoming", color: GOLD },
           ] as const
         ).map(s => (
           <button
@@ -2604,8 +2663,8 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
               cursor: "pointer",
               fontSize: 12,
               fontWeight: 600,
-              background: section === s.key ? ACCENT : "transparent",
-              color: section === s.key ? "white" : "rgba(255,255,255,0.45)",
+              background: section === s.key ? s.color : "transparent",
+              color: section === s.key ? "#15151E" : "rgba(255,255,255,0.45)",
               transition: "all 0.15s",
             }}
           >
@@ -2669,6 +2728,7 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
             </div>
           )}
 
+          <SectionLabel text="Active Proposals" accentColor={PURPLE} />
           {(() => {
             const totalVotesCast = Math.max(
               epoch1Mces.reduce((sum, m) => sum + m.votesFor + (p.mceVoteAllocations[m.id] ?? 0), 0),
@@ -2989,8 +3049,8 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
       >
         {(
           [
-            { key: "browse", label: "Browse Offerings" },
-            { key: "history", label: "Redemption History" },
+            { key: "browse", label: "Browse Offerings", color: ACCENT },
+            { key: "history", label: "Redemption History", color: GOLD },
           ] as const
         ).map(item => (
           <button
@@ -3004,8 +3064,8 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              background: view === item.key ? ACCENT : "transparent",
-              color: view === item.key ? "white" : "rgba(255,255,255,0.45)",
+              background: view === item.key ? item.color : "transparent",
+              color: view === item.key ? "#15151E" : "rgba(255,255,255,0.45)",
               transition: "all 0.15s",
             }}
           >
@@ -3354,6 +3414,7 @@ export default function ParticipantPage() {
         title="CitySync · Citizen"
         leftPanel={leftPanel}
         rightPanel={rightPanel}
+        phoneFrame
       >
         {activeTab === "profile" && <ProfileTab onTabChange={setActiveTab} onLearnMore={openLearnMore} />}
         {activeTab === "explore" && <ExploreTab onLearnMore={openLearnMore} />}

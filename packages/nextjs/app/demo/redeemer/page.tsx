@@ -121,7 +121,10 @@ const TABS = [
   { key: "mces", label: "MCEs", icon: <IconBolt /> },
 ];
 
-const ACCENT = "#34eeb6";
+const ACCENT = "#34eeb6"; // teal — primary / committed
+const ACCENT_GOLD = "#DD9E33"; // gold — MCE / business
+const ACCENT_BLUE = "#7eb3ff"; // blue — stats / info
+const ACCENT_PURPLE = "#a78bfa"; // purple — catalog / network
 const SURFACE = "#1E1E2C";
 const BG = "#15151E";
 const MUTED = "rgba(255,255,255,0.45)";
@@ -191,36 +194,55 @@ type QROfferingData = {
 
 type CatalogEditorState = { type: "committed"; editId?: string } | { type: "mce"; editId?: string } | null;
 
-// ─── Success Toast ────────────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
-function SuccessToast({ message, onDone }: { message: string; onDone: () => void }) {
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  const isError = /fail|error|not ready/i.test(message);
+  const isInfo = /submitting|approving|pending/i.test(message);
+
   React.useEffect(() => {
-    const t = setTimeout(onDone, 3000);
+    const t = setTimeout(onDone, isInfo ? 8000 : 3500);
     return () => clearTimeout(t);
-  }, [onDone]);
+  }, [onDone, isInfo]);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 90,
-        left: "50%",
-        transform: "translateX(-50%)",
-        background: "#0d2620",
-        border: "1px solid rgba(52,238,182,0.35)",
-        borderRadius: 12,
-        padding: "12px 20px",
-        color: ACCENT,
-        fontSize: 14,
-        fontWeight: 600,
-        zIndex: 300,
-        whiteSpace: "nowrap",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        maxWidth: 440,
-      }}
-    >
-      ✓ {message}
-    </div>
+    <>
+      <style>{`
+        @keyframes toastSlide {
+          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
+      <div
+        style={{
+          position: "fixed",
+          top: "env(safe-area-inset-top, 0px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          marginTop: 14,
+          animation: "toastSlide 0.22s cubic-bezier(0.34,1.36,0.64,1) both",
+          background: isError ? "rgba(30,14,20,0.96)" : isInfo ? "rgba(14,18,36,0.96)" : "rgba(10,24,20,0.96)",
+          border: `1px solid ${isError ? "rgba(255,107,157,0.4)" : isInfo ? "rgba(65,105,225,0.4)" : `${ACCENT}55`}`,
+          borderRadius: 40,
+          padding: "9px 18px 9px 14px",
+          color: isError ? "#ff6b9d" : isInfo ? "#8aa8ff" : ACCENT,
+          fontSize: 13,
+          fontWeight: 600,
+          zIndex: 400,
+          whiteSpace: "nowrap",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          maxWidth: "calc(100vw - 40px)",
+        }}
+      >
+        <span style={{ fontSize: 15 }}>{isError ? "✗" : isInfo ? "⏳" : "✓"}</span>
+        {message}
+      </div>
+    </>
   );
 }
 
@@ -578,6 +600,7 @@ export default function RedeemerApp() {
         title="Redeemer"
         leftPanel={leftPanel}
         rightPanel={rightPanel}
+        phoneFrame
       >
         {activeTab === "profile" && <ProfileTab redeemer={redeemer} dispatch={dispatch} onLearnMore={openLearnMore} />}
         {activeTab === "offerings" && (
@@ -690,7 +713,7 @@ export default function RedeemerApp() {
         )}
       </AppShell>
 
-      {toast && <SuccessToast message={toast} onDone={() => setToast(null)} />}
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </>
   );
 }
@@ -908,25 +931,28 @@ function ProfileTab({
       </div>
 
       {/* Venue Information */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <SectionLabel text="Venue Information" />
-        {!editingVenue && (
-          <button
-            onClick={startVenueEdit}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: MUTED,
-              padding: 4,
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <IconPencil />
-          </button>
-        )}
-      </div>
+      <SectionLabel
+        text="Venue Information"
+        accentColor={ACCENT_BLUE}
+        right={
+          !editingVenue ? (
+            <button
+              onClick={startVenueEdit}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: MUTED,
+                padding: 4,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <IconPencil />
+            </button>
+          ) : undefined
+        }
+      />
       <div
         style={{
           ...surfaceCard,
@@ -1084,10 +1110,15 @@ function OfferingsTab({
       </div>
       {/* Segment control */}
       <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
-        {(["committed", "mce"] as const).map(v => (
+        {(
+          [
+            { key: "committed", label: `Committed (${committedOfferings.length})`, color: ACCENT },
+            { key: "mce", label: `MCE (${mceOfferings.length})`, color: ACCENT_GOLD },
+          ] as const
+        ).map(({ key, label, color }) => (
           <button
-            key={v}
-            onClick={() => setView(v)}
+            key={key}
+            onClick={() => setView(key)}
             style={{
               flex: 1,
               border: "none",
@@ -1097,13 +1128,11 @@ function OfferingsTab({
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.2s",
-              background: view === v ? ACCENT : "transparent",
-              color: view === v ? BG : MUTED,
+              background: view === key ? color : "transparent",
+              color: view === key ? BG : MUTED,
             }}
           >
-            {v === "committed"
-              ? `Committed Offerings (${committedOfferings.length})`
-              : `MCE Offerings (${mceOfferings.length})`}
+            {label}
           </button>
         ))}
       </div>
@@ -1176,7 +1205,7 @@ function OfferingsTab({
             <IconPlus /> Add Offering to Catalog
           </button>
 
-          <SectionLabel text={`Offering Catalog (${committedCatalog.length})`} />
+          <SectionLabel text={`Offering Catalog (${committedCatalog.length})`} accentColor={ACCENT_PURPLE} />
 
           {committedCatalog.length === 0 ? (
             <EmptyState
@@ -1241,7 +1270,7 @@ function OfferingsTab({
             </div>
           )}
 
-          <SectionLabel text={`Active Committed Offerings (${committedOfferings.length})`} />
+          <SectionLabel text={`Active Committed Offerings (${committedOfferings.length})`} accentColor={ACCENT} />
 
           {committedOfferings.length === 0 ? (
             <EmptyState
@@ -1395,7 +1424,7 @@ function OfferingsTab({
             <IconPlus /> Add Offering to MCE Catalog
           </button>
 
-          <SectionLabel text={`MCE Offering Catalog (${mceCatalog.length})`} />
+          <SectionLabel text={`MCE Offering Catalog (${mceCatalog.length})`} accentColor={ACCENT_GOLD} />
 
           {mceCatalog.length === 0 ? (
             <EmptyState
@@ -1465,7 +1494,7 @@ function OfferingsTab({
             </div>
           )}
 
-          <SectionLabel text={`Active MCE Offerings (${mceOfferings.length})`} />
+          <SectionLabel text={`Active MCE Offerings (${mceOfferings.length})`} accentColor={ACCENT_GOLD} />
 
           {mceOfferings.length === 0 ? (
             <EmptyState
@@ -2701,7 +2730,7 @@ function DashboardTab({
         <LearnMoreLink onClick={() => onLearnMore("dashboard-metrics")} />
       </div>
       {/* Network Totals */}
-      <SectionLabel text="Network Overview" />
+      <SectionLabel text="Network Overview" accentColor={ACCENT_BLUE} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
         <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: ACCENT }}>
@@ -2726,7 +2755,7 @@ function DashboardTab({
       {/* Per-offering breakdown */}
       {offeringStats.length > 0 ? (
         <>
-          <SectionLabel text="Offerings Breakdown" />
+          <SectionLabel text="Offerings Breakdown" accentColor={ACCENT_PURPLE} />
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
             {offeringStats.map((o, i) => (
               <div
@@ -2791,7 +2820,7 @@ function DashboardTab({
       )}
 
       {/* How it works */}
-      <SectionLabel text="How Redemption Works" />
+      <SectionLabel text="How Redemption Works" accentColor={ACCENT} />
       <div style={{ ...surfaceCard, display: "flex", flexDirection: "column", gap: 14 }}>
         {(
           [
@@ -2906,8 +2935,8 @@ function MCEsTab({
       >
         {(
           [
-            { key: "epoch1", label: "Epoch 1 · Voting" },
-            { key: "epoch2", label: "Epoch 2 · Upcoming" },
+            { key: "epoch1", label: "Epoch 1 · Voting", color: ACCENT },
+            { key: "epoch2", label: "Epoch 2 · Upcoming", color: ACCENT_GOLD },
           ] as const
         ).map(s => (
           <button
@@ -2921,7 +2950,7 @@ function MCEsTab({
               cursor: "pointer",
               fontSize: 12,
               fontWeight: 600,
-              background: section === s.key ? ACCENT : "transparent",
+              background: section === s.key ? s.color : "transparent",
               color: section === s.key ? BG : MUTED,
               transition: "all 0.15s",
             }}
@@ -3311,19 +3340,47 @@ function MCEsTab({
 
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
-function SectionLabel({ text }: { text: string }) {
+function SectionLabel({
+  text,
+  right,
+  accentColor = ACCENT,
+}: {
+  text: string;
+  right?: React.ReactNode;
+  accentColor?: string;
+}) {
   return (
     <div
       style={{
-        fontSize: 11,
-        fontWeight: 600,
-        textTransform: "uppercase",
-        letterSpacing: "0.1em",
-        color: "rgba(255,255,255,0.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
         marginBottom: 10,
       }}
     >
-      {text}
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span
+          style={{
+            width: 3,
+            height: 12,
+            borderRadius: 2,
+            background: `linear-gradient(180deg, ${accentColor}, ${accentColor}55)`,
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "rgba(255,255,255,0.5)",
+          }}
+        >
+          {text}
+        </span>
+      </div>
+      {right && <div>{right}</div>}
     </div>
   );
 }
