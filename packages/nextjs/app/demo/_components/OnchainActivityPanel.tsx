@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { decodeEventLog, decodeFunctionData } from "viem";
+import { decodeEventLog } from "viem";
 import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 
@@ -27,12 +27,18 @@ const FRIENDLY_LABELS: Record<string, string> = {
   unclaimOpportunity:  "Task Unclaimed",
   submitCompletion:    "Completion Submitted",
   verifyCompletion:    "Completion Verified → CITY Minted",
-  // Redemption
+  // Redemption events
+  CityOfferPurchased:  "CITY Redeemed",
+  MCEOfferPurchased:   "MCE Credits Redeemed",
   purchaseOffer:       "CITY Redeemed",
   // TaskProposalRegistry
   proposeTask:         "Task Proposed",
   approveTask:         "Task Approved",
-  // DemoRedeemerRegistry
+  // DemoRedeemerRegistry events
+  OfferCreated:        "Offer Created",
+  OfferRemoved:        "Offer Removed",
+  RedeemerRegistered:  "Org Registered",
+  // DemoRedeemerRegistry functions (fallback)
   createOffer:         "Offer Created",
   removeOffer:         "Offer Removed",
   register:            "Org Registered",
@@ -325,15 +331,8 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                   data: log.data,
                 }) as { eventName: string; args: Record<string, unknown> };
                 eventName = decoded.eventName;
-                if (
-                  (eventName === "OpportunityClaimed" || eventName === "OpportunityUnclaimed") &&
-                  typeof decoded.args.citizen === "string"
-                ) {
-                  actorAddress = decoded.args.citizen;
-                } else if (
-                  (eventName === "CompletionSubmitted" || eventName === "CompletionVerified") &&
-                  typeof decoded.args.citizen === "string"
-                ) {
+                // OpportunityManager: citizen arg
+                if (typeof decoded.args.citizen === "string") {
                   actorAddress = decoded.args.citizen;
                 }
               } catch {
@@ -344,13 +343,11 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
               const relevantEvents = new Set([
                 "OpportunityClaimed", "OpportunityUnclaimed",
                 "CompletionSubmitted", "CompletionVerified",
+                // Redemption events — citizen is the buyer
+                "CityOfferPurchased", "MCEOfferPurchased",
               ]);
-              // For redemption contracts any event counts
-              const isRedemptionContract =
-                contract.address === BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address ||
-                contract.address === BASE_SEPOLIA_CONTRACTS.MCERedemption.address;
 
-              if (!isRedemptionContract && !relevantEvents.has(eventName)) continue;
+              if (!relevantEvents.has(eventName)) continue;
 
               const actorLabel =
                 actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR
@@ -606,23 +603,22 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
           {
             address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
             abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
-            fallback: "createOffer",
+            fallback: "OfferCreated",
           },
           {
             address: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address,
             abi: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi,
-            fallback: "purchaseOffer",
+            fallback: "CityOfferPurchased",
           },
           {
             address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,
             abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
-            fallback: "purchaseOffer",
+            fallback: "MCEOfferPurchased",
           },
         ] as const;
 
         const newItems: ActivityItem[] = [];
         const seen = new Set<string>();
-        const txCache = new Map<string, Awaited<ReturnType<typeof baseSepoliaPublicClient.getTransaction>> | null>();
         const chunk = 400n;
 
         while (from <= latestBlock) {
@@ -641,33 +637,22 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
               const bn = log.blockNumber as bigint | undefined;
               if (!hash || bn === undefined) continue;
 
-              let tx = txCache.get(hash);
-              if (tx === undefined) {
-                try {
-                  tx = await baseSepoliaPublicClient.getTransaction({ hash });
-                } catch {
-                  tx = null;
-                }
-                txCache.set(hash, tx);
-              }
+              let eventName: string = contract.fallback;
+              let actorAddress: string | undefined;
 
-              let rawAction: string = contract.fallback;
-              let actorAddress: string | undefined = tx?.from;
-
-              if (tx?.input && tx.input !== "0x") {
-                try {
-                  const decoded = decodeFunctionData({
-                    abi: contract.abi as any,
-                    data: tx.input,
-                  });
-                  if (decoded.functionName) rawAction = String(decoded.functionName);
-                  if (decoded.functionName === "purchaseOffer" && Array.isArray(decoded.args)) {
-                    const redeemerArg = decoded.args[0];
-                    if (typeof redeemerArg === "string") actorAddress = redeemerArg;
-                  }
-                } catch {
-                  // Keep fallback action.
+              try {
+                const decoded = decodeEventLog({
+                  abi: contract.abi as any,
+                  topics: [...(log.topics as readonly `0x${string}`[])] as any,
+                  data: log.data,
+                }) as { eventName: string; args: Record<string, unknown> };
+                eventName = decoded.eventName;
+                // Extract the redeemer address — present in all three contracts' events
+                if (typeof decoded.args.redeemer === "string") {
+                  actorAddress = decoded.args.redeemer;
                 }
+              } catch {
+                continue;
               }
 
               let actorLabel = "Redeemer Network";
@@ -677,7 +662,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                   `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`;
               }
 
-              const action = friendlyLabel(rawAction);
+              const action = friendlyLabel(eventName);
               const key = `${hash}:${action}`;
               if (seen.has(key)) continue;
               seen.add(key);
@@ -690,72 +675,6 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
             }
           }
           from = to + 1n;
-        }
-
-        // Fallback for contract writes that may not emit indexable logs (e.g. some createOffer paths).
-        // Keep this bounded so initial catch-up remains fast.
-        const txScanStart = redeemerCursorRef.current + 1n;
-        const txScanSpan = latestBlock - txScanStart;
-        if (txScanSpan >= 0n && txScanSpan <= 120n) {
-          const watched = new Set(
-            contracts
-              .map(c => c.address.toLowerCase())
-              .concat(BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address.toLowerCase()),
-          );
-
-          for (let bn = txScanStart; bn <= latestBlock; bn++) {
-            let block: any;
-            try {
-              block = await baseSepoliaPublicClient.getBlock({ blockNumber: bn, includeTransactions: true });
-            } catch {
-              continue;
-            }
-            const txs = (block?.transactions ?? []) as any[];
-            for (const tx of txs) {
-              const to = typeof tx.to === "string" ? tx.to.toLowerCase() : "";
-              if (!to || !watched.has(to)) continue;
-              const hash = tx.hash as `0x${string}` | undefined;
-              if (!hash) continue;
-
-              const contract = contracts.find(c => c.address.toLowerCase() === to);
-              let rawAction: string = contract?.fallback ?? "contractCall";
-              let actorAddress: string | undefined = tx.from;
-
-              if (tx.input && tx.input !== "0x") {
-                try {
-                  const decoded = decodeFunctionData({
-                    abi: (contract?.abi ?? BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi) as any,
-                    data: tx.input,
-                  });
-                  if (decoded.functionName) rawAction = String(decoded.functionName);
-                  if (decoded.functionName === "purchaseOffer" && Array.isArray(decoded.args)) {
-                    const redeemerArg = decoded.args[0];
-                    if (typeof redeemerArg === "string") actorAddress = redeemerArg;
-                  }
-                } catch {
-                  // Keep fallback action.
-                }
-              }
-
-              let actorLabel = "Redeemer Network";
-              if (actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR) {
-                actorLabel =
-                  redeemerProfilesRef.current.get(actorAddress.toLowerCase()) ??
-                  `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`;
-              }
-
-              const action = friendlyLabel(rawAction);
-              const key = `${hash}:${action}`;
-              if (seen.has(key)) continue;
-              seen.add(key);
-
-              newItems.push({
-                hash,
-                blockNumber: bn,
-                label: `${actorLabel} · ${action}`,
-              });
-            }
-          }
         }
 
         redeemerCursorRef.current = latestBlock;

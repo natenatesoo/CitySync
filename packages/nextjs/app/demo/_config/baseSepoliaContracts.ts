@@ -180,6 +180,33 @@ export const BASE_SEPOLIA_CONTRACTS = {
           },
         ],
       },
+      {
+        type: "event",
+        name: "OfferCreated",
+        inputs: [
+          { name: "redeemer", type: "address", indexed: true, internalType: "address" },
+          { name: "offerId", type: "uint256", indexed: true, internalType: "uint256" },
+          { name: "name", type: "string", indexed: false, internalType: "string" },
+          { name: "cost", type: "uint256", indexed: false, internalType: "uint256" },
+          { name: "mceOnly", type: "bool", indexed: false, internalType: "bool" },
+        ],
+      },
+      {
+        type: "event",
+        name: "OfferRemoved",
+        inputs: [
+          { name: "redeemer", type: "address", indexed: true, internalType: "address" },
+          { name: "offerId", type: "uint256", indexed: true, internalType: "uint256" },
+        ],
+      },
+      {
+        type: "event",
+        name: "RedeemerRegistered",
+        inputs: [
+          { name: "redeemer", type: "address", indexed: true, internalType: "address" },
+          { name: "orgName", type: "string", indexed: false, internalType: "string" },
+        ],
+      },
     ] as const,
   },
   MCERedemption: {
@@ -195,6 +222,18 @@ export const BASE_SEPOLIA_CONTRACTS = {
         ],
         outputs: [{ name: "receiptId", type: "uint256", internalType: "uint256" }],
       },
+      {
+        type: "event",
+        name: "MCEOfferPurchased",
+        inputs: [
+          { name: "receiptId", type: "uint256", indexed: true, internalType: "uint256" },
+          { name: "citizen", type: "address", indexed: true, internalType: "address" },
+          { name: "redeemer", type: "address", indexed: true, internalType: "address" },
+          { name: "offerId", type: "uint256", indexed: false, internalType: "uint256" },
+          { name: "costMCE", type: "uint256", indexed: false, internalType: "uint256" },
+          { name: "offerName", type: "string", indexed: false, internalType: "string" },
+        ],
+      },
     ] as const,
   },
   DemoCityRedemption: {
@@ -209,6 +248,18 @@ export const BASE_SEPOLIA_CONTRACTS = {
           { name: "offerId", type: "uint256", internalType: "uint256" },
         ],
         outputs: [{ name: "receiptId", type: "uint256", internalType: "uint256" }],
+      },
+      {
+        type: "event",
+        name: "CityOfferPurchased",
+        inputs: [
+          { name: "receiptId", type: "uint256", indexed: true, internalType: "uint256" },
+          { name: "citizen", type: "address", indexed: true, internalType: "address" },
+          { name: "redeemer", type: "address", indexed: true, internalType: "address" },
+          { name: "offerId", type: "uint256", indexed: false, internalType: "uint256" },
+          { name: "costCity", type: "uint256", indexed: false, internalType: "uint256" },
+          { name: "offerName", type: "string", indexed: false, internalType: "string" },
+        ],
       },
     ] as const,
   },
