@@ -37,20 +37,6 @@ const IconCity = () => (
   </svg>
 );
 
-const IconDashboard = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-
-const IconBolt = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-  </svg>
-);
 
 const IconPlus = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
