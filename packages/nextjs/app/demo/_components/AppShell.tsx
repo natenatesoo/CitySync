@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLogout } from "@account-kit/react";
 import BottomNav, { NavTab } from "./BottomNav";
 import WalletModal from "./WalletModal";
 import { useDemo } from "../_context/DemoContext";
@@ -76,6 +77,7 @@ export default function AppShell({
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const { setRole } = useDemo();
   const router = useRouter();
+  const { logout } = useLogout({ onSuccess: () => router.push("/demo") });
 
   const currentRole = ROLES.find(r => r.key === role)!;
 
@@ -396,8 +398,8 @@ export default function AppShell({
             })}
           </div>
 
-          {/* Cancel */}
-          <div style={{ padding: "4px 20px 0" }}>
+          {/* Cancel + Exit */}
+          <div style={{ padding: "4px 20px 0", display: "flex", flexDirection: "column", gap: 8 }}>
             <button
               onClick={() => setSwitcherOpen(false)}
               style={{
@@ -413,6 +415,25 @@ export default function AppShell({
               }}
             >
               Cancel
+            </button>
+            <button
+              onClick={() => {
+                setSwitcherOpen(false);
+                logout();
+              }}
+              style={{
+                width: "100%",
+                padding: "11px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,80,80,0.18)",
+                background: "rgba(255,80,80,0.06)",
+                color: "rgba(255,100,100,0.7)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Exit Demo
             </button>
           </div>
         </div>

@@ -19,6 +19,35 @@ const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 
 const shortHash = (hash: string) => `${hash.slice(0, 8)}...${hash.slice(-6)}`;
 
+// Map raw contract function/event names → investor-friendly labels
+const FRIENDLY_LABELS: Record<string, string> = {
+  // OpportunityManager
+  createOpportunity:   "Task Issued",
+  claimOpportunity:    "Task Claimed",
+  unclaimOpportunity:  "Task Unclaimed",
+  submitCompletion:    "Completion Submitted",
+  verifyCompletion:    "Completion Verified → CITY Minted",
+  // Redemption
+  purchaseOffer:       "CITY Redeemed",
+  // TaskProposalRegistry
+  proposeTask:         "Task Proposed",
+  approveTask:         "Task Approved",
+  // DemoRedeemerRegistry
+  createOffer:         "Offer Created",
+  removeOffer:         "Offer Removed",
+  register:            "Org Registered",
+  // Events (from decodeEventLog)
+  OpportunityCreated:  "Task Issued",
+  OpportunityClaimed:  "Task Claimed",
+  OpportunityUnclaimed:"Task Unclaimed",
+  CompletionSubmitted: "Completion Submitted",
+  CompletionVerified:  "Completion Verified → CITY Minted",
+  TaskProposed:        "Task Proposed",
+  TaskApproved:        "Task Approved",
+};
+
+const friendlyLabel = (raw: string) => FRIENDLY_LABELS[raw] ?? raw;
+
 const formatTimestamp = (timestamp?: bigint) => {
   if (!timestamp) return "Pending";
   const date = new Date(Number(timestamp) * 1000);
@@ -266,72 +295,75 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         const seen = new Set<string>();
         const chunk = 400n;
 
+        // Track OpportunityManager events (claim, submit, verify)
+        // AND redemption contracts (DemoCityRedemption, MCERedemption)
+        const participantContracts = [
+          { address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address, abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi },
+          { address: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address, abi: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi },
+          { address: BASE_SEPOLIA_CONTRACTS.MCERedemption.address,      abi: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi },
+        ] as const;
+
         while (from <= latestBlock) {
           const to = from + chunk > latestBlock ? latestBlock : from + chunk;
-          const logs = await baseSepoliaPublicClient
-            .getLogs({
-              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-              fromBlock: from,
-              toBlock: to,
-            } as any)
-            .catch(() => []);
 
-          for (const log of logs as any[]) {
-            const hash = log.transactionHash as `0x${string}` | undefined;
-            const bn = log.blockNumber as bigint | undefined;
-            if (!hash || bn === undefined) continue;
+          for (const contract of participantContracts) {
+            const logs = await baseSepoliaPublicClient
+              .getLogs({ address: contract.address, fromBlock: from, toBlock: to } as any)
+              .catch(() => []);
 
-            let eventName = "";
-            let actorAddress: string | undefined;
-            try {
-              const decoded = decodeEventLog({
-                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
-                topics: [...(log.topics as readonly `0x${string}`[])] as any,
-                data: log.data,
-              }) as { eventName: string; args: Record<string, unknown> };
-              eventName = decoded.eventName;
-              if (
-                (eventName === "OpportunityClaimed" || eventName === "OpportunityUnclaimed") &&
-                typeof decoded.args.claimer === "string"
-              ) {
-                actorAddress = decoded.args.claimer;
-              } else if (
-                (eventName === "CompletionSubmitted" || eventName === "CompletionVerified") &&
-                typeof decoded.args.citizen === "string"
-              ) {
-                actorAddress = decoded.args.citizen;
+            for (const log of logs as any[]) {
+              const hash = log.transactionHash as `0x${string}` | undefined;
+              const bn = log.blockNumber as bigint | undefined;
+              if (!hash || bn === undefined) continue;
+
+              let eventName = "";
+              let actorAddress: string | undefined;
+              try {
+                const decoded = decodeEventLog({
+                  abi: contract.abi as any,
+                  topics: [...(log.topics as readonly `0x${string}`[])] as any,
+                  data: log.data,
+                }) as { eventName: string; args: Record<string, unknown> };
+                eventName = decoded.eventName;
+                if (
+                  (eventName === "OpportunityClaimed" || eventName === "OpportunityUnclaimed") &&
+                  typeof decoded.args.citizen === "string"
+                ) {
+                  actorAddress = decoded.args.citizen;
+                } else if (
+                  (eventName === "CompletionSubmitted" || eventName === "CompletionVerified") &&
+                  typeof decoded.args.citizen === "string"
+                ) {
+                  actorAddress = decoded.args.citizen;
+                }
+              } catch {
+                continue;
               }
-            } catch {
-              continue;
+
+              // Participant panel: task lifecycle + redemptions
+              const relevantEvents = new Set([
+                "OpportunityClaimed", "OpportunityUnclaimed",
+                "CompletionSubmitted", "CompletionVerified",
+              ]);
+              // For redemption contracts any event counts
+              const isRedemptionContract =
+                contract.address === BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address ||
+                contract.address === BASE_SEPOLIA_CONTRACTS.MCERedemption.address;
+
+              if (!isRedemptionContract && !relevantEvents.has(eventName)) continue;
+
+              const actorLabel =
+                actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR
+                  ? `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`
+                  : "Participant Network";
+
+              const action = friendlyLabel(eventName || "contractCall");
+              const key = `${hash}:${action}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              newItems.push({ hash, blockNumber: bn, label: `${actorLabel} · ${action}` });
             }
-
-            const action =
-              eventName === "OpportunityClaimed"
-                ? "claimOpportunity"
-                : eventName === "OpportunityUnclaimed"
-                  ? "unclaimOpportunity"
-                  : eventName === "CompletionSubmitted"
-                    ? "submitCompletion"
-                    : eventName === "CompletionVerified"
-                      ? "verifyCompletion"
-                      : null;
-
-            if (!action) continue;
-
-            const actorLabel =
-              actorAddress && actorAddress.toLowerCase() !== ZERO_ADDR
-                ? `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`
-                : "Participant Network";
-
-            const key = `${hash}:${action}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-
-            newItems.push({
-              hash,
-              blockNumber: bn,
-              label: `${actorLabel} · ${action}`,
-            });
           }
           from = to + 1n;
         }
@@ -415,66 +447,78 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         const seen = new Set<string>();
         const chunk = 400n;
 
+        const issuerContracts = [
+          {
+            address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
+            abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+            relevantEvents: new Set(["OpportunityCreated", "CompletionVerified"]),
+          },
+          {
+            address: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.TaskProposalRegistry.abi,
+            relevantEvents: new Set(["TaskProposed", "TaskApproved"]),
+          },
+        ] as const;
+
         while (from <= latestBlock) {
           const to = from + chunk > latestBlock ? latestBlock : from + chunk;
-          const logs = await baseSepoliaPublicClient
-            .getLogs({
-              address: BASE_SEPOLIA_CONTRACTS.OpportunityManager.address,
-              fromBlock: from,
-              toBlock: to,
-            } as any)
-            .catch(() => []);
 
-          for (const log of logs as any[]) {
-            const hash = log.transactionHash as `0x${string}` | undefined;
-            const bn = log.blockNumber as bigint | undefined;
-            if (!hash || bn === undefined) continue;
+          for (const contract of issuerContracts) {
+            const logs = await baseSepoliaPublicClient
+              .getLogs({ address: contract.address, fromBlock: from, toBlock: to } as any)
+              .catch(() => []);
 
-            let eventName = "";
-            let issuerAddress: string | undefined;
-            try {
-              const decoded = decodeEventLog({
-                abi: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi as any,
-                topics: [...(log.topics as readonly `0x${string}`[])] as any,
-                data: log.data,
-              }) as { eventName: string; args: Record<string, unknown> };
-              eventName = decoded.eventName;
-              if (eventName === "OpportunityCreated" && typeof decoded.args.issuer === "string") {
-                issuerAddress = decoded.args.issuer;
-              }
-            } catch {
-              continue;
-            }
+            for (const log of logs as any[]) {
+              const hash = log.transactionHash as `0x${string}` | undefined;
+              const bn = log.blockNumber as bigint | undefined;
+              if (!hash || bn === undefined) continue;
 
-            if (eventName !== "OpportunityCreated" && eventName !== "CompletionVerified") continue;
-
-            let actorLabel = "Issuer Network";
-            if (issuerAddress && issuerAddress.toLowerCase() !== ZERO_ADDR) {
-              actorLabel =
-                issuerProfilesRef.current.get(issuerAddress.toLowerCase()) ??
-                `${issuerAddress.slice(0, 6)}...${issuerAddress.slice(-4)}`;
-            }
-
-            if (eventName === "CompletionVerified" && actorLabel === "Issuer Network") {
+              let eventName = "";
+              let issuerAddress: string | undefined;
               try {
-                const tx = await baseSepoliaPublicClient.getTransaction({ hash });
-                const fromAddr = tx.from.toLowerCase();
-                actorLabel = issuerProfilesRef.current.get(fromAddr) ?? `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`;
+                const decoded = decodeEventLog({
+                  abi: contract.abi as any,
+                  topics: [...(log.topics as readonly `0x${string}`[])] as any,
+                  data: log.data,
+                }) as { eventName: string; args: Record<string, unknown> };
+                eventName = decoded.eventName;
+                if (eventName === "OpportunityCreated" && typeof decoded.args.issuer === "string") {
+                  issuerAddress = decoded.args.issuer;
+                } else if (eventName === "TaskProposed" && typeof decoded.args.proposer === "string") {
+                  issuerAddress = decoded.args.proposer;
+                } else if (eventName === "TaskApproved" && typeof decoded.args.approver === "string") {
+                  issuerAddress = decoded.args.approver;
+                }
               } catch {
-                // leave fallback label
+                continue;
               }
+
+              if (!(contract.relevantEvents as Set<string>).has(eventName)) continue;
+
+              let actorLabel = "Issuer Network";
+              if (issuerAddress && issuerAddress.toLowerCase() !== ZERO_ADDR) {
+                actorLabel =
+                  issuerProfilesRef.current.get(issuerAddress.toLowerCase()) ??
+                  `${issuerAddress.slice(0, 6)}...${issuerAddress.slice(-4)}`;
+              }
+
+              if (eventName === "CompletionVerified" && actorLabel === "Issuer Network") {
+                try {
+                  const tx = await baseSepoliaPublicClient.getTransaction({ hash });
+                  const fromAddr = tx.from.toLowerCase();
+                  actorLabel = issuerProfilesRef.current.get(fromAddr) ?? `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`;
+                } catch {
+                  // leave fallback label
+                }
+              }
+
+              const action = friendlyLabel(eventName);
+              const key = `${hash}:${action}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              newItems.push({ hash, blockNumber: bn, label: `${actorLabel} · ${action}` });
             }
-
-            const action = eventName === "OpportunityCreated" ? "createOpportunity" : "verifyCompletion";
-            const key = `${hash}:${action}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-
-            newItems.push({
-              hash,
-              blockNumber: bn,
-              label: `${actorLabel} · ${action}`,
-            });
           }
 
           from = to + 1n;
@@ -607,7 +651,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                 txCache.set(hash, tx);
               }
 
-              let action: string = contract.fallback;
+              let rawAction: string = contract.fallback;
               let actorAddress: string | undefined = tx?.from;
 
               if (tx?.input && tx.input !== "0x") {
@@ -616,7 +660,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                     abi: contract.abi as any,
                     data: tx.input,
                   });
-                  if (decoded.functionName) action = String(decoded.functionName);
+                  if (decoded.functionName) rawAction = String(decoded.functionName);
                   if (decoded.functionName === "purchaseOffer" && Array.isArray(decoded.args)) {
                     const redeemerArg = decoded.args[0];
                     if (typeof redeemerArg === "string") actorAddress = redeemerArg;
@@ -633,6 +677,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                   `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`;
               }
 
+              const action = friendlyLabel(rawAction);
               const key = `${hash}:${action}`;
               if (seen.has(key)) continue;
               seen.add(key);
@@ -673,7 +718,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
               if (!hash) continue;
 
               const contract = contracts.find(c => c.address.toLowerCase() === to);
-              let action = contract?.fallback ?? "contractCall";
+              let rawAction: string = contract?.fallback ?? "contractCall";
               let actorAddress: string | undefined = tx.from;
 
               if (tx.input && tx.input !== "0x") {
@@ -682,7 +727,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                     abi: (contract?.abi ?? BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi) as any,
                     data: tx.input,
                   });
-                  if (decoded.functionName) action = String(decoded.functionName);
+                  if (decoded.functionName) rawAction = String(decoded.functionName);
                   if (decoded.functionName === "purchaseOffer" && Array.isArray(decoded.args)) {
                     const redeemerArg = decoded.args[0];
                     if (typeof redeemerArg === "string") actorAddress = redeemerArg;
@@ -699,6 +744,7 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
                   `${actorAddress.slice(0, 6)}...${actorAddress.slice(-4)}`;
               }
 
+              const action = friendlyLabel(rawAction);
               const key = `${hash}:${action}`;
               if (seen.has(key)) continue;
               seen.add(key);
@@ -832,10 +878,10 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         }}
       >
         {role === "issuer"
-          ? "Issuer Onchain Activity (Global)"
+          ? "Live Issuer Activity · Base Sepolia"
           : role === "redeemer"
-            ? "Redeemer Onchain Activity (Global)"
-            : "Participant Task Onchain Activity (Global)"}
+            ? "Live Redeemer Activity · Base Sepolia"
+            : "Live Participant Activity · Base Sepolia"}
       </div>
 
       {items.length === 0 ? (
