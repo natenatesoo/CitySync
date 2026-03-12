@@ -92,7 +92,10 @@ const TABS = [
 
 const EPOCH1_CAP = 312;
 
-const ACCENT = "#DD9E33";
+const ACCENT = "#DD9E33"; // gold — primary issuer colour
+const ACCENT_PURPLE = "#a78bfa"; // purple — community / MCE content
+const ACCENT_TEAL = "#34eeb6"; // teal — verify / success states
+const ACCENT_BLUE = "#7eb3ff"; // blue — informational / stats
 const SURFACE = "#1E1E2C";
 const BG = "#15151E";
 const MUTED = "rgba(255,255,255,0.45)";
@@ -126,10 +129,17 @@ const surfaceCard: React.CSSProperties = {
   padding: "16px",
 };
 
-/** Card with a faint gold left accent — for primary content cards */
+/** Card with a faint gold left accent — for primary content cards (tasks) */
 const accentCard: React.CSSProperties = {
   ...surfaceCard,
   borderLeft: `3px solid rgba(221,158,51,0.35)`,
+  paddingLeft: 13,
+};
+
+/** Card with a purple left accent — for catalog / community cards */
+const purpleCard: React.CSSProperties = {
+  ...surfaceCard,
+  borderLeft: `3px solid rgba(167,139,250,0.4)`,
   paddingLeft: 13,
 };
 
@@ -533,6 +543,7 @@ export default function IssuerApp() {
         title="Issuer"
         leftPanel={leftPanel}
         rightPanel={rightPanel}
+        phoneFrame
       >
         {isConnected && !address && (
           <div
@@ -993,7 +1004,11 @@ function ProfileTab({
       </div>
 
       {/* Stats */}
-      <SectionLabel text="Issuance Stats" right={<LearnMoreLink onClick={() => onLearnMore("activity-stats")} />} />
+      <SectionLabel
+        text="Issuance Stats"
+        right={<LearnMoreLink onClick={() => onLearnMore("activity-stats")} />}
+        accentColor={ACCENT_BLUE}
+      />
       <div
         style={{
           ...surfaceCard,
@@ -1003,9 +1018,14 @@ function ProfileTab({
           background: "linear-gradient(135deg, #1e1c2e 0%, #1E1E2C 100%)",
         }}
       >
-        <StatRow label="Tasks Created" value={issuer.totalTasksIssued} />
-        <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border />
-        <StatRow label="Pending Verifications" value={totalPending} border accent={totalPending > 0} />
+        <StatRow label="Tasks Created" value={issuer.totalTasksIssued} accentColor={ACCENT_BLUE} />
+        <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border accentColor={ACCENT} />
+        <StatRow
+          label="Pending Verifications"
+          value={totalPending}
+          border
+          accentColor={totalPending > 0 ? ACCENT_TEAL : undefined}
+        />
       </div>
 
       {/* Epoch 1 Issuance Allocation */}
@@ -1062,7 +1082,11 @@ function ProfileTab({
       {/* Active tasks quick view */}
       {activeTaskInstances.length > 0 && (
         <>
-          <SectionLabel text="Active Tasks" right={<LearnMoreLink onClick={() => onLearnMore("active-tasks")} />} />
+          <SectionLabel
+            text="Active Tasks"
+            right={<LearnMoreLink onClick={() => onLearnMore("active-tasks")} />}
+            accentColor={ACCENT_TEAL}
+          />
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
             {activeTaskInstances.map(t => (
               <div
@@ -1324,6 +1348,7 @@ function TasksTab({
             catalog: `Catalog (${approvedCatalogTasks.length})`,
             verify: "Verify",
           };
+          const segAccent = v === "verify" ? ACCENT_TEAL : v === "catalog" ? ACCENT_PURPLE : ACCENT;
           return (
             <button
               key={v}
@@ -1337,7 +1362,7 @@ function TasksTab({
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 0.18s",
-                background: view === v ? ACCENT : "transparent",
+                background: view === v ? segAccent : "transparent",
                 color: view === v ? BG : MUTED,
                 letterSpacing: view === v ? "0.01em" : 0,
               }}
@@ -1456,7 +1481,7 @@ function TasksTab({
               />
             ) : (
               <>
-                <SectionLabel text={`Active Tasks (${openPoolTasks.length})`} />
+                <SectionLabel text={`Active Tasks (${openPoolTasks.length})`} accentColor={ACCENT_TEAL} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {openPoolTasks.map(t => (
                     <div key={t.id} style={{ ...accentCard }}>
@@ -1523,16 +1548,18 @@ function TasksTab({
           {/* Proposed tasks awaiting approval */}
           {proposedTasks.length > 0 && (
             <>
-              <SectionLabel text={`Proposed Tasks (${proposedTasks.length})`} />
+              <SectionLabel text={`Proposed Tasks (${proposedTasks.length})`} accentColor={ACCENT_PURPLE} />
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
                 {proposedTasks.map(pt => (
                   <div
                     key={pt.id}
                     style={{
-                      background: "rgba(221,158,51,0.05)",
-                      border: "1px solid rgba(221,158,51,0.25)",
+                      background: "rgba(167,139,250,0.06)",
+                      border: "1px solid rgba(167,139,250,0.22)",
+                      borderLeft: `3px solid rgba(167,139,250,0.45)`,
                       borderRadius: 16,
                       padding: 16,
+                      paddingLeft: 13,
                     }}
                   >
                     <div style={{ marginBottom: 10 }}>
@@ -1571,14 +1598,14 @@ function TasksTab({
                       }}
                     >
                       <span>Proposed reward</span>
-                      <span style={{ color: ACCENT, fontWeight: 700 }}>{pt.credits} CITYx</span>
+                      <span style={{ color: ACCENT_PURPLE, fontWeight: 700 }}>{pt.credits} CITYx</span>
                     </div>
 
                     <button
                       onClick={() => onApproveProposed(pt)}
                       style={{
                         width: "100%",
-                        background: ACCENT,
+                        background: ACCENT_PURPLE,
                         border: "none",
                         borderRadius: 12,
                         padding: "11px 0",
@@ -1613,13 +1640,13 @@ function TasksTab({
             <EmptyState emoji="📝" title="Propose a Task to add to your Task Catalog." desc="" />
           ) : null}
 
-          <SectionLabel text={`Task Catalog (${approvedCatalogTasks.length})`} />
+          <SectionLabel text={`Task Catalog (${approvedCatalogTasks.length})`} accentColor={ACCENT_PURPLE} />
           {approvedCatalogTasks.length === 0 ? (
             <EmptyState emoji="📚" title="No tasks in catalog" desc="Approve a proposed task to add it to catalog." />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {approvedCatalogTasks.map(task => (
-                <div key={task.id} style={{ ...accentCard }}>
+                <div key={task.id} style={{ ...purpleCard }}>
                   <div
                     style={{
                       display: "flex",
@@ -1635,7 +1662,7 @@ function TasksTab({
                       </div>
                     </div>
                     <div style={{ textAlign: "right", marginLeft: 12 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{task.credits} CITYx</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: ACCENT_PURPLE }}>{task.credits} CITYx</div>
                       <div style={{ fontSize: 11, color: DIMMED }}>+{task.voteTokens} VOTE</div>
                     </div>
                   </div>
@@ -2176,26 +2203,29 @@ function CommunityTab({
           margin: "0 20px 20px",
         }}
       >
-        {(["feed", "mces"] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            style={{
-              flex: 1,
-              border: "none",
-              borderRadius: 10,
-              padding: "8px 0",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.18s",
-              background: section === s ? ACCENT : "transparent",
-              color: section === s ? BG : MUTED,
-            }}
-          >
-            {s === "feed" ? "MyCity Feed" : "MCE Proposals"}
-          </button>
-        ))}
+        {(["feed", "mces"] as const).map(s => {
+          const segAccent = s === "feed" ? ACCENT : ACCENT_PURPLE;
+          return (
+            <button
+              key={s}
+              onClick={() => setSection(s)}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 10,
+                padding: "8px 0",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.18s",
+                background: section === s ? segAccent : "transparent",
+                color: section === s ? BG : MUTED,
+              }}
+            >
+              {s === "feed" ? "MyCity Feed" : "MCE Proposals"}
+            </button>
+          );
+        })}
       </div>
 
       {section === "feed" && (
@@ -4027,7 +4057,15 @@ function ModifyTaskSheet({
 
 // ─── Micro-components ─────────────────────────────────────────────────────────
 
-function SectionLabel({ text, right }: { text: string; right?: React.ReactNode }) {
+function SectionLabel({
+  text,
+  right,
+  accentColor = ACCENT,
+}: {
+  text: string;
+  right?: React.ReactNode;
+  accentColor?: string;
+}) {
   return (
     <div
       style={{
@@ -4043,7 +4081,7 @@ function SectionLabel({ text, right }: { text: string; right?: React.ReactNode }
             width: 3,
             height: 12,
             borderRadius: 2,
-            background: `linear-gradient(180deg, ${ACCENT}, ${ACCENT}55)`,
+            background: `linear-gradient(180deg, ${accentColor}, ${accentColor}55)`,
             flexShrink: 0,
           }}
         />
@@ -4092,13 +4130,17 @@ function StatRow({
   suffix,
   border,
   accent,
+  accentColor,
 }: {
   label: string;
   value: number;
   suffix?: string;
   border?: boolean;
+  /** @deprecated use accentColor instead */
   accent?: boolean;
+  accentColor?: string;
 }) {
+  const color = accentColor ?? (accent ? ACCENT : "#fff");
   return (
     <div
       style={{
@@ -4111,7 +4153,7 @@ function StatRow({
     >
       <span style={{ fontSize: 13, color: MUTED }}>{label}</span>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: accent ? ACCENT : "#fff" }}>{value.toLocaleString()}</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color }}>{value.toLocaleString()}</span>
         {suffix && <span style={{ fontSize: 11, color: DIMMED }}>{suffix}</span>}
       </div>
     </div>

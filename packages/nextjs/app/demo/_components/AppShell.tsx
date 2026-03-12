@@ -53,6 +53,110 @@ interface AppShellProps {
   children: React.ReactNode;
   leftPanel?: React.ReactNode;
   rightPanel?: React.ReactNode;
+  /** When true, renders a phone device bezel around the app */
+  phoneFrame?: boolean;
+}
+
+// ─── Phone Status Bar ───────────────────────────────────────────────────────────
+
+function PhoneStatusBar({ accentColor }: { accentColor: string }) {
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+
+  return (
+    <div
+      style={{
+        height: 50,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        flexShrink: 0,
+        paddingBottom: 6,
+        position: "relative",
+      }}
+    >
+      {/* Dynamic Island pill */}
+      <div
+        style={{
+          width: 126,
+          height: 32,
+          borderRadius: 20,
+          background: "#000",
+          border: "1px solid rgba(255,255,255,0.08)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 12px",
+          boxShadow: `0 0 12px ${accentColor}30`,
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: "0.04em" }}>
+          {time}
+        </span>
+        {/* Signal + battery */}
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          {/* Signal bars */}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 1.5 }}>
+            {[4, 6, 8, 10].map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 3,
+                  height: h,
+                  borderRadius: 1,
+                  background: i < 3 ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)",
+                }}
+              />
+            ))}
+          </div>
+          {/* Battery */}
+          <div
+            style={{
+              width: 18,
+              height: 10,
+              borderRadius: 2,
+              border: "1px solid rgba(255,255,255,0.4)",
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              padding: "1px",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                right: -4,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 3,
+                height: 5,
+                borderRadius: "0 1px 1px 0",
+                background: "rgba(255,255,255,0.3)",
+              }}
+            />
+            <div style={{ width: "75%", height: "100%", borderRadius: 1, background: accentColor }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Home Indicator ─────────────────────────────────────────────────────────────
+
+function HomeIndicator({ accentColor }: { accentColor: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", paddingBottom: 10, paddingTop: 6, flexShrink: 0 }}>
+      <div
+        style={{
+          width: 120,
+          height: 5,
+          borderRadius: 3,
+          background: `linear-gradient(90deg, ${accentColor}40, rgba(255,255,255,0.2), ${accentColor}40)`,
+        }}
+      />
+    </div>
+  );
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -72,6 +176,7 @@ export default function AppShell({
   children,
   leftPanel,
   rightPanel,
+  phoneFrame = false,
 }: AppShellProps) {
   const [walletOpen, setWalletOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -90,6 +195,468 @@ export default function AppShell({
     setSwitcherOpen(false);
     router.push(r.href);
   };
+
+  // ─── Phone inner content (shared between both modes) ───────────────────────
+
+  const phoneInner = (
+    <>
+      {phoneFrame && <PhoneStatusBar accentColor={accentColor} />}
+
+      {/* Header */}
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 35,
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center",
+          padding: phoneFrame ? "10px 14px 10px" : "max(12px, env(safe-area-inset-top)) 14px 10px",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          background: phoneFrame ? "rgba(18,18,28,0.96)" : "rgba(21,21,30,0.92)",
+          backdropFilter: "blur(10px)",
+          flexShrink: 0,
+        }}
+      >
+        {/* Left: Role badge / switcher trigger */}
+        <button
+          onClick={() => setSwitcherOpen(true)}
+          style={{
+            justifySelf: "start",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            minHeight: 42,
+            padding: "6px 10px 6px 8px",
+            borderRadius: 10,
+            border: `1px solid ${currentRole.accent}30`,
+            background: `${currentRole.accent}14`,
+            cursor: "pointer",
+            transition: "background 0.15s ease",
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = `${currentRole.accent}22`;
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = `${currentRole.accent}14`;
+          }}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>{currentRole.emoji}</span>
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.03em",
+              color: currentRole.accent,
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {currentRole.label}
+          </span>
+          {/* Chevron down */}
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={currentRole.accent}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ opacity: 0.7, marginLeft: 1 }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {/* Center: // logo mark */}
+        <div
+          style={{
+            justifySelf: "center",
+            background: accentColor,
+            borderRadius: 10,
+            padding: "6px 10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <svg viewBox="47 2 30 32" width="20" height="22" aria-hidden="true">
+            <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#15151E" strokeWidth="2" />
+            <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="rgba(21,21,30,0.5)" strokeWidth="2" />
+          </svg>
+        </div>
+
+        {/* Right: Wallet button */}
+        <button
+          onClick={() => setWalletOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl transition"
+          style={{
+            justifySelf: "end",
+            minHeight: 42,
+            padding: "8px 12px 8px 10px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          <div className="h-2 w-2 rounded-full" style={{ background: "#34eeb6" }} />
+          <span className="font-mono text-white" style={{ fontSize: 11, lineHeight: 1, whiteSpace: "nowrap" }}>
+            {cityBalance.toLocaleString()} CITY
+          </span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <rect x="2" y="7" width="20" height="15" rx="2" stroke="currentColor" strokeWidth="2" />
+            <path d="M16 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor" />
+            <path d="M2 11h20" stroke="currentColor" strokeWidth="2" />
+            <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      {/* Scrollable content area */}
+      <main
+        className="flex-1 overflow-y-auto"
+        style={{
+          position: "relative",
+          paddingBottom: phoneFrame ? "108px" : "calc(108px + env(safe-area-inset-bottom, 0px))",
+          WebkitOverflowScrolling: "touch",
+          overscrollBehaviorY: "contain",
+        }}
+      >
+        {children}
+      </main>
+
+      {/* Bottom navigation */}
+      <BottomNav tabs={tabs} active={activeTab} onChange={onTabChange} accentColor={accentColor} />
+
+      {phoneFrame && <HomeIndicator accentColor={accentColor} />}
+
+      {/* ── Role Switcher Bottom Sheet ────────────────────────────────────── */}
+      <div
+        onClick={() => setSwitcherOpen(false)}
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(13,13,20,0.45)",
+          backdropFilter: "blur(2px)",
+          WebkitBackdropFilter: "blur(2px)",
+          zIndex: 50,
+          opacity: switcherOpen ? 1 : 0,
+          pointerEvents: switcherOpen ? "auto" : "none",
+          transition: "opacity 0.2s ease",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 51,
+          background: "#15151E",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "18px 18px 0 0",
+          padding: "0 0 calc(16px + env(safe-area-inset-bottom, 0px))",
+          transform: switcherOpen ? "translateY(0)" : "translateY(100%)",
+          transition: "transform 0.26s cubic-bezier(0.32,0.72,0,1)",
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.3)",
+        }}
+      >
+        {/* Drag handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+          <div style={{ width: 32, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.12)" }} />
+        </div>
+
+        {/* Sheet header */}
+        <div style={{ padding: "4px 20px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.3)",
+            }}
+          >
+            Switch Between Roles
+          </p>
+        </div>
+
+        {/* Role options */}
+        <div style={{ padding: "8px 12px" }}>
+          {ROLES.map(r => {
+            const isActive = r.key === role;
+            return (
+              <button
+                key={r.key}
+                onClick={() => handleRoleSwitch(r)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "14px 12px",
+                  borderRadius: 14,
+                  border: isActive ? `1px solid ${r.accent}35` : "1px solid transparent",
+                  background: isActive ? `${r.accent}12` : "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 0.12s ease",
+                  marginBottom: 4,
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    background: `${r.accent}18`,
+                    border: `1px solid ${r.accent}28`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                    flexShrink: 0,
+                  }}
+                >
+                  {r.emoji}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: isActive ? r.accent : "#fff",
+                      lineHeight: 1.2,
+                      marginBottom: 3,
+                    }}
+                  >
+                    {r.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", letterSpacing: "0.03em" }}>
+                    {r.tagline}
+                  </div>
+                </div>
+
+                {isActive && (
+                  <div
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      background: r.accent,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M20 6L9 17l-5-5"
+                        stroke="#0D0D14"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ padding: "4px 20px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+          <button
+            onClick={() => setSwitcherOpen(false)}
+            style={{
+              width: "100%",
+              padding: "13px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.04)",
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              setSwitcherOpen(false);
+              logout();
+            }}
+            style={{
+              width: "100%",
+              padding: "11px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,80,80,0.18)",
+              background: "rgba(255,80,80,0.06)",
+              color: "rgba(255,100,100,0.7)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Exit Demo
+          </button>
+        </div>
+      </div>
+
+      {/* Wallet modal */}
+      {walletOpen && (
+        <WalletModal
+          address={address}
+          cityBalance={cityBalance}
+          voteBalance={voteBalance}
+          mceBalance={mceBalance}
+          orgName={orgName}
+          role={role}
+          onClose={() => setWalletOpen(false)}
+        />
+      )}
+    </>
+  );
+
+  // ─── Phone-frame render mode ────────────────────────────────────────────────
+
+  if (phoneFrame) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{
+          background: `
+            radial-gradient(ellipse 700px 500px at 50% 20%, ${accentColor}1a, transparent 60%),
+            radial-gradient(ellipse 500px 400px at 20% 80%, rgba(100,80,220,0.12), transparent 65%),
+            radial-gradient(ellipse 500px 400px at 80% 70%, rgba(52,238,182,0.08), transparent 65%),
+            #08080f
+          `,
+          fontFamily: "system-ui, -apple-system, sans-serif",
+        }}
+      >
+        {/* Left context panel */}
+        {leftPanel && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              right: "calc(50% + 230px)",
+              width: 280,
+              padding: "72px 20px 40px",
+              display: "flex",
+              flexDirection: "column",
+              overflowY: "auto",
+            }}
+          >
+            {leftPanel}
+          </div>
+        )}
+
+        {/* Right context panel */}
+        {rightPanel && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: "calc(50% + 230px)",
+              width: 280,
+              padding: "72px 20px 40px",
+              display: "flex",
+              flexDirection: "column",
+              overflowY: "auto",
+            }}
+          >
+            {rightPanel}
+          </div>
+        )}
+
+        {/* Device wrapper — side buttons */}
+        <div style={{ position: "relative", height: "calc(100vh - 32px)", maxHeight: 900 }}>
+          {/* Volume buttons (left side) */}
+          <div
+            style={{
+              position: "absolute",
+              left: -5,
+              top: "22%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              zIndex: 1,
+            }}
+          >
+            {[44, 44].map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 4,
+                  height: h,
+                  borderRadius: "2px 0 0 2px",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), -1px 0 4px rgba(0,0,0,0.4)",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Power button (right side) */}
+          <div
+            style={{
+              position: "absolute",
+              right: -5,
+              top: "28%",
+              width: 4,
+              height: 64,
+              borderRadius: "0 2px 2px 0",
+              background: "linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 1px 0 4px rgba(0,0,0,0.4)",
+              zIndex: 1,
+            }}
+          />
+
+          {/* Gradient border bezel */}
+          <div
+            style={{
+              padding: 2,
+              borderRadius: 52,
+              background: `linear-gradient(145deg, ${accentColor}90 0%, rgba(130,100,240,0.6) 45%, rgba(52,238,182,0.5) 100%)`,
+              boxShadow: `
+                0 0 0 1px rgba(0,0,0,0.6),
+                0 0 60px ${accentColor}28,
+                0 0 120px rgba(100,80,220,0.15),
+                0 40px 80px rgba(0,0,0,0.8)
+              `,
+              height: "100%",
+              display: "flex",
+            }}
+          >
+            {/* Phone screen */}
+            <div
+              className="relative flex flex-col overflow-hidden"
+              style={{
+                width: 390,
+                flex: 1,
+                background: "#12121c",
+                borderRadius: 50,
+                overflow: "hidden",
+                position: "relative",
+              }}
+            >
+              {phoneInner}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Normal render mode ─────────────────────────────────────────────────────
 
   return (
     <div
@@ -110,333 +677,7 @@ export default function AppShell({
           boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
         }}
       >
-        {/* Header */}
-        <header
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 35,
-            display: "grid",
-            gridTemplateColumns: "1fr auto 1fr",
-            alignItems: "center",
-            padding: "max(12px, env(safe-area-inset-top)) 14px 10px",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-            background: "rgba(21,21,30,0.92)",
-            backdropFilter: "blur(10px)",
-            flexShrink: 0,
-          }}
-        >
-          {/* Left: Role badge / switcher trigger */}
-          <button
-            onClick={() => setSwitcherOpen(true)}
-            style={{
-              justifySelf: "start",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              minHeight: 42,
-              padding: "6px 10px 6px 8px",
-              borderRadius: 10,
-              border: `1px solid ${currentRole.accent}30`,
-              background: `${currentRole.accent}14`,
-              cursor: "pointer",
-              transition: "background 0.15s ease",
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = `${currentRole.accent}22`;
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = `${currentRole.accent}14`;
-            }}
-          >
-            <span style={{ fontSize: 14, lineHeight: 1 }}>{currentRole.emoji}</span>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.03em",
-                color: currentRole.accent,
-                lineHeight: 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {currentRole.label}
-            </span>
-            {/* Chevron down */}
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={currentRole.accent}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ opacity: 0.7, marginLeft: 1 }}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-
-          {/* Center: // logo mark */}
-          <div
-            style={{
-              justifySelf: "center",
-              background: accentColor,
-              borderRadius: 10,
-              padding: "6px 10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg viewBox="47 2 30 32" width="20" height="22" aria-hidden="true">
-              <polygon points="51,32 55,32 62,10 58,10" fill="none" stroke="#15151E" strokeWidth="2" />
-              <polygon points="62,28 66,28 73,6 69,6" fill="none" stroke="rgba(21,21,30,0.5)" strokeWidth="2" />
-            </svg>
-          </div>
-
-          {/* Right: Wallet button */}
-          <button
-            onClick={() => setWalletOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl transition"
-            style={{
-              justifySelf: "end",
-              minHeight: 42,
-              padding: "8px 12px 8px 10px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            <div className="h-2 w-2 rounded-full" style={{ background: "#34eeb6" }} />
-            <span className="font-mono text-white" style={{ fontSize: 11, lineHeight: 1, whiteSpace: "nowrap" }}>
-              {cityBalance.toLocaleString()} CITY
-            </span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ color: "rgba(255,255,255,0.4)" }}>
-              <rect x="2" y="7" width="20" height="15" rx="2" stroke="currentColor" strokeWidth="2" />
-              <path d="M16 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor" />
-              <path d="M2 11h20" stroke="currentColor" strokeWidth="2" />
-              <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </header>
-
-        {/* Scrollable content area */}
-        <main
-          className="flex-1 overflow-y-auto"
-          style={{
-            position: "relative",
-            paddingBottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
-            WebkitOverflowScrolling: "touch",
-            overscrollBehaviorY: "contain",
-          }}
-        >
-          {children}
-        </main>
-
-        {/* Bottom navigation */}
-        <BottomNav tabs={tabs} active={activeTab} onChange={onTabChange} accentColor={accentColor} />
-
-        {/* ── Role Switcher Bottom Sheet ────────────────────────────────────── */}
-        {/* Backdrop — subtle, app-tinted rather than heavy overlay */}
-        <div
-          onClick={() => setSwitcherOpen(false)}
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(13,13,20,0.45)",
-            backdropFilter: "blur(2px)",
-            WebkitBackdropFilter: "blur(2px)",
-            zIndex: 50,
-            opacity: switcherOpen ? 1 : 0,
-            pointerEvents: switcherOpen ? "auto" : "none",
-            transition: "opacity 0.2s ease",
-          }}
-        />
-
-        {/* Sheet — matches app surface so it feels embedded */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 51,
-            background: "#15151E",
-            borderTop: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: "18px 18px 0 0",
-            padding: "0 0 calc(16px + env(safe-area-inset-bottom, 0px))",
-            transform: switcherOpen ? "translateY(0)" : "translateY(100%)",
-            transition: "transform 0.26s cubic-bezier(0.32,0.72,0,1)",
-            boxShadow: "0 -4px 24px rgba(0,0,0,0.3)",
-          }}
-        >
-          {/* Drag handle */}
-          <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
-            <div
-              style={{
-                width: 32,
-                height: 3,
-                borderRadius: 2,
-                background: "rgba(255,255,255,0.12)",
-              }}
-            />
-          </div>
-
-          {/* Sheet header */}
-          <div
-            style={{
-              padding: "4px 20px 12px",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.3)",
-              }}
-            >
-              Switch Between Roles
-            </p>
-          </div>
-
-          {/* Role options */}
-          <div style={{ padding: "8px 12px" }}>
-            {ROLES.map(r => {
-              const isActive = r.key === role;
-              return (
-                <button
-                  key={r.key}
-                  onClick={() => handleRoleSwitch(r)}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    padding: "14px 12px",
-                    borderRadius: 14,
-                    border: isActive ? `1px solid ${r.accent}35` : "1px solid transparent",
-                    background: isActive ? `${r.accent}12` : "transparent",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: "background 0.12s ease",
-                    marginBottom: 4,
-                  }}
-                >
-                  {/* Emoji badge */}
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: `${r.accent}18`,
-                      border: `1px solid ${r.accent}28`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 20,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {r.emoji}
-                  </div>
-
-                  {/* Label + tagline */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: isActive ? r.accent : "#fff",
-                        lineHeight: 1.2,
-                        marginBottom: 3,
-                      }}
-                    >
-                      {r.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "rgba(255,255,255,0.38)",
-                        letterSpacing: "0.03em",
-                      }}
-                    >
-                      {r.tagline}
-                    </div>
-                  </div>
-
-                  {/* Active checkmark */}
-                  {isActive && (
-                    <div
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: "50%",
-                        background: r.accent,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M20 6L9 17l-5-5"
-                          stroke="#0D0D14"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Cancel + Exit */}
-          <div style={{ padding: "4px 20px 0", display: "flex", flexDirection: "column", gap: 8 }}>
-            <button
-              onClick={() => setSwitcherOpen(false)}
-              style={{
-                width: "100%",
-                padding: "13px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.04)",
-                color: "rgba(255,255,255,0.45)",
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                setSwitcherOpen(false);
-                logout();
-              }}
-              style={{
-                width: "100%",
-                padding: "11px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,80,80,0.18)",
-                background: "rgba(255,80,80,0.06)",
-                color: "rgba(255,100,100,0.7)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Exit Demo
-            </button>
-          </div>
-        </div>
+        {phoneInner}
       </div>
 
       {/* Left context panel */}
@@ -475,19 +716,6 @@ export default function AppShell({
         >
           {rightPanel}
         </div>
-      )}
-
-      {/* Wallet modal */}
-      {walletOpen && (
-        <WalletModal
-          address={address}
-          cityBalance={cityBalance}
-          voteBalance={voteBalance}
-          mceBalance={mceBalance}
-          orgName={orgName}
-          role={role}
-          onClose={() => setWalletOpen(false)}
-        />
       )}
     </div>
   );
