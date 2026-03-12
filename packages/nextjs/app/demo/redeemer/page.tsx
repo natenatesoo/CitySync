@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
-import { useSmartAccountClient } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { LearnInfoCard, LearnMoreLink, LearnMorePanel } from "../_components/LearnMore";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
@@ -295,7 +294,6 @@ const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
 export default function RedeemerApp() {
   const { state, setRole, redeemerAddOffer, dispatch } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const { client } = useSmartAccountClient({ type: "ModularAccountV2" });
   const [activeTab, setActiveTab] = useState("profile");
   const [catalogEditor, setCatalogEditor] = useState<CatalogEditorState>(null);
   const [qrTarget, setQrTarget] = useState<QROfferingData | null>(null);
@@ -312,7 +310,11 @@ export default function RedeemerApp() {
   const [openInfoCards, setOpenInfoCards] = useState<RedeemerLearnCardKey[]>([]);
 
   const { redeemer, mces } = state;
-  const canCommitOnchain = Boolean(address && client);
+  // Only require `address` — the smart-account client can lag behind by
+  // 1-3 s after login or after a prior UserOp. If it still isn't ready
+  // when the write fires, writeContractAsync (DemoContext) will throw a
+  // clear "Session not ready" message rather than silently blocking.
+  const canCommitOnchain = Boolean(address);
   const walletStorageSuffix = React.useMemo(() => (address ?? FAKE_WALLETS.redeemer).toLowerCase(), [address]);
   const committedCatalogStorageKey = React.useMemo(
     () => `${REDEEMER_COMMITTED_CATALOG_STORAGE_PREFIX}:${walletStorageSuffix}`,
