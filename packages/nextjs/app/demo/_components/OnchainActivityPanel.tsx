@@ -22,34 +22,34 @@ const shortHash = (hash: string) => `${hash.slice(0, 8)}...${hash.slice(-6)}`;
 // Map raw contract function/event names → investor-friendly labels
 const FRIENDLY_LABELS: Record<string, string> = {
   // OpportunityManager
-  createOpportunity:   "Task Issued",
-  claimOpportunity:    "Task Claimed",
-  unclaimOpportunity:  "Task Unclaimed",
-  submitCompletion:    "Completion Submitted",
-  verifyCompletion:    "Completion Verified → CITY Minted",
+  createOpportunity: "Task Issued",
+  claimOpportunity: "Task Claimed",
+  unclaimOpportunity: "Task Unclaimed",
+  submitCompletion: "Completion Submitted",
+  verifyCompletion: "Completion Verified → CITY Minted",
   // Redemption events
-  CityOfferPurchased:  "CITY Redeemed",
-  MCEOfferPurchased:   "MCE Credits Redeemed",
-  purchaseOffer:       "CITY Redeemed",
+  CityOfferPurchased: "CITY Redeemed",
+  MCEOfferPurchased: "MCE Credits Redeemed",
+  purchaseOffer: "CITY Redeemed",
   // TaskProposalRegistry
-  proposeTask:         "Task Proposed",
-  approveTask:         "Task Approved",
+  proposeTask: "Task Proposed",
+  approveTask: "Task Approved",
   // DemoRedeemerRegistry events
-  OfferCreated:        "Offer Created",
-  OfferRemoved:        "Offer Removed",
-  RedeemerRegistered:  "Org Registered",
+  OfferCreated: "Offer Created",
+  OfferRemoved: "Offer Removed",
+  RedeemerRegistered: "Org Registered",
   // DemoRedeemerRegistry functions (fallback)
-  createOffer:         "Offer Created",
-  removeOffer:         "Offer Removed",
-  register:            "Org Registered",
+  createOffer: "Offer Created",
+  removeOffer: "Offer Removed",
+  register: "Org Registered",
   // Events (from decodeEventLog)
-  OpportunityCreated:  "Task Issued",
-  OpportunityClaimed:  "Task Claimed",
-  OpportunityUnclaimed:"Task Unclaimed",
+  OpportunityCreated: "Task Issued",
+  OpportunityClaimed: "Task Claimed",
+  OpportunityUnclaimed: "Task Unclaimed",
   CompletionSubmitted: "Completion Submitted",
-  CompletionVerified:  "Completion Verified → CITY Minted",
-  TaskProposed:        "Task Proposed",
-  TaskApproved:        "Task Approved",
+  CompletionVerified: "Completion Verified → CITY Minted",
+  TaskProposed: "Task Proposed",
+  TaskApproved: "Task Approved",
 };
 
 const friendlyLabel = (raw: string) => FRIENDLY_LABELS[raw] ?? raw;
@@ -316,15 +316,20 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         ] as const;
 
         const PARTICIPANT_ABI_BY_ADDRESS: Record<string, readonly unknown[]> = {
-          [BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase()]: BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
-          [BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address.toLowerCase()]: BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi,
+          [BASE_SEPOLIA_CONTRACTS.OpportunityManager.address.toLowerCase()]:
+            BASE_SEPOLIA_CONTRACTS.OpportunityManager.abi,
+          [BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.address.toLowerCase()]:
+            BASE_SEPOLIA_CONTRACTS.DemoCityRedemption.abi,
           [BASE_SEPOLIA_CONTRACTS.MCERedemption.address.toLowerCase()]: BASE_SEPOLIA_CONTRACTS.MCERedemption.abi,
         };
 
         const participantRelevant = new Set([
-          "OpportunityClaimed", "OpportunityUnclaimed",
-          "CompletionSubmitted", "CompletionVerified",
-          "CityOfferPurchased", "MCEOfferPurchased",
+          "OpportunityClaimed",
+          "OpportunityUnclaimed",
+          "CompletionSubmitted",
+          "CompletionVerified",
+          "CityOfferPurchased",
+          "MCEOfferPurchased",
         ]);
 
         while (from <= latestBlock) {
@@ -332,7 +337,10 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
           const logs = await baseSepoliaPublicClient
             .getLogs({ address: PARTICIPANT_ADDRESSES, fromBlock: from, toBlock: to } as any)
-            .catch((err: unknown) => { console.warn("[participant panel] getLogs failed:", err); return []; });
+            .catch((err: unknown) => {
+              console.warn("[participant panel] getLogs failed:", err);
+              return [];
+            });
 
           for (const log of logs as any[]) {
             const hash = log.transactionHash as `0x${string}` | undefined;
@@ -479,7 +487,10 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
 
           const logs = await baseSepoliaPublicClient
             .getLogs({ address: ISSUER_ADDRESSES, fromBlock: from, toBlock: to } as any)
-            .catch((err: unknown) => { console.warn("[issuer panel] getLogs failed:", err); return []; });
+            .catch((err: unknown) => {
+              console.warn("[issuer panel] getLogs failed:", err);
+              return [];
+            });
 
           for (const log of logs as any[]) {
             const hash = log.transactionHash as `0x${string}` | undefined;
@@ -643,8 +654,11 @@ export function OnchainActivityPanel({ role, accent }: { role: ActivityRole; acc
         };
 
         const redeemerRelevant = new Set([
-          "OfferCreated", "OfferRemoved", "RedeemerRegistered",
-          "CityOfferPurchased", "MCEOfferPurchased",
+          "OfferCreated",
+          "OfferRemoved",
+          "RedeemerRegistered",
+          "CityOfferPurchased",
+          "MCEOfferPurchased",
         ]);
 
         const newItems: ActivityItem[] = [];

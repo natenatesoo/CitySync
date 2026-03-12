@@ -39,24 +39,6 @@ const IconCity = () => (
   </svg>
 );
 
-const IconVerify = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path
-      d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const IconBolt = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-  </svg>
-);
-
 const IconPlus = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -103,9 +85,9 @@ const IconHeart = () => (
 // ─── Constants & Styles ───────────────────────────────────────────────────────
 
 const TABS = [
-  { key: "profile",    label: "Profile",    icon: <IconBuilding /> },
-  { key: "tasks",      label: "Tasks",      icon: <IconClipboard /> },
-  { key: "community",  label: "Community",  icon: <IconCity /> },
+  { key: "profile", label: "Profile", icon: <IconBuilding /> },
+  { key: "tasks", label: "Tasks", icon: <IconClipboard /> },
+  { key: "community", label: "Community", icon: <IconCity /> },
 ];
 
 const EPOCH1_CAP = 312;
@@ -237,7 +219,7 @@ const ISSUER_LEARN_CARDS: Record<IssuerLearnCardKey, LearnInfoCard> = {
 
 function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   const isError = /fail|error|not ready/i.test(message);
-  const isInfo  = /submitting|approving|pending/i.test(message);
+  const isInfo = /submitting|approving|pending/i.test(message);
 
   React.useEffect(() => {
     const t = setTimeout(onDone, isInfo ? 8000 : 3500);
@@ -260,11 +242,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
           transform: "translateX(-50%)",
           marginTop: 14,
           animation: "toastSlide 0.22s cubic-bezier(0.34,1.36,0.64,1) both",
-          background: isError
-            ? "rgba(30,14,20,0.96)"
-            : isInfo
-              ? "rgba(14,18,36,0.96)"
-              : "rgba(14,22,20,0.96)",
+          background: isError ? "rgba(30,14,20,0.96)" : isInfo ? "rgba(14,18,36,0.96)" : "rgba(14,22,20,0.96)",
           border: `1px solid ${isError ? "rgba(255,107,157,0.4)" : isInfo ? "rgba(65,105,225,0.4)" : `${ACCENT}55`}`,
           borderRadius: 40,
           padding: "9px 18px 9px 14px",
@@ -282,9 +260,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
           maxWidth: "calc(100vw - 40px)",
         }}
       >
-        <span style={{ fontSize: 15, lineHeight: 1 }}>
-          {isError ? "✕" : isInfo ? "⋯" : "✓"}
-        </span>
+        <span style={{ fontSize: 15, lineHeight: 1 }}>{isError ? "✕" : isInfo ? "⋯" : "✓"}</span>
         <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{message}</span>
       </div>
     </>
@@ -317,7 +293,15 @@ type TaskWriteStatus = {
 };
 
 export default function IssuerApp() {
-  const { state, setRole, issuerProposeTask, issuerApproveTask, issuerCreateTask, issuerVerifyCompletion, issuerSetTaskActive } = useDemo();
+  const {
+    state,
+    setRole,
+    issuerProposeTask,
+    issuerApproveTask,
+    issuerCreateTask,
+    issuerVerifyCompletion,
+    issuerSetTaskActive,
+  } = useDemo();
   const { address } = useAccount({ type: "ModularAccountV2" });
   const { openAuthModal } = useAuthModal();
   const { isConnected, isAuthenticating } = useSignerStatus();
@@ -410,13 +394,13 @@ export default function IssuerApp() {
     setProposeSheet(false);
     setToast("Submitting proposal onchain…");
     const result = await issuerProposeTask({
-      title:           proposed.title,
-      description:     proposed.successCriteria || "Community civic task.",
+      title: proposed.title,
+      description: proposed.successCriteria || "Community civic task.",
       successCriteria: proposed.successCriteria || "",
-      estimatedTime:   proposed.estimatedTime,
-      location:        proposed.location || "TBD",
-      creditReward:    proposed.credits,
-      voteReward:      proposed.credits,
+      estimatedTime: proposed.estimatedTime,
+      location: proposed.location || "TBD",
+      creditReward: proposed.credits,
+      voteReward: proposed.credits,
     });
     if (!result.ok) {
       setToast(result.error ?? "Proposal failed onchain.");
@@ -427,11 +411,7 @@ export default function IssuerApp() {
       { ...proposed, onchainProposalId: result.proposalId, proposeTxHash: result.hash },
       ...prev,
     ]);
-    setToast(
-      result.proposalId
-        ? `Proposal #${result.proposalId} submitted onchain ✓`
-        : "Proposal submitted onchain ✓",
-    );
+    setToast(result.proposalId ? `Proposal #${result.proposalId} submitted onchain ✓` : "Proposal submitted onchain ✓");
   };
 
   const handleApproveProposed = async (proposed: ProposedTask) => {
@@ -1014,7 +994,15 @@ function ProfileTab({
 
       {/* Stats */}
       <SectionLabel text="Issuance Stats" right={<LearnMoreLink onClick={() => onLearnMore("activity-stats")} />} />
-      <div style={{ ...surfaceCard, padding: 0, marginBottom: 20, overflow: "hidden", background: "linear-gradient(135deg, #1e1c2e 0%, #1E1E2C 100%)" }}>
+      <div
+        style={{
+          ...surfaceCard,
+          padding: 0,
+          marginBottom: 20,
+          overflow: "hidden",
+          background: "linear-gradient(135deg, #1e1c2e 0%, #1E1E2C 100%)",
+        }}
+      >
         <StatRow label="Tasks Created" value={issuer.totalTasksIssued} />
         <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border />
         <StatRow label="Pending Verifications" value={totalPending} border accent={totalPending > 0} />
@@ -1320,12 +1308,21 @@ function TasksTab({
       </div>
 
       {/* Segment control — Issue / Catalog / Verify */}
-      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, display: "flex", marginBottom: 20, gap: 2 }}>
+      <div
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: 14,
+          padding: 4,
+          display: "flex",
+          marginBottom: 20,
+          gap: 2,
+        }}
+      >
         {(["issue", "catalog", "verify"] as const).map(v => {
           const labels: Record<string, string> = {
-            issue:   `Issue (${onchainTasks.length})`,
+            issue: `Issue (${onchainTasks.length})`,
             catalog: `Catalog (${approvedCatalogTasks.length})`,
-            verify:  "Verify",
+            verify: "Verify",
           };
           return (
             <button
@@ -2204,9 +2201,7 @@ function CommunityTab({
       {section === "feed" && (
         <MyCityTab posts={posts} orgName={orgName} onCompose={onCompose} onLearnMore={onLearnMore} />
       )}
-      {section === "mces" && (
-        <MCEsTab state={state} orgName={orgName} onLearnMore={onLearnMore} />
-      )}
+      {section === "mces" && <MCEsTab state={state} orgName={orgName} onLearnMore={onLearnMore} />}
     </div>
   );
 }
@@ -4116,9 +4111,7 @@ function StatRow({
     >
       <span style={{ fontSize: 13, color: MUTED }}>{label}</span>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: accent ? ACCENT : "#fff" }}>
-          {value.toLocaleString()}
-        </span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: accent ? ACCENT : "#fff" }}>{value.toLocaleString()}</span>
         {suffix && <span style={{ fontSize: 11, color: DIMMED }}>{suffix}</span>}
       </div>
     </div>
