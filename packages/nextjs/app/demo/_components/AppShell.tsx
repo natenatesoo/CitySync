@@ -1,9 +1,41 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import BottomNav, { NavTab } from "./BottomNav";
 import WalletModal from "./WalletModal";
+import { useDemo } from "../_context/DemoContext";
+
+// ─── Role definitions (single source of truth for the switcher) ────────────────
+
+const ROLES = [
+  {
+    key: "participant" as const,
+    emoji: "🏙️",
+    label: "Participant",
+    tagline: "Earn · Vote · Redeem",
+    accent: "#4169E1",
+    href: "/demo/participant",
+  },
+  {
+    key: "issuer" as const,
+    emoji: "📋",
+    label: "Issuer Org",
+    tagline: "Create · Verify · Distribute",
+    accent: "#DD9E33",
+    href: "/demo/issuer",
+  },
+  {
+    key: "redeemer" as const,
+    emoji: "🏪",
+    label: "Redeemer Org",
+    tagline: "Incentivize · Reward · Track",
+    accent: "#34eeb6",
+    href: "/demo/redeemer",
+  },
+] as const;
+
+// ─── Props ─────────────────────────────────────────────────────────────────────
 
 interface AppShellProps {
   role: "participant" | "issuer" | "redeemer";
@@ -22,6 +54,8 @@ interface AppShellProps {
   rightPanel?: React.ReactNode;
 }
 
+// ─── Component ─────────────────────────────────────────────────────────────────
+
 export default function AppShell({
   role,
   orgName,
@@ -39,6 +73,21 @@ export default function AppShell({
   rightPanel,
 }: AppShellProps) {
   const [walletOpen, setWalletOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const { setRole } = useDemo();
+  const router = useRouter();
+
+  const currentRole = ROLES.find(r => r.key === role)!;
+
+  const handleRoleSwitch = (r: (typeof ROLES)[number]) => {
+    if (r.key === role) {
+      setSwitcherOpen(false);
+      return;
+    }
+    setRole(r.key);
+    setSwitcherOpen(false);
+    router.push(r.href);
+  };
 
   return (
     <div
@@ -70,41 +119,63 @@ export default function AppShell({
             alignItems: "center",
             padding: "max(12px, env(safe-area-inset-top)) 14px 10px",
             borderBottom: "1px solid rgba(255,255,255,0.07)",
-            background: "rgba(21,21,30,0.84)",
+            background: "rgba(21,21,30,0.92)",
             backdropFilter: "blur(10px)",
             flexShrink: 0,
           }}
         >
-          {/* Left: Switch Roles */}
-          <Link
-            href="/demo"
+          {/* Left: Role badge / switcher trigger */}
+          <button
+            onClick={() => setSwitcherOpen(true)}
             style={{
+              justifySelf: "start",
               display: "flex",
               alignItems: "center",
-              gap: 5,
+              gap: 6,
               minHeight: 42,
-              padding: "0 4px",
-              justifySelf: "start",
-              color: "rgba(255,255,255,0.55)",
-              textDecoration: "none",
+              padding: "6px 10px 6px 8px",
+              borderRadius: 10,
+              border: `1px solid ${currentRole.accent}30`,
+              background: `${currentRole.accent}14`,
+              cursor: "pointer",
+              transition: "background 0.15s ease",
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = `${currentRole.accent}22`;
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = `${currentRole.accent}14`;
             }}
           >
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{currentRole.emoji}</span>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.03em",
+                color: currentRole.accent,
+                lineHeight: 1,
+              }}
+            >
+              {currentRole.label}
+            </span>
+            {/* Chevron down */}
             <svg
-              width="16"
-              height="16"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="currentColor"
+              stroke={currentRole.accent}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              style={{ opacity: 0.7, marginLeft: 1 }}
             >
-              <polyline points="15 18 9 12 15 6" />
+              <polyline points="6 9 12 15 18 9" />
             </svg>
-            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.01em" }}>Switch Roles</span>
-          </Link>
+          </button>
 
-          {/* Center: // logo */}
+          {/* Center: // logo mark */}
           <div
             style={{
               justifySelf: "center",
@@ -125,7 +196,7 @@ export default function AppShell({
           {/* Right: Wallet button */}
           <button
             onClick={() => setWalletOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 transition"
+            className="flex items-center gap-1.5 rounded-xl transition"
             style={{
               justifySelf: "end",
               minHeight: 42,
@@ -161,10 +232,190 @@ export default function AppShell({
         </main>
 
         {/* Bottom navigation */}
-        <BottomNav tabs={tabs} active={activeTab} onChange={onTabChange} />
+        <BottomNav tabs={tabs} active={activeTab} onChange={onTabChange} accentColor={accentColor} />
+
+        {/* ── Role Switcher Bottom Sheet ────────────────────────────────────── */}
+        {/* Backdrop */}
+        <div
+          onClick={() => setSwitcherOpen(false)}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 50,
+            opacity: switcherOpen ? 1 : 0,
+            pointerEvents: switcherOpen ? "auto" : "none",
+            transition: "opacity 0.22s ease",
+          }}
+        />
+
+        {/* Sheet */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 51,
+            background: "#1A1A28",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "20px 20px 0 0",
+            padding: "0 0 calc(16px + env(safe-area-inset-bottom, 0px))",
+            transform: switcherOpen ? "translateY(0)" : "translateY(100%)",
+            transition: "transform 0.28s cubic-bezier(0.32,0.72,0,1)",
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
+          }}
+        >
+          {/* Drag handle */}
+          <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+            <div
+              style={{
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                background: "rgba(255,255,255,0.18)",
+              }}
+            />
+          </div>
+
+          {/* Sheet header */}
+          <div
+            style={{
+              padding: "4px 20px 14px",
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.35)",
+              }}
+            >
+              Switch Role
+            </p>
+          </div>
+
+          {/* Role options */}
+          <div style={{ padding: "8px 12px" }}>
+            {ROLES.map(r => {
+              const isActive = r.key === role;
+              return (
+                <button
+                  key={r.key}
+                  onClick={() => handleRoleSwitch(r)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "14px 12px",
+                    borderRadius: 14,
+                    border: isActive ? `1px solid ${r.accent}35` : "1px solid transparent",
+                    background: isActive ? `${r.accent}12` : "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.12s ease",
+                    marginBottom: 4,
+                  }}
+                >
+                  {/* Emoji badge */}
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: `${r.accent}18`,
+                      border: `1px solid ${r.accent}28`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 20,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {r.emoji}
+                  </div>
+
+                  {/* Label + tagline */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: isActive ? r.accent : "#fff",
+                        lineHeight: 1.2,
+                        marginBottom: 3,
+                      }}
+                    >
+                      {r.label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "rgba(255,255,255,0.38)",
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {r.tagline}
+                    </div>
+                  </div>
+
+                  {/* Active checkmark */}
+                  {isActive && (
+                    <div
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        background: r.accent,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M20 6L9 17l-5-5"
+                          stroke="#0D0D14"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Cancel */}
+          <div style={{ padding: "4px 20px 0" }}>
+            <button
+              onClick={() => setSwitcherOpen(false)}
+              style={{
+                width: "100%",
+                padding: "13px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.04)",
+                color: "rgba(255,255,255,0.45)",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Left context panel — naturally hidden on narrow viewports via absolute positioning */}
+      {/* Left context panel */}
       {leftPanel && (
         <div
           style={{
@@ -183,7 +434,7 @@ export default function AppShell({
         </div>
       )}
 
-      {/* Right context panel — naturally hidden on narrow viewports via absolute positioning */}
+      {/* Right context panel */}
       {rightPanel && (
         <div
           style={{

@@ -12,9 +12,12 @@ interface BottomNavProps {
   tabs: NavTab[];
   active: string;
   onChange: (key: string) => void;
+  accentColor?: string;
 }
 
-export default function BottomNav({ tabs, active, onChange }: BottomNavProps) {
+export default function BottomNav({ tabs, active, onChange, accentColor = "#4169E1" }: BottomNavProps) {
+  const activeBg = `${accentColor}20`;
+
   return (
     <nav
       className="absolute left-3 right-3 z-40 flex items-center justify-around rounded-2xl"
@@ -35,11 +38,11 @@ export default function BottomNav({ tabs, active, onChange }: BottomNavProps) {
             onClick={() => onChange(tab.key)}
             className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-3 transition-all"
             style={{
-              color: isActive ? "#4169E1" : "rgba(255,255,255,0.45)",
+              color: isActive ? accentColor : "rgba(255,255,255,0.45)",
               minHeight: 52,
               minWidth: 58,
               flex: 1,
-              background: isActive ? "rgba(65,105,225,0.14)" : "transparent",
+              background: isActive ? activeBg : "transparent",
             }}
           >
             <span
