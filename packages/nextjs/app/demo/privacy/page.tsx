@@ -41,10 +41,13 @@ export default function PrivacyPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        position: "fixed",
+        inset: 0,
+        overflowY: "auto",
         background: "#15151E",
         padding: "48px 24px 80px",
         fontFamily: "system-ui, -apple-system, sans-serif",
+        zIndex: 50,
       }}
     >
       <div style={{ maxWidth: 680, margin: "0 auto" }}>
