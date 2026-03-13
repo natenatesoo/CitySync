@@ -1010,6 +1010,8 @@ function RedeemModal({
 function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   const isError = /fail|error|not ready/i.test(message);
   const isInfo = /submitting|approving|pending/i.test(message);
+  const accentBorder = isError ? "rgba(255,107,157,0.65)" : isInfo ? "rgba(130,160,255,0.55)" : "rgba(52,238,182,0.55)";
+  const iconColor = isError ? "#ff6b9d" : isInfo ? "#8aa8ff" : TEAL;
 
   useEffect(() => {
     const t = setTimeout(onDismiss, isInfo ? 8000 : 3500);
@@ -1019,39 +1021,46 @@ function Toast({ message, onDismiss }: { message: string; onDismiss: () => void 
   return (
     <>
       <style>{`
-        @keyframes toastSlide {
-          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        @keyframes toastUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
       <div
         style={{
           position: "fixed",
-          top: "env(safe-area-inset-top, 0px)",
-          left: "50%",
-          transform: "translateX(-50%)",
-          marginTop: 14,
-          animation: "toastSlide 0.22s cubic-bezier(0.34,1.36,0.64,1) both",
-          background: isError ? "rgba(30,14,20,0.96)" : isInfo ? "rgba(14,18,36,0.96)" : "rgba(10,14,30,0.96)",
-          border: `1px solid ${isError ? "rgba(255,107,157,0.4)" : isInfo ? "rgba(65,105,225,0.4)" : `${ACCENT}55`}`,
-          borderRadius: 40,
-          padding: "9px 18px 9px 14px",
-          color: isError ? "#ff6b9d" : isInfo ? "#8aa8ff" : TEAL,
+          bottom: 28,
+          right: 24,
+          animation: "toastUp 0.2s cubic-bezier(0.34,1.36,0.64,1) both",
+          background: "rgba(20,22,32,0.97)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderLeft: `3px solid ${accentBorder}`,
+          borderRadius: 10,
+          padding: "10px 12px 10px 13px",
           fontSize: 13,
-          fontWeight: 600,
+          fontWeight: 500,
           zIndex: 400,
-          whiteSpace: "nowrap",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
           display: "flex",
-          alignItems: "center",
-          gap: 8,
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          maxWidth: "calc(100vw - 40px)",
+          alignItems: "flex-start",
+          gap: 9,
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          maxWidth: 300,
+          minWidth: 180,
         }}
       >
-        <span style={{ fontSize: 15 }}>{isError ? "✗" : isInfo ? "⏳" : "✓"}</span>
-        {message}
+        <span style={{ fontSize: 13, color: iconColor, flexShrink: 0, marginTop: 1 }}>
+          {isError ? "✕" : isInfo ? "⋯" : "✓"}
+        </span>
+        <span style={{ color: "rgba(255,255,255,0.82)", lineHeight: 1.45, flex: 1 }}>{message}</span>
+        <button
+          onClick={onDismiss}
+          style={{ background: "none", border: "none", color: "rgba(255,255,255,0.28)", cursor: "pointer", fontSize: 15, padding: 0, flexShrink: 0, lineHeight: 1 }}
+          aria-label="Dismiss"
+        >
+          ×
+        </button>
       </div>
     </>
   );
