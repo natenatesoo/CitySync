@@ -1566,6 +1566,7 @@ function TaskCard({
   canUnclaim,
   showClaimButton,
   showUnclaimButton,
+  claimError,
   onClaim,
   onUnclaim,
   onExecute,
@@ -1577,6 +1578,7 @@ function TaskCard({
   canUnclaim?: boolean;
   showClaimButton?: boolean;
   showUnclaimButton?: boolean;
+  claimError?: string;
   onClaim?: () => void;
   onUnclaim?: () => void;
   onExecute?: () => void;
@@ -1741,6 +1743,19 @@ function TaskCard({
         </div>
       )}
 
+      {claimError && !isClaimed && (
+        <div
+          style={{
+            fontSize: 11,
+            color: "rgba(255,107,157,0.9)",
+            textAlign: "right",
+            marginBottom: 4,
+          }}
+        >
+          {claimError}
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 8 }}>
         {showClaimButton && !isClaimed && !locked && (
           <button
@@ -1850,6 +1865,8 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   const [pendingTaskSnapshots, setPendingTaskSnapshots] = useState<Record<string, Task>>({});
   const [completedTasks, setCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
   const [optimisticUnclaimIds, setOptimisticUnclaimIds] = useState<string[]>([]);
+  const [optimisticClaimedTaskMap, setOptimisticClaimedTaskMap] = useState<Record<string, Task>>({});
+  const [claimErrorByTask, setClaimErrorByTask] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2068,7 +2085,8 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     const claimedBy = t.claimedBy?.toLowerCase();
     const isUnclaimed = !claimedBy || claimedBy === "0x0000000000000000000000000000000000000000";
     const optimisticUnclaimedByMe = !!addressLower && claimedBy === addressLower && optimisticUnclaimIds.includes(t.id);
-    return isUnclaimed || optimisticUnclaimedByMe;
+    const optimisticallyClaimedByMe = !!optimisticClaimedTaskMap[t.id];
+    return (isUnclaimed || optimisticUnclaimedByMe) && !optimisticallyClaimedByMe;
   });
   const nonOnboardingOpenOnchainTasks = openOnchainTasks.filter(t => !t.isOnboarding);
   const openTasks = !isOnboarded
@@ -2117,10 +2135,14 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     () => (localOnboardingClaimed ? [{ ...DEMO_LOCAL_ONBOARDING_TASK, completionStatus: 0 }] : []),
     [localOnboardingClaimed],
   );
-  const myTasks = React.useMemo(
-    () => [...localClaimedTasks, ...myTasksRaw.filter(t => t.completionStatus !== 2)],
-    [localClaimedTasks, myTasksRaw],
-  );
+  const myTasks = React.useMemo(() => {
+    const base = [...localClaimedTasks, ...myTasksRaw.filter(t => t.completionStatus !== 2)];
+    const confirmedIds = new Set(base.map(t => t.id));
+    const optimistic = Object.values(optimisticClaimedTaskMap)
+      .filter(t => !confirmedIds.has(t.id))
+      .map(t => ({ ...t, completionStatus: 0 as const }));
+    return [...base, ...optimistic];
+  }, [localClaimedTasks, myTasksRaw, optimisticClaimedTaskMap]);
   const onchainCompletedTasks = myTasksRaw.filter(t => t.completionStatus === 2);
   const myTaskIds = new Set(myTasks.map(t => t.id));
 
@@ -2176,6 +2198,18 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     });
   }, [addressLower, onchainTasks]);
 
+  // Clear optimistic claims once the onchain sync confirms them
+  useEffect(() => {
+    if (!addressLower || Object.keys(optimisticClaimedTaskMap).length === 0) return;
+    const confirmedClaimedIds = new Set(
+      onchainTasks.filter(t => t.claimedBy?.toLowerCase() === addressLower).map(t => t.id),
+    );
+    setOptimisticClaimedTaskMap(prev => {
+      const pruned = Object.fromEntries(Object.entries(prev).filter(([id]) => !confirmedClaimedIds.has(id)));
+      return Object.keys(pruned).length === Object.keys(prev).length ? prev : pruned;
+    });
+  }, [addressLower, onchainTasks, optimisticClaimedTaskMap]);
+
   const handleClaim = async (task: Task) => {
     if (myTasks.length >= 2) {
       setToast("Max 2 tasks can be claimed at a time");
@@ -2186,11 +2220,24 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       setToast(`Claimed: ${task.title}`);
       return;
     }
+    // Optimistically move task into "My Tasks" immediately
+    setOptimisticClaimedTaskMap(prev => ({ ...prev, [task.id]: task }));
+    setClaimErrorByTask(prev => {
+      const n = { ...prev };
+      delete n[task.id];
+      return n;
+    });
+    setToast(`Claimed: ${task.title}`);
+    // Fire onchain write in background — success is already reflected optimistically
     const result = await claimTask(task.id);
-    if (result.ok) {
-      setToast(`Claimed: ${task.title}`);
-    } else {
-      setToast("Claim failed");
+    if (!result.ok && result.error === "Invalid opportunity id.") {
+      // Roll back: this task has no onchain opportunity at all
+      setOptimisticClaimedTaskMap(prev => {
+        const n = { ...prev };
+        delete n[task.id];
+        return n;
+      });
+      setClaimErrorByTask(prev => ({ ...prev, [task.id]: "Cannot claim — invalid task" }));
     }
   };
 
@@ -2406,6 +2453,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
               isClaimed={myTaskIds.has(task.id)}
               locked={!isOnboarded && !task.isOnboarding}
               showClaimButton
+              claimError={claimErrorByTask[task.id]}
               onClaim={() => handleClaim(task)}
               onExecute={() => setExecuteTask(task)}
             />
