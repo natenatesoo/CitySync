@@ -281,19 +281,6 @@ const IconSearch = () => (
     <path d="M20 20l-3.5-3.5" />
   </svg>
 );
-const IconSort = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-  >
-    <path d="M4 6h16M7 12h10M10 18h4" />
-  </svg>
-);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1835,18 +1822,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   const [toast, setToast] = useState<string | null>(null);
   const [onchainTasks, setOnchainTasks] = useState<OnchainTask[]>([]);
   const [search, setSearch] = useState("");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<{
-    highValue: boolean;
-    lowValue: boolean;
-    dateIssued: boolean;
-    organization: boolean;
-  }>({
-    highValue: false,
-    lowValue: false,
-    dateIssued: true,
-    organization: false,
-  });
   const [pendingVerificationIds, setPendingVerificationIds] = useState<string[]>([]);
   const [localOnboardingClaimed, setLocalOnboardingClaimed] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
@@ -2093,15 +2068,9 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     catFilter === "All" ? searchedOpenTasks : searchedOpenTasks.filter(t => t.category === catFilter);
   const sortedOpenTasks = React.useMemo(() => {
     const sorted = [...filteredOpenTasks].sort((a, b) => {
-      if (sortBy.highValue) return b.credits - a.credits;
-      if (sortBy.lowValue) return a.credits - b.credits;
-      if (sortBy.organization) return a.issuerName.localeCompare(b.issuerName);
-      if (sortBy.dateIssued) {
-        const aId = Number(a.id.match(/(\d+)$/)?.[1] ?? "0");
-        const bId = Number(b.id.match(/(\d+)$/)?.[1] ?? "0");
-        return bId - aId;
-      }
-      return 0;
+      const aId = Number(a.id.match(/(\d+)$/)?.[1] ?? "0");
+      const bId = Number(b.id.match(/(\d+)$/)?.[1] ?? "0");
+      return bId - aId;
     });
 
     const onboardingIdx = sorted.findIndex(task => task.id === DEMO_LOCAL_ONBOARDING_TASK.id || task.isOnboarding);
@@ -2110,7 +2079,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       sorted.unshift(onboardingTask);
     }
     return sorted;
-  }, [filteredOpenTasks, sortBy.dateIssued, sortBy.highValue, sortBy.lowValue, sortBy.organization]);
+  }, [filteredOpenTasks]);
   const myTasksRaw = React.useMemo(
     () =>
       onchainTasks.filter(
@@ -3012,7 +2981,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
   const { state, redeemOffer } = useDemo();
   const p = state.participant;
   const [view, setView] = useState<RedeemView>("browse");
-  const [filter, setFilter] = useState<CreditFilter>("All");
+  const [filter] = useState<CreditFilter>("All");
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
   const [redeemWriteStatus, setRedeemWriteStatus] = useState<RedeemWriteStatus>({ state: "idle" });
   const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string; costCity: number } | null>(
