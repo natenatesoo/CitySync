@@ -646,6 +646,7 @@ export default function RedeemerApp() {
             onRemoveAttempt={id => setRemoveTarget(id)}
             orgName={redeemer.orgName}
             offerWriteStatus={offerWriteStatus}
+            onDismissOfferWrite={() => setOfferWriteStatus({ state: "idle" })}
             onLearnMore={openLearnMore}
           />
         )}
@@ -1209,6 +1210,7 @@ function OfferingsTab({
   onRemoveAttempt,
   orgName,
   offerWriteStatus,
+  onDismissOfferWrite,
   onLearnMore,
 }: {
   committedOfferings: CustomOffering[];
@@ -1225,6 +1227,7 @@ function OfferingsTab({
   onRemoveAttempt: (id: string) => void;
   orgName: string;
   offerWriteStatus: OfferWriteStatus;
+  onDismissOfferWrite: () => void;
   onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
   const [view, setView] = useState<"committed" | "mce">("committed");
@@ -1308,7 +1311,7 @@ function OfferingsTab({
             </a>
           )}
           <button
-            onClick={() => setOfferWriteStatus({ state: "idle" })}
+            onClick={() => onDismissOfferWrite()}
             style={{
               position: "absolute",
               top: 8,
