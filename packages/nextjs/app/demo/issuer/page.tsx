@@ -338,6 +338,7 @@ export default function IssuerApp() {
   const [toast, setToast] = useState<string | null>(null);
   const [taskWriteStatus, setTaskWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [verifyWriteStatus, setVerifyWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
+  const [proposeWriteStatus, setProposeWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [openInfoCards, setOpenInfoCards] = useState<IssuerLearnCardKey[]>([]);
 
   const { issuer } = state;
@@ -404,16 +405,14 @@ export default function IssuerApp() {
     const result = await issuerVerifyCompletion(taskId, citizen);
     if (result.ok) {
       setVerifyWriteStatus({ state: "confirmed", hash: result.hash });
-      setToast("Verification complete — CITY and VOTE minted onchain.");
       return;
     }
     setVerifyWriteStatus({ state: "failed", error: result.error });
-    setToast("Verify & Mint failed onchain.");
   };
 
   const handleProposeTask = async (proposed: ProposedTask) => {
     setProposeSheet(false);
-    setToast("Submitting proposal onchain…");
+    setProposeWriteStatus({ state: "pending" });
     const result = await issuerProposeTask({
       title: proposed.title,
       description: proposed.successCriteria || "Community civic task.",
@@ -424,7 +423,7 @@ export default function IssuerApp() {
       voteReward: proposed.credits,
     });
     if (!result.ok) {
-      setToast(result.error ?? "Proposal failed onchain.");
+      setProposeWriteStatus({ state: "failed", error: result.error ?? "Proposal failed onchain." });
       return;
     }
     // Store locally with the onchain proposal ID so Approve can reference it
@@ -432,7 +431,7 @@ export default function IssuerApp() {
       { ...proposed, onchainProposalId: result.proposalId, proposeTxHash: result.hash },
       ...prev,
     ]);
-    setToast(result.proposalId ? `Proposal #${result.proposalId} submitted onchain ✓` : "Proposal submitted onchain ✓");
+    setProposeWriteStatus({ state: "confirmed", hash: result.hash });
   };
 
   const handleApproveProposed = async (proposed: ProposedTask) => {
@@ -446,12 +445,13 @@ export default function IssuerApp() {
 
     // If we have an onchain proposal ID, call approveTask() on the contract
     if (proposed.onchainProposalId !== undefined) {
-      setToast("Approving proposal onchain…");
+      setProposeWriteStatus({ state: "pending" });
       const result = await issuerApproveTask(proposed.onchainProposalId);
       if (!result.ok) {
-        setToast(result.error ?? "Approval failed onchain.");
+        setProposeWriteStatus({ state: "failed", error: result.error ?? "Approval failed onchain." });
         return;
       }
+      setProposeWriteStatus({ state: "confirmed", hash: result.hash });
     }
 
     const task: Task = {
@@ -477,7 +477,6 @@ export default function IssuerApp() {
     };
     setApprovedCatalogTasks(prev => [task, ...prev]);
     setProposedTasks(prev => prev.filter(p => p.id !== proposed.id));
-    setToast("Task approved onchain and added to your catalog!");
   };
 
   const handleIssueTask = async (task: Task, slots: number) => {
@@ -508,7 +507,6 @@ export default function IssuerApp() {
 
     if (okCount === slots) {
       setTaskWriteStatus({ state: "confirmed", hash: lastHash });
-      setToast(`Issued ${okCount} onchain task instance${okCount === 1 ? "" : "s"}.`);
       return;
     }
 
@@ -518,12 +516,10 @@ export default function IssuerApp() {
         hash: lastHash,
         error: firstError ? `${firstError} (${okCount}/${slots} succeeded)` : `${okCount}/${slots} succeeded`,
       });
-      setToast(`Partially issued: ${okCount}/${slots} task instances were created onchain.`);
       return;
     }
 
     setTaskWriteStatus({ state: "failed", error: firstError ?? "Task issuance failed." });
-    setToast("Task issuance failed onchain.");
   };
 
   const handleModifyApproved = (taskId: string, updates: { location: string; taskDate: string }) => {
@@ -540,13 +536,14 @@ export default function IssuerApp() {
 
   const handleUnissueTask = React.useCallback(
     async (taskId: string) => {
+      setTaskWriteStatus({ state: "pending" });
       const result = await issuerSetTaskActive(taskId, false);
       if (!result.ok) {
-        setToast(result.error ?? "Unissue failed.");
+        setTaskWriteStatus({ state: "failed", error: result.error ?? "Unissue failed." });
         return;
       }
       dispatch({ type: "ISSUER_REMOVE_TASK", taskId });
-      setToast("Task removed from Open Tasks Pool. Epoch cap updated.");
+      setTaskWriteStatus({ state: "confirmed", hash: result.hash });
     },
     [issuerSetTaskActive, dispatch],
   );
@@ -606,10 +603,14 @@ export default function IssuerApp() {
             }}
             onModifyCatalogTask={taskId => setCatalogModifyTaskId(taskId)}
             taskWriteStatus={taskWriteStatus}
+            onDismissTaskWrite={() => setTaskWriteStatus({ state: "idle" })}
             onVerify={handleVerify}
             onSetTaskActive={issuerSetTaskActive}
             onUnissueTask={handleUnissueTask}
             verifyWriteStatus={verifyWriteStatus}
+            onDismissVerifyWrite={() => setVerifyWriteStatus({ state: "idle" })}
+            proposeWriteStatus={proposeWriteStatus}
+            onDismissProposeWrite={() => setProposeWriteStatus({ state: "idle" })}
             onLearnMore={openLearnMore}
           />
         )}
@@ -1163,10 +1164,14 @@ function TasksTab({
   onRemoveCatalogTask,
   onModifyCatalogTask,
   taskWriteStatus,
+  onDismissTaskWrite,
   onVerify,
   onSetTaskActive,
   onUnissueTask,
   verifyWriteStatus,
+  onDismissVerifyWrite,
+  proposeWriteStatus,
+  onDismissProposeWrite,
   onLearnMore,
 }: {
   creditsCommitted: number;
@@ -1178,10 +1183,14 @@ function TasksTab({
   onRemoveCatalogTask: (taskId: string) => void;
   onModifyCatalogTask: (taskId: string) => void;
   taskWriteStatus: TaskWriteStatus;
+  onDismissTaskWrite: () => void;
   onVerify: (taskId: string, citizen: string) => Promise<void>;
   onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   onUnissueTask: (taskId: string) => Promise<void>;
   verifyWriteStatus: TaskWriteStatus;
+  onDismissVerifyWrite: () => void;
+  proposeWriteStatus: TaskWriteStatus;
+  onDismissProposeWrite: () => void;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
@@ -1412,6 +1421,7 @@ function TasksTab({
             <div
               style={{
                 ...surfaceCard,
+                position: "relative",
                 marginBottom: 16,
                 border:
                   taskWriteStatus.state === "confirmed"
@@ -1448,6 +1458,24 @@ function TasksTab({
                   View on Base Sepolia Explorer ↗
                 </a>
               )}
+              <button
+                onClick={onDismissTaskWrite}
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 10,
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.3)",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
             </div>
           )}
 
@@ -1576,6 +1604,68 @@ function TasksTab({
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
             <LearnMoreLink onClick={() => onLearnMore("task-catalog")} />
           </div>
+
+          {proposeWriteStatus.state !== "idle" && (
+            <div
+              style={{
+                ...surfaceCard,
+                position: "relative",
+                marginBottom: 16,
+                border:
+                  proposeWriteStatus.state === "confirmed"
+                    ? "1px solid rgba(221,158,51,0.35)"
+                    : proposeWriteStatus.state === "failed"
+                      ? "1px solid rgba(255,107,157,0.35)"
+                      : "1px solid rgba(65,105,225,0.35)",
+                background:
+                  proposeWriteStatus.state === "confirmed"
+                    ? "rgba(221,158,51,0.08)"
+                    : proposeWriteStatus.state === "failed"
+                      ? "rgba(255,107,157,0.08)"
+                      : "rgba(65,105,225,0.08)",
+              }}
+            >
+              <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Last Proposal Write</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+                {proposeWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+                {proposeWriteStatus.state === "confirmed" && "Confirmed onchain"}
+                {proposeWriteStatus.state === "failed" && "Failed onchain"}
+              </div>
+              {proposeWriteStatus.error && (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>
+                  {proposeWriteStatus.error}
+                </div>
+              )}
+              {proposeWriteStatus.hash && (
+                <a
+                  href={`https://sepolia.basescan.org/tx/${proposeWriteStatus.hash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: ACCENT, textDecoration: "none" }}
+                >
+                  View on Base Sepolia Explorer ↗
+                </a>
+              )}
+              <button
+                onClick={onDismissProposeWrite}
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 10,
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.3)",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           {/* Proposed tasks awaiting approval */}
           {proposedTasks.length > 0 && (
@@ -3006,6 +3096,7 @@ function VerifyTab({
             <div
               style={{
                 ...surfaceCard,
+                position: "relative",
                 marginBottom: 12,
                 border:
                   verifyWriteStatus.state === "confirmed"
@@ -3042,6 +3133,24 @@ function VerifyTab({
                   View on Base Sepolia Explorer ↗
                 </a>
               )}
+              <button
+                onClick={onDismissVerifyWrite}
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 10,
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.3)",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
             </div>
           )}
 

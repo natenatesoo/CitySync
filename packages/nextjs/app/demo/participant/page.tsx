@@ -1859,6 +1859,12 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   const [pendingTaskSnapshots, setPendingTaskSnapshots] = useState<Record<string, Task>>({});
   const [completedTasks, setCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
   const [optimisticUnclaimIds, setOptimisticUnclaimIds] = useState<string[]>([]);
+  const [taskWriteStatus, setTaskWriteStatus] = useState<{
+    state: "idle" | "pending" | "confirmed" | "failed";
+    hash?: `0x${string}`;
+    error?: string;
+    label?: string;
+  }>({ state: "idle" });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2195,11 +2201,12 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       setToast(`Claimed: ${task.title}`);
       return;
     }
+    setTaskWriteStatus({ state: "pending", label: "Claim" });
     const result = await claimTask(task.id);
     if (result.ok) {
-      setToast(`Claimed: ${task.title}`);
+      setTaskWriteStatus({ state: "confirmed", hash: result.hash, label: "Claim" });
     } else {
-      setToast("Claim failed");
+      setTaskWriteStatus({ state: "failed", error: "Claim failed", label: "Claim" });
     }
   };
 
@@ -2209,6 +2216,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       setToast("Task returned to Open Tasks");
       return;
     }
+    setTaskWriteStatus({ state: "pending", label: "Unclaim" });
     const result = await unclaimTask(task.id);
     if (result.ok) {
       setOptimisticUnclaimIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
@@ -2218,12 +2226,12 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
         delete next[task.id];
         return next;
       });
-      setToast("Task returned to Open Tasks");
+      setTaskWriteStatus({ state: "confirmed", hash: result.hash, label: "Unclaim" });
     } else {
       if ((result.error ?? "").toLowerCase().includes("pending/verified")) {
         setToast("Cannot unclaim after submission. Await issuer verify/invalidate.");
       } else {
-        setToast("Unclaim failed");
+        setTaskWriteStatus({ state: "failed", error: "Unclaim failed", label: "Unclaim" });
       }
     }
   };
@@ -2246,16 +2254,19 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     }
     setPendingVerificationIds(prev => (prev.includes(task.id) ? prev : [...prev, task.id]));
     setPendingTaskSnapshots(prev => ({ ...prev, [task.id]: task }));
-    setToast("Submitted. Pending verification by issuer.");
+    setTaskWriteStatus({ state: "pending", label: "Submit Completion" });
     void startVerify(task.id, task.title).then(result => {
-      if (result.ok) return;
+      if (result.ok) {
+        setTaskWriteStatus({ state: "confirmed", hash: result.hash, label: "Submit Completion" });
+        return;
+      }
       setPendingVerificationIds(prev => prev.filter(id => id !== task.id));
       setPendingTaskSnapshots(prev => {
         const next = { ...prev };
         delete next[task.id];
         return next;
       });
-      setToast(result.error ?? "Submit completion failed onchain.");
+      setTaskWriteStatus({ state: "failed", error: result.error ?? "Submit completion failed onchain.", label: "Submit Completion" });
     });
   };
 
@@ -2399,6 +2410,72 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
             ))}
           </div>
         </>
+      )}
+
+      {taskWriteStatus.state !== "idle" && (
+        <div
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: 12,
+            marginBottom: 16,
+            position: "relative",
+            border:
+              taskWriteStatus.state === "confirmed"
+                ? "1px solid rgba(52,238,182,0.35)"
+                : taskWriteStatus.state === "failed"
+                  ? "1px solid rgba(255,107,157,0.35)"
+                  : "1px solid rgba(65,105,225,0.35)",
+            background:
+              taskWriteStatus.state === "confirmed"
+                ? "rgba(52,238,182,0.08)"
+                : taskWriteStatus.state === "failed"
+                  ? "rgba(255,107,157,0.08)"
+                  : "rgba(65,105,225,0.08)",
+            padding: "12px 14px",
+          }}
+        >
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>
+            {taskWriteStatus.label ? `Last Write — ${taskWriteStatus.label}` : "Last Task Write"}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+            {taskWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
+            {taskWriteStatus.state === "confirmed" && "Confirmed onchain"}
+            {taskWriteStatus.state === "failed" && "Failed onchain"}
+          </div>
+          {taskWriteStatus.error && (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>
+              {taskWriteStatus.error}
+            </div>
+          )}
+          {taskWriteStatus.hash && (
+            <a
+              href={`https://sepolia.basescan.org/tx/${taskWriteStatus.hash}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: "inline-block", marginTop: 6, fontSize: 12, color: "#34eeb6", textDecoration: "none" }}
+            >
+              View on Base Sepolia Explorer ↗
+            </a>
+          )}
+          <button
+            onClick={() => setTaskWriteStatus({ state: "idle" })}
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 10,
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.3)",
+              cursor: "pointer",
+              fontSize: 16,
+              padding: 0,
+              lineHeight: 1,
+            }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {/* Task list */}

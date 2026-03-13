@@ -516,10 +516,8 @@ export default function RedeemerApp() {
       };
       setCommittedOfferings(prev => [offering, ...prev]);
       setOfferWriteStatus({ state: "confirmed", hash: result.hash });
-      setToast("Committed offering issued from catalog and submitted onchain.");
     } else {
       setOfferWriteStatus({ state: "failed", error: result.error });
-      setToast("Committed offering commit failed onchain.");
     }
   };
 
@@ -585,10 +583,8 @@ export default function RedeemerApp() {
       };
       setMceOfferings(prev => [offering, ...prev]);
       setOfferWriteStatus({ state: "confirmed", hash: result.hash });
-      setToast("MCE offering issued from catalog and submitted onchain.");
     } else {
       setOfferWriteStatus({ state: "failed", error: result.error });
-      setToast("MCE offering commit failed onchain.");
     }
   };
 
@@ -1265,6 +1261,7 @@ function OfferingsTab({
         <div
           style={{
             ...surfaceCard,
+            position: "relative",
             marginBottom: 16,
             border:
               offerWriteStatus.state === "confirmed"
@@ -1301,6 +1298,24 @@ function OfferingsTab({
               View on Base Sepolia Explorer ↗
             </a>
           )}
+          <button
+            onClick={() => setOfferWriteStatus({ state: "idle" })}
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 10,
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.3)",
+              cursor: "pointer",
+              fontSize: 16,
+              padding: 0,
+              lineHeight: 1,
+            }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
         </div>
       )}
 
