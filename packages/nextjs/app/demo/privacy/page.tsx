@@ -138,8 +138,8 @@ export default function PrivacyPage() {
               </li>
               <li style={LI_STYLE}>
                 <strong style={{ color: "rgba(255,255,255,0.8)" }}>Profile data</strong> — Display names and profile
-                photos you voluntarily set within the app. Photos are stored locally in your browser's localStorage and
-                are never uploaded to our servers.
+                photos you voluntarily set within the app. Photos are stored locally in your browser&apos;s localStorage
+                and are never uploaded to our servers.
               </li>
               <li style={LI_STYLE}>
                 <strong style={{ color: "rgba(255,255,255,0.8)" }}>Usage data</strong> — Interactions with demo features
@@ -193,7 +193,8 @@ export default function PrivacyPage() {
               </li>
             </ul>
             <p style={P_STYLE}>
-              You can clear all locally stored data at any time by clearing your browser's site data for this domain.
+              You can clear all locally stored data at any time by clearing your browser&apos;s site data for this
+              domain.
             </p>
           </div>
 
@@ -217,11 +218,11 @@ export default function PrivacyPage() {
             <ul style={UL_STYLE}>
               <li style={LI_STYLE}>
                 <strong style={{ color: "rgba(255,255,255,0.8)" }}>Alchemy Account Kit</strong> — Provides smart account
-                infrastructure and authentication. See Alchemy's Privacy Policy at alchemy.com.
+                infrastructure and authentication. See Alchemy&apos;s Privacy Policy at alchemy.com.
               </li>
               <li style={LI_STYLE}>
                 <strong style={{ color: "rgba(255,255,255,0.8)" }}>Google OAuth</strong> — If you sign in with Google,
-                Google's Privacy Policy applies to that authentication step.
+                Google&apos;s Privacy Policy applies to that authentication step.
               </li>
               <li style={LI_STYLE}>
                 <strong style={{ color: "rgba(255,255,255,0.8)" }}>Base Sepolia (Coinbase / OP Labs)</strong> — A public
@@ -234,13 +235,13 @@ export default function PrivacyPage() {
             <h2 style={H2_STYLE}>6. Data Retention</h2>
             <p style={P_STYLE}>
               Authentication records and usage logs are retained for a maximum of 12 months from your last activity,
-              after which they are deleted from our systems. Profile data stored in your browser's localStorage persists
-              until you clear it manually. Onchain data is permanent by the nature of blockchain technology.
+              after which they are deleted from our systems. Profile data stored in your browser&apos;s localStorage
+              persists until you clear it manually. Onchain data is permanent by the nature of blockchain technology.
             </p>
           </div>
 
           <div style={SECTION_STYLE}>
-            <h2 style={H2_STYLE}>7. Children's Privacy</h2>
+            <h2 style={H2_STYLE}>7. Children&apos;s Privacy</h2>
             <p style={P_STYLE}>
               City/Sync is not intended for use by individuals under the age of 13. We do not knowingly collect personal
               information from children under 13. If you believe a child has provided us with personal information,

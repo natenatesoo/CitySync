@@ -123,9 +123,9 @@ export default function TermsPage() {
           <div style={SECTION_STYLE}>
             <h2 style={H2_STYLE}>1. Acceptance of Terms</h2>
             <p style={P_STYLE}>
-              By accessing or using the City/Sync demo application ("the App"), you agree to be bound by these Terms of
-              Service ("Terms"). If you do not agree to these Terms, do not use the App. These Terms apply to all
-              visitors, users, and anyone else who accesses the App.
+              By accessing or using the City/Sync demo application (&quot;the App&quot;), you agree to be bound by these
+              Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, do not use the App. These Terms
+              apply to all visitors, users, and anyone else who accesses the App.
             </p>
             <p style={P_STYLE}>
               We reserve the right to modify these Terms at any time. Changes become effective upon posting to the App.
@@ -196,7 +196,7 @@ export default function TermsPage() {
               <li style={LI_STYLE}>
                 Spam, phish, or harass other users or attempt to impersonate another person or entity.
               </li>
-              <li style={LI_STYLE}>Interfere with or disrupt the App's infrastructure, servers, or networks.</li>
+              <li style={LI_STYLE}>Interfere with or disrupt the App&apos;s infrastructure, servers, or networks.</li>
               <li style={LI_STYLE}>
                 Use automated scripts, bots, or other means to interact with the App in a manner not intended for
                 regular users, except with our prior written consent.
@@ -242,9 +242,9 @@ export default function TermsPage() {
           <div style={SECTION_STYLE}>
             <h2 style={H2_STYLE}>8. Disclaimer of Warranties</h2>
             <p style={P_STYLE}>
-              THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
-              TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES INCLUDING, BUT NOT LIMITED TO, IMPLIED
-              WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+              THE APP IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER
+              EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES INCLUDING, BUT NOT
+              LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
             </p>
             <p style={P_STYLE}>
               We do not warrant that the App will be uninterrupted, error-free, or free of viruses or other harmful
@@ -273,8 +273,8 @@ export default function TermsPage() {
             <p style={P_STYLE}>
               You agree to indemnify, defend, and hold harmless the City/Sync project and its contributors from and
               against any claims, liabilities, damages, judgments, awards, losses, costs, or expenses (including
-              reasonable attorneys' fees) arising out of or relating to your violation of these Terms or your use of the
-              App.
+              reasonable attorneys&apos; fees) arising out of or relating to your violation of these Terms or your use
+              of the App.
             </p>
           </div>
 
