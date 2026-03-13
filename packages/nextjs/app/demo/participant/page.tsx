@@ -11,6 +11,7 @@ import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, PastRedemption, RedemptionOffer, Task, TaskCategory } from "../_data/mockData";
+import { compressPhotoToBase64 } from "../_utils/compressPhoto";
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
@@ -1099,14 +1100,40 @@ function ProfileTab({
   const [section, setSection] = useState<"overview" | "completed">("overview");
   const [localCompletedTasks, setLocalCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
 
+  const photoStorageKey = `citysync:demo:profile:photo:participant:v1:${participantAddress.toLowerCase()}`;
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setPhotoUrl(URL.createObjectURL(file));
+    if (!file) return;
+    compressPhotoToBase64(file)
+      .then(dataUrl => {
+        setPhotoUrl(dataUrl);
+        try {
+          window.localStorage.setItem(photoStorageKey, dataUrl);
+        } catch {
+          // Storage full or unavailable — photo shows in-session only.
+        }
+      })
+      .catch(() => {
+        // Fallback: show photo in-session without persistence.
+        setPhotoUrl(URL.createObjectURL(file));
+      });
   };
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
   }, [editing]);
+
+  // Hydrate profile photo from localStorage on mount / address change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem(photoStorageKey);
+      if (saved) setPhotoUrl(saved);
+    } catch {
+      // Ignore.
+    }
+  }, [photoStorageKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -155,6 +155,7 @@ const _randomAddress = () =>
 
 const VERIFY_DURATION = 7; // seconds
 const TASK_STATE_STORAGE_KEY = "citysync:demo:taskState:v2";
+const PROFILE_NAMES_STORAGE_KEY = "citysync:demo:profile:names:v1";
 
 const parseTaskOpportunityId = (taskId: string): bigint | null => {
   const m = taskId.match(/^task-(\d+)$/);
@@ -772,9 +773,33 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     if (autoRegisteredForRef.current === address) return;
     autoRegisteredForRef.current = address;
 
+    // Hydrate saved profile names — use saved names if they exist, otherwise generate new ones.
+    let savedIssuerOrgName: string | null = null;
+    let savedRedeemerOrgName: string | null = null;
+    let savedCitizenName: string | null = null;
+    try {
+      const profileKey = `${PROFILE_NAMES_STORAGE_KEY}:${address.toLowerCase()}`;
+      const raw = window.localStorage.getItem(profileKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          citizenName?: string;
+          issuerOrgName?: string;
+          redeemerOrgName?: string;
+        };
+        savedIssuerOrgName = saved.issuerOrgName ?? null;
+        savedRedeemerOrgName = saved.redeemerOrgName ?? null;
+        savedCitizenName = saved.citizenName ?? null;
+      }
+    } catch {
+      // Ignore hydration failures.
+    }
     const now = Date.now();
-    dispatch({ type: "ISSUER_REGISTER", orgName: generateIssuerName(now % PREFIXES.length) });
-    dispatch({ type: "REDEEMER_REGISTER", orgName: generateRedeemerName(now % ADJECTIVES.length) });
+    dispatch({ type: "ISSUER_REGISTER", orgName: savedIssuerOrgName ?? generateIssuerName(now % PREFIXES.length) });
+    dispatch({
+      type: "REDEEMER_REGISTER",
+      orgName: savedRedeemerOrgName ?? generateRedeemerName(now % ADJECTIVES.length),
+    });
+    if (savedCitizenName) dispatch({ type: "SET_CITIZEN_NAME", name: savedCitizenName });
 
     void (async () => {
       try {
@@ -816,6 +841,24 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       }
     })();
   }, [address, client, writeContractAsync]);
+
+  // ── Persist profile names to localStorage ────────────────────────────────────
+  // Saves citizenName, issuerOrgName, and redeemerOrgName whenever they change,
+  // keyed by wallet address so each user's data stays isolated.
+  useEffect(() => {
+    if (!address || typeof window === "undefined") return;
+    const citizenName = state.participant.citizenName;
+    const issuerOrgName = state.issuer.orgName;
+    const redeemerOrgName = state.redeemer.orgName;
+    // Skip saving if all names are empty (initial state before hydration completes).
+    if (!citizenName && !issuerOrgName && !redeemerOrgName) return;
+    try {
+      const profileKey = `${PROFILE_NAMES_STORAGE_KEY}:${address.toLowerCase()}`;
+      window.localStorage.setItem(profileKey, JSON.stringify({ citizenName, issuerOrgName, redeemerOrgName }));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [address, state.participant.citizenName, state.issuer.orgName, state.redeemer.orgName]);
 
   useEffect(() => {
     if (!address) return;

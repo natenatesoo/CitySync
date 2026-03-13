@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAccount } from "@account-kit/react";
 import AppShell from "../_components/AppShell";
 import { LearnInfoCard, LearnMoreLink, LearnMorePanel } from "../_components/LearnMore";
 import { OnchainActivityPanel } from "../_components/OnchainActivityPanel";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, Post, PostCategory, RedemptionOffer } from "../_data/mockData";
+import { compressPhotoToBase64 } from "../_utils/compressPhoto";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -763,6 +764,7 @@ function ProfileTab({
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const logoStorageKey = `citysync:demo:profile:photo:redeemer:v1:${redeemerAddress.toLowerCase()}`;
 
   // Venue info editable fields
   const [venueAddress, setVenueAddress] = useState("123 Main Street, Oakland, CA 94601");
@@ -789,11 +791,31 @@ function ProfileTab({
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setLogoUrl(url);
-    }
+    if (!file) return;
+    compressPhotoToBase64(file)
+      .then(dataUrl => {
+        setLogoUrl(dataUrl);
+        try {
+          window.localStorage.setItem(logoStorageKey, dataUrl);
+        } catch {
+          // Storage full or unavailable — logo shows in-session only.
+        }
+      })
+      .catch(() => {
+        setLogoUrl(URL.createObjectURL(file));
+      });
   };
+
+  // Hydrate logo from localStorage on mount / address change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem(logoStorageKey);
+      if (saved) setLogoUrl(saved);
+    } catch {
+      // Ignore.
+    }
+  }, [logoStorageKey]);
 
   const startEdit = () => {
     setDraft(redeemer.orgName);

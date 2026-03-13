@@ -10,6 +10,7 @@ import { baseSepoliaPublicClient } from "../_config/baseSepoliaClient";
 import { BASE_SEPOLIA_CONTRACTS } from "../_config/baseSepoliaContracts";
 import { useDemo } from "../_context/DemoContext";
 import { FAKE_WALLETS, Post, PostCategory, Task } from "../_data/mockData";
+import { compressPhotoToBase64 } from "../_utils/compressPhoto";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -712,14 +713,35 @@ function ProfileTab({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const issuerAddress = address ?? FAKE_WALLETS.issuer;
   const shortAddress = `${issuerAddress.slice(0, 8)}...${issuerAddress.slice(-6)}`;
+  const logoStorageKey = `citysync:demo:profile:photo:issuer:v1:${issuerAddress.toLowerCase()}`;
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setLogoUrl(url);
-    }
+    if (!file) return;
+    compressPhotoToBase64(file)
+      .then(dataUrl => {
+        setLogoUrl(dataUrl);
+        try {
+          window.localStorage.setItem(logoStorageKey, dataUrl);
+        } catch {
+          // Storage full or unavailable — logo shows in-session only.
+        }
+      })
+      .catch(() => {
+        setLogoUrl(URL.createObjectURL(file));
+      });
   };
+
+  // Hydrate logo from localStorage on mount / address change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem(logoStorageKey);
+      if (saved) setLogoUrl(saved);
+    } catch {
+      // Ignore.
+    }
+  }, [logoStorageKey]);
 
   const startEdit = () => {
     setDraft(issuer.orgName);
