@@ -127,19 +127,20 @@ const surfaceCard: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.07)",
   borderRadius: 16,
   padding: "16px",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
 };
 
 /** Card with a faint gold left accent — for primary content cards (tasks) */
 const accentCard: React.CSSProperties = {
   ...surfaceCard,
-  borderLeft: `3px solid rgba(221,158,51,0.35)`,
+  borderLeft: `3px solid rgba(221,158,51,0.45)`,
   paddingLeft: 13,
 };
 
 /** Card with a purple left accent — for catalog / community cards */
 const purpleCard: React.CSSProperties = {
   ...surfaceCard,
-  borderLeft: `3px solid rgba(167,139,250,0.4)`,
+  borderLeft: `3px solid rgba(167,139,250,0.5)`,
   paddingLeft: 13,
 };
 
@@ -305,6 +306,7 @@ type TaskWriteStatus = {
 export default function IssuerApp() {
   const {
     state,
+    dispatch,
     setRole,
     issuerProposeTask,
     issuerApproveTask,
@@ -527,6 +529,19 @@ export default function IssuerApp() {
     setToast("Post published to MyCity!");
   };
 
+  const handleUnissueTask = React.useCallback(
+    async (taskId: string) => {
+      const result = await issuerSetTaskActive(taskId, false);
+      if (!result.ok) {
+        setToast(result.error ?? "Unissue failed.");
+        return;
+      }
+      dispatch({ type: "ISSUER_REMOVE_TASK", taskId });
+      setToast("Task removed from Open Tasks Pool. Epoch cap updated.");
+    },
+    [issuerSetTaskActive, dispatch],
+  );
+
   return (
     <>
       <AppShell
@@ -584,6 +599,7 @@ export default function IssuerApp() {
             taskWriteStatus={taskWriteStatus}
             onVerify={handleVerify}
             onSetTaskActive={issuerSetTaskActive}
+            onUnissueTask={handleUnissueTask}
             verifyWriteStatus={verifyWriteStatus}
             onLearnMore={openLearnMore}
           />
@@ -828,11 +844,12 @@ function ProfileTab({
         >
           <div
             style={{
-              fontSize: 11,
+              fontSize: 9,
               fontWeight: 600,
               textTransform: "uppercase",
-              letterSpacing: "0.1em",
+              letterSpacing: "0.08em",
               color: "rgba(221,158,51,0.6)",
+              whiteSpace: "nowrap",
             }}
           >
             Certified Issuer Organization
@@ -961,13 +978,17 @@ function ProfileTab({
             style={{
               background: "transparent",
               border: "none",
-              color: ACCENT,
+              color: copied ? ACCENT_TEAL : ACCENT,
               cursor: "pointer",
-              fontSize: 11,
-              padding: 0,
+              fontSize: 13,
+              padding: "0 2px",
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
             }}
+            title="Copy address"
           >
-            {copied ? "Copied" : "Copy"}
+            {copied ? "✓" : "⧉"}
           </button>
           <a
             href={`https://sepolia.basescan.org/address/${issuerAddress}`}
@@ -975,7 +996,7 @@ function ProfileTab({
             rel="noreferrer"
             style={{ color: ACCENT, textDecoration: "none", fontSize: 11 }}
           >
-            View onchain account ↗
+            View Account ↗
           </a>
         </div>
 
@@ -1135,6 +1156,7 @@ function TasksTab({
   taskWriteStatus,
   onVerify,
   onSetTaskActive,
+  onUnissueTask,
   verifyWriteStatus,
   onLearnMore,
 }: {
@@ -1149,11 +1171,12 @@ function TasksTab({
   taskWriteStatus: TaskWriteStatus;
   onVerify: (taskId: string, citizen: string) => Promise<void>;
   onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
+  onUnissueTask: (taskId: string) => Promise<void>;
   verifyWriteStatus: TaskWriteStatus;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const [view, setView] = useState<"issue" | "catalog" | "verify">("issue");
+  const [view, setView] = useState<"issue" | "verify" | "catalog">("issue");
   const [onchainTasks, setOnchainTasks] = useState<
     Array<{
       id: string;
@@ -1342,11 +1365,11 @@ function TasksTab({
           gap: 2,
         }}
       >
-        {(["issue", "catalog", "verify"] as const).map(v => {
+        {(["issue", "verify", "catalog"] as const).map(v => {
           const labels: Record<string, string> = {
             issue: `Issue (${onchainTasks.length})`,
-            catalog: `Catalog (${approvedCatalogTasks.length})`,
             verify: "Verify",
+            catalog: `Catalog (${approvedCatalogTasks.length})`,
           };
           const segAccent = v === "verify" ? ACCENT_TEAL : v === "catalog" ? ACCENT_PURPLE : ACCENT;
           return (
@@ -1719,6 +1742,7 @@ function TasksTab({
         <VerifyTab
           onVerify={onVerify}
           onSetTaskActive={onSetTaskActive}
+          onUnissueTask={onUnissueTask}
           verifyWriteStatus={verifyWriteStatus}
           onLearnMore={onLearnMore}
         />
@@ -2574,11 +2598,13 @@ type OnchainVerifyItem = {
 function VerifyTab({
   onVerify,
   onSetTaskActive,
+  onUnissueTask,
   verifyWriteStatus,
   onLearnMore,
 }: {
   onVerify: (taskId: string, citizen: string) => Promise<void>;
   onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
+  onUnissueTask: (taskId: string) => Promise<void>;
   verifyWriteStatus: TaskWriteStatus;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
@@ -2736,9 +2762,6 @@ function VerifyTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("verify-flow")} />
-      </div>
       {/* Three-way toggle */}
       <div
         style={{
@@ -2746,7 +2769,7 @@ function VerifyTab({
           background: "rgba(255,255,255,0.05)",
           borderRadius: 10,
           padding: 4,
-          marginBottom: 20,
+          marginBottom: 8,
         }}
       >
         {TOGGLE_OPTIONS.map(opt => (
@@ -2769,6 +2792,9 @@ function VerifyTab({
             {opt.label}
           </button>
         ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+        <LearnMoreLink onClick={() => onLearnMore("verify-flow")} />
       </div>
 
       {loading && <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>Syncing onchain issuer tasks...</div>}
@@ -2823,7 +2849,9 @@ function VerifyTab({
                     </div>
                     <button
                       onClick={async () => {
-                        await onSetTaskActive(task.taskId, false);
+                        // Optimistically remove from local state immediately
+                        setIssuedItems(prev => prev.filter(i => i.taskId !== task.taskId));
+                        await onUnissueTask(task.taskId);
                       }}
                       style={{
                         marginLeft: 8,

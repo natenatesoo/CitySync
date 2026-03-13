@@ -37,7 +37,6 @@ const IconCity = () => (
   </svg>
 );
 
-
 const IconPlus = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -119,6 +118,7 @@ const surfaceCard: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.06)",
   borderRadius: 16,
   padding: "16px",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
 };
 
 const POST_CATEGORIES: PostCategory[] = ["Announcement", "Event", "Update", "Opportunity"];
@@ -233,6 +233,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 type RedeemerLearnCardKey =
   | "profile-account"
   | "profile-role"
+  | "profile-overview"
   | "offerings-catalog"
   | "offerings-commitment"
   | "offerings-activity"
@@ -252,6 +253,11 @@ const REDEEMER_LEARN_CARDS: Record<RedeemerLearnCardKey, LearnInfoCard> = {
     title: "Redeemer Responsibilities",
     subtitle: "How redeemers create utility",
     body: "Redeemers convert earned CITY into real-world value through committed offerings and event-specific reward programs, closing the contribution-to-benefit loop.",
+  },
+  "profile-overview": {
+    title: "Certified Redeemer Organization",
+    subtitle: "Account identity and responsibilities",
+    body: "Your redeemer profile ties venue details, organization identity, and account-level redemption actions to one persistent role session. Redeemers convert earned CITY into real-world value through committed offerings and event-specific reward programs, closing the contribution-to-benefit loop for Civic Participants.",
   },
   "offerings-catalog": {
     title: "Offerings Catalog",
@@ -717,6 +723,10 @@ function ProfileTab({
   mceOfferings: MCECustomOffering[];
   onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
+  const { address: connectedAddress } = useAccount({ type: "ModularAccountV2" });
+  const redeemerAddress = connectedAddress ?? FAKE_WALLETS.redeemer;
+  const shortRedeemerAddress = `${redeemerAddress.slice(0, 8)}...${redeemerAddress.slice(-6)}`;
+  const [copiedAddress, setCopiedAddress] = useState(false);
   const [section, setSection] = useState<"profile" | "dashboard">("profile");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(redeemer.orgName);
@@ -810,10 +820,6 @@ function ProfileTab({
 
       {section === "profile" && (
         <>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginBottom: 12 }}>
-            <LearnMoreLink onClick={() => onLearnMore("profile-account")} />
-            <LearnMoreLink onClick={() => onLearnMore("profile-role")} />
-          </div>
           {/* Welcome banner */}
           <div
             style={{
@@ -822,19 +828,32 @@ function ProfileTab({
               borderRadius: 20,
               padding: "20px",
               marginBottom: 20,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
             }}
           >
             <div
               style={{
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                color: "rgba(52,238,182,0.6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 6,
                 marginBottom: 4,
+                flexWrap: "nowrap",
               }}
             >
-              Registered Redeemer Venue
+              <div
+                style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(52,238,182,0.6)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Certified Redeemer Organization
+              </div>
+              <LearnMoreLink onClick={() => onLearnMore("profile-overview")} />
             </div>
 
             {editing ? (
@@ -936,8 +955,49 @@ function ProfileTab({
               </div>
             )}
 
-            <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>
-              {FAKE_WALLETS.redeemer}
+            <div
+              style={{
+                fontFamily: "monospace",
+                fontSize: 11,
+                color: "rgba(255,255,255,0.35)",
+                marginBottom: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span>{shortRedeemerAddress}</span>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(redeemerAddress);
+                    setCopiedAddress(true);
+                    window.setTimeout(() => setCopiedAddress(false), 1200);
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: copiedAddress ? ACCENT : DIMMED,
+                  cursor: "pointer",
+                  fontSize: 13,
+                  padding: "0 2px",
+                  lineHeight: 1,
+                }}
+                title="Copy address"
+              >
+                {copiedAddress ? "✓" : "⧉"}
+              </button>
+              <a
+                href={`https://sepolia.basescan.org/address/${redeemerAddress}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: ACCENT, textDecoration: "none", fontSize: 11 }}
+              >
+                View Account ↗
+              </a>
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

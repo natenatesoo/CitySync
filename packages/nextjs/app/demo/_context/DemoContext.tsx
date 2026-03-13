@@ -113,6 +113,7 @@ type Action =
   | { type: "REDEEM_OFFER"; offerId: string; txHash?: `0x${string}` }
   | { type: "ISSUER_REGISTER"; orgName: string }
   | { type: "ISSUER_CREATE_TASK"; task: Task }
+  | { type: "ISSUER_REMOVE_TASK"; taskId: string }
   | { type: "ISSUER_VERIFY_COMPLETION"; taskId: string; citizenAddress: string }
   | { type: "REDEEMER_REGISTER"; orgName: string }
   | { type: "REDEEMER_TOGGLE_MCE" }
@@ -440,6 +441,20 @@ function reducer(state: DemoState, action: Action): DemoState {
           ...state.issuer,
           tasks: [...state.issuer.tasks, issuerTask],
           totalTasksIssued: state.issuer.totalTasksIssued + 1,
+        },
+      };
+    }
+
+    case "ISSUER_REMOVE_TASK": {
+      const removedTask = state.issuer.tasks.find(t => t.id === action.taskId);
+      return {
+        ...state,
+        availableTasks: state.availableTasks.filter(t => t.id !== action.taskId),
+        issuer: {
+          ...state.issuer,
+          tasks: state.issuer.tasks.filter(t => t.id !== action.taskId),
+          totalTasksIssued: Math.max(0, state.issuer.totalTasksIssued - 1),
+          totalCreditsIssued: Math.max(0, state.issuer.totalCreditsIssued - (removedTask?.credits ?? 0)),
         },
       };
     }

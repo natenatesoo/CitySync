@@ -14,6 +14,7 @@ const ROLES = [
     key: "participant" as const,
     emoji: "🏙️",
     label: "Civic Participant",
+    shortLabel: "Participant",
     tagline: "Earn · Vote · Redeem",
     accent: "#4169E1",
     href: "/demo/participant",
@@ -22,6 +23,7 @@ const ROLES = [
     key: "issuer" as const,
     emoji: "📋",
     label: "Issuer Organization",
+    shortLabel: "Issuer",
     tagline: "Create · Verify · Distribute",
     accent: "#DD9E33",
     href: "/demo/issuer",
@@ -30,6 +32,7 @@ const ROLES = [
     key: "redeemer" as const,
     emoji: "🏪",
     label: "Redeemer Organization",
+    shortLabel: "Redeemer",
     tagline: "Incentivize · Reward · Track",
     accent: "#34eeb6",
     href: "/demo/redeemer",
@@ -252,7 +255,7 @@ export default function AppShell({
               whiteSpace: "nowrap",
             }}
           >
-            {currentRole.label}
+            {currentRole.shortLabel}
           </span>
           {/* Chevron down */}
           <svg

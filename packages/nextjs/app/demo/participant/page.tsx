@@ -321,6 +321,7 @@ const card: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 14,
   padding: "16px",
+  boxShadow: "0 2px 10px rgba(0,0,0,0.22)",
 };
 
 const APP_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
@@ -1072,8 +1073,16 @@ function ProfileTab({
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState(p.citizenName);
   const inputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [section, setSection] = useState<"overview" | "completed">("overview");
   const [localCompletedTasks, setLocalCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setPhotoUrl(URL.createObjectURL(file));
+  };
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
@@ -1151,12 +1160,6 @@ function ProfileTab({
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Participant Profile</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={() => onLearnMore("profile-overview")} />
-        </div>
-      </div>
       {/* Profile card */}
       <div
         style={{
@@ -1165,38 +1168,67 @@ function ProfileTab({
           borderRadius: 20,
           padding: "20px",
           marginBottom: 14,
+          boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
         }}
       >
         <div
           style={{
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "rgba(65,105,225,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 6,
             marginBottom: 4,
+            flexWrap: "nowrap",
           }}
         >
-          Registered Civic Participant
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "rgba(65,105,225,0.75)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Civic Participant
+          </div>
+          <LearnMoreLink onClick={() => onLearnMore("profile-overview")} />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handlePhotoChange}
+          />
+          <button
+            onClick={() => photoInputRef.current?.click()}
+            title="Upload profile photo"
             style={{
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: "rgba(65,105,225,0.15)",
-              border: "1px solid rgba(65,105,225,0.3)",
+              background: photoUrl ? "transparent" : "rgba(65,105,225,0.15)",
+              border: `1px ${photoUrl ? "solid transparent" : "dashed rgba(65,105,225,0.4)"}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 20,
               flexShrink: 0,
+              cursor: "pointer",
+              padding: 0,
+              overflow: "hidden",
             }}
           >
-            👤
-          </div>
+            {photoUrl ? (
+              <img src={photoUrl} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span>👤</span>
+            )}
+          </button>
           <div>
             {editing ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1268,8 +1300,45 @@ function ProfileTab({
           </div>
         </div>
 
-        <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>
-          {participantAddress}
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            color: "rgba(255,255,255,0.35)",
+            marginBottom: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>
+            {participantAddress.slice(0, 8)}...{participantAddress.slice(-6)}
+          </span>
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(participantAddress);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1200);
+              } catch {
+                /* ignore */
+              }
+            }}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: copied ? TEAL : ACCENT,
+              cursor: "pointer",
+              fontSize: 13,
+              padding: "0 2px",
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+            }}
+            title="Copy address"
+          >
+            {copied ? "✓" : "⧉"}
+          </button>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -2198,11 +2267,8 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Task Marketplace</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={openExploreLearnMore} />
-        </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={openExploreLearnMore} />
       </div>
       {/* Browse / Claimed toggle */}
       <div
@@ -2299,73 +2365,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
                   fontSize: 12,
                 }}
               />
-            </div>
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setSortOpen(v => !v)}
-                style={{
-                  height: "100%",
-                  padding: "0 12px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(255,255,255,0.05)",
-                  color: "rgba(255,255,255,0.8)",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <IconSort /> Sort
-              </button>
-              {sortOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 6px)",
-                    right: 0,
-                    width: 220,
-                    background: "#1c2235",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 10,
-                    padding: 10,
-                    zIndex: 20,
-                  }}
-                >
-                  {[
-                    { key: "highValue", label: "Highest value" },
-                    { key: "lowValue", label: "Lowest value" },
-                    { key: "dateIssued", label: "Date issued" },
-                    { key: "organization", label: "Organization" },
-                  ].map(opt => (
-                    <label
-                      key={opt.key}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        fontSize: 12,
-                        color: "rgba(255,255,255,0.8)",
-                        marginBottom: 7,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={sortBy[opt.key as keyof typeof sortBy]}
-                        onChange={e =>
-                          setSortBy(prev => ({
-                            ...prev,
-                            [opt.key]: e.target.checked,
-                          }))
-                        }
-                      />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
           <div
@@ -3020,11 +3019,8 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
     null,
   );
 
-  const filteredOffers = state.offers.filter(o => {
-    if (filter === "MCE") return o.mceOnly;
-    if (filter === "CITYx") return !o.mceOnly;
-    return true;
-  });
+  // Show all offers (CITYx and MCE) — MCE offers are visually distinguished by color
+  const filteredOffers = state.offers;
   const filteredRedemptions = React.useMemo(() => {
     const resolveMceOnly = (redemption: PastRedemption): boolean => {
       if (typeof redemption.mceOnly === "boolean") return redemption.mceOnly;
@@ -3065,8 +3061,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Redeem CITY Credits</div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
       </div>
       {/* Balances */}
@@ -3118,32 +3113,11 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
         ))}
       </div>
 
-      {/* Credit filter pills + Scan QR */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-        {(["All", "CITYx", "MCE"] as CreditFilter[]).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{
-              padding: "7px 18px",
-              borderRadius: 20,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-              background:
-                filter === f ? (f === "MCE" ? GOLD : f === "CITYx" ? TEAL : ACCENT) : "rgba(255,255,255,0.06)",
-              color: filter === f ? "#15151E" : "rgba(255,255,255,0.55)",
-              transition: "all 0.15s",
-            }}
-          >
-            {f === "All" ? "All Offers" : f === "CITYx" ? "CITYx Only" : "MCE Only"}
-          </button>
-        ))}
-        {view === "browse" ? (
+      {/* Scan QR (browse only) */}
+      {view === "browse" && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
           <button
             style={{
-              marginLeft: "auto",
               display: "flex",
               alignItems: "center",
               background: "rgba(255,255,255,0.05)",
@@ -3152,13 +3126,12 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
               padding: "7px 10px",
               cursor: "default",
               color: "rgba(255,255,255,0.5)",
-              flexShrink: 0,
             }}
           >
             <QRIcon />
           </button>
-        ) : null}
-      </div>
+        </div>
+      )}
       {redeemWriteStatus.state !== "idle" && (
         <div
           style={{
@@ -3211,7 +3184,21 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
             const disabled = !canAfford || needsMce;
 
             return (
-              <div key={offer.id} style={{ ...card, marginBottom: 10, opacity: disabled ? 0.55 : 1 }}>
+              <div
+                key={offer.id}
+                style={{
+                  ...card,
+                  marginBottom: 10,
+                  opacity: disabled ? 0.55 : 1,
+                  ...(offer.mceOnly
+                    ? {
+                        borderLeft: `3px solid rgba(221,158,51,0.5)`,
+                        background: "rgba(221,158,51,0.04)",
+                        paddingLeft: 13,
+                      }
+                    : {}),
+                }}
+              >
                 <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
                   <div
                     style={{
