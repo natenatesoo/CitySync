@@ -2428,7 +2428,6 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       {taskWriteStatus.state !== "idle" && (
         <div
           style={{
-            background: "rgba(255,255,255,0.04)",
             borderRadius: 12,
             marginBottom: 16,
             position: "relative",
