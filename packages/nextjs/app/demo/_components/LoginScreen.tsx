@@ -2,6 +2,7 @@
 
 import { useAuthModal, useSignerStatus } from "@account-kit/react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function LoginScreen() {
   const { openAuthModal } = useAuthModal();
@@ -112,6 +113,16 @@ export function LoginScreen() {
 
       {/* Footer */}
       <p style={{ marginTop: 32, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Powered by Base Sepolia Testnet</p>
+
+      <div style={{ display: "flex", gap: 20, marginTop: 16, alignItems: "center" }}>
+        <Link href="/demo/privacy" style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>
+          Privacy Policy
+        </Link>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)" }}>·</span>
+        <Link href="/demo/terms" style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>
+          Terms of Service
+        </Link>
+      </div>
     </div>
   );
 }
