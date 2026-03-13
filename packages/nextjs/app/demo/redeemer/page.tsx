@@ -244,7 +244,16 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
         <span style={{ color: "rgba(255,255,255,0.82)", lineHeight: 1.45, flex: 1 }}>{message}</span>
         <button
           onClick={onDone}
-          style={{ background: "none", border: "none", color: "rgba(255,255,255,0.28)", cursor: "pointer", fontSize: 15, padding: 0, flexShrink: 0, lineHeight: 1 }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "rgba(255,255,255,0.28)",
+            cursor: "pointer",
+            fontSize: 15,
+            padding: 0,
+            flexShrink: 0,
+            lineHeight: 1,
+          }}
           aria-label="Dismiss"
         >
           ×

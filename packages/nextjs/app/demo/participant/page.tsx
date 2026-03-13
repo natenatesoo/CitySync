@@ -1056,7 +1056,16 @@ function Toast({ message, onDismiss }: { message: string; onDismiss: () => void 
         <span style={{ color: "rgba(255,255,255,0.82)", lineHeight: 1.45, flex: 1 }}>{message}</span>
         <button
           onClick={onDismiss}
-          style={{ background: "none", border: "none", color: "rgba(255,255,255,0.28)", cursor: "pointer", fontSize: 15, padding: 0, flexShrink: 0, lineHeight: 1 }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "rgba(255,255,255,0.28)",
+            cursor: "pointer",
+            fontSize: 15,
+            padding: 0,
+            flexShrink: 0,
+            lineHeight: 1,
+          }}
           aria-label="Dismiss"
         >
           ×
@@ -2266,7 +2275,11 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
         delete next[task.id];
         return next;
       });
-      setTaskWriteStatus({ state: "failed", error: result.error ?? "Submit completion failed onchain.", label: "Submit Completion" });
+      setTaskWriteStatus({
+        state: "failed",
+        error: result.error ?? "Submit completion failed onchain.",
+        label: "Submit Completion",
+      });
     });
   };
 
@@ -2443,9 +2456,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
             {taskWriteStatus.state === "failed" && "Failed onchain"}
           </div>
           {taskWriteStatus.error && (
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>
-              {taskWriteStatus.error}
-            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>{taskWriteStatus.error}</div>
           )}
           {taskWriteStatus.hash && (
             <a

@@ -277,7 +277,17 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
         <span style={{ color: "rgba(255,255,255,0.82)", lineHeight: 1.45, flex: 1 }}>{message}</span>
         <button
           onClick={onDone}
-          style={{ background: "none", border: "none", color: "rgba(255,255,255,0.28)", cursor: "pointer", fontSize: 15, padding: 0, flexShrink: 0, lineHeight: 1, marginTop: 0 }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "rgba(255,255,255,0.28)",
+            cursor: "pointer",
+            fontSize: 15,
+            padding: 0,
+            flexShrink: 0,
+            lineHeight: 1,
+            marginTop: 0,
+          }}
           aria-label="Dismiss"
         >
           ×
@@ -1844,6 +1854,7 @@ function TasksTab({
           onSetTaskActive={onSetTaskActive}
           onUnissueTask={onUnissueTask}
           verifyWriteStatus={verifyWriteStatus}
+          onDismissVerifyWrite={onDismissVerifyWrite}
           onLearnMore={onLearnMore}
         />
       )}
@@ -2700,12 +2711,14 @@ function VerifyTab({
   onSetTaskActive,
   onUnissueTask,
   verifyWriteStatus,
+  onDismissVerifyWrite,
   onLearnMore,
 }: {
   onVerify: (taskId: string, citizen: string) => Promise<void>;
   onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
   onUnissueTask: (taskId: string) => Promise<void>;
   verifyWriteStatus: TaskWriteStatus;
+  onDismissVerifyWrite: () => void;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
