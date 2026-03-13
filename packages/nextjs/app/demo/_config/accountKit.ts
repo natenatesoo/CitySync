@@ -9,6 +9,9 @@ export const accountKitConfig = createConfig(
     storage: cookieStorage,
     enablePopupOauth: true,
     policyId: process.env.NEXT_PUBLIC_ALCHEMY_GAS_POLICY_ID,
+    sessionConfig: {
+      expirationTimeMs: 1000 * 60 * 60 * 24 * 30, // 30 days
+    },
   },
   {
     auth: {
