@@ -647,6 +647,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     waitForTxn: true,
   });
   const roleRegisterInFlight = useRef<{ issuer: boolean; redeemer: boolean }>({ issuer: false, redeemer: false });
+  const autoRegisteredForRef = useRef<string | null>(null);
   const taskStateHydratedRef = useRef(false);
 
   useEffect(() => {
@@ -760,6 +761,61 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     }
     return undefined;
   }, []);
+
+  // ── Auto-register both roles on sign-in ───────────────────────────────────
+  // As soon as the smart account address and client are available, register the
+  // address in both the Issuer and Redeemer registries in a single background
+  // pass. This means every sign-in immediately gets a full account — no role
+  // selection required before registry membership is established.
+  useEffect(() => {
+    if (!address || !client) return;
+    if (autoRegisteredForRef.current === address) return;
+    autoRegisteredForRef.current = address;
+
+    const now = Date.now();
+    dispatch({ type: "ISSUER_REGISTER", orgName: generateIssuerName(now % PREFIXES.length) });
+    dispatch({ type: "REDEEMER_REGISTER", orgName: generateRedeemerName(now % ADJECTIVES.length) });
+
+    void (async () => {
+      try {
+        const [isIssuer, isRedeemer] = await Promise.all([
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+            abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+            functionName: "isActiveIssuer",
+            args: [address],
+          }),
+          baseSepoliaPublicClient.readContract({
+            address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+            abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+            functionName: "isActiveRedeemer",
+            args: [address],
+          }),
+        ]);
+
+        await Promise.all([
+          isIssuer
+            ? Promise.resolve()
+            : writeContractAsync({
+                address: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.address,
+                abi: BASE_SEPOLIA_CONTRACTS.IssuerRegistryDemo.abi,
+                functionName: "register",
+                args: [],
+              }).catch(() => undefined),
+          isRedeemer
+            ? Promise.resolve()
+            : writeContractAsync({
+                address: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.address,
+                abi: BASE_SEPOLIA_CONTRACTS.DemoRedeemerRegistry.abi,
+                functionName: "register",
+                args: [],
+              }).catch(() => undefined),
+        ]);
+      } catch {
+        // Non-fatal — the 6-second onchain sync will reflect state once confirmed.
+      }
+    })();
+  }, [address, client, writeContractAsync]);
 
   useEffect(() => {
     if (!address) return;
