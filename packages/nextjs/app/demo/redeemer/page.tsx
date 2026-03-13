@@ -120,6 +120,21 @@ const surfaceCard: React.CSSProperties = {
   padding: "16px",
   boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
 };
+const accentCard: React.CSSProperties = {
+  ...surfaceCard,
+  borderLeft: "3px solid rgba(52,238,182,0.45)",
+  paddingLeft: 13,
+};
+const goldCard: React.CSSProperties = {
+  ...surfaceCard,
+  borderLeft: "3px solid rgba(221,158,51,0.45)",
+  paddingLeft: 13,
+};
+const purpleCard: React.CSSProperties = {
+  ...surfaceCard,
+  borderLeft: "3px solid rgba(167,139,250,0.5)",
+  paddingLeft: 13,
+};
 
 const POST_CATEGORIES: PostCategory[] = ["Announcement", "Event", "Update", "Opportunity"];
 
@@ -1319,7 +1334,7 @@ function OfferingsTab({
                 <div
                   key={item.id}
                   style={{
-                    ...surfaceCard,
+                    ...accentCard,
                     border: "1px solid rgba(52,238,182,0.2)",
                     background: "rgba(52,238,182,0.04)",
                   }}
@@ -1384,7 +1399,7 @@ function OfferingsTab({
                 <div
                   key={offering.id}
                   style={{
-                    ...surfaceCard,
+                    ...accentCard,
                     border: "1px solid rgba(52,238,182,0.15)",
                   }}
                 >
@@ -1538,7 +1553,7 @@ function OfferingsTab({
                 <div
                   key={item.id}
                   style={{
-                    ...surfaceCard,
+                    ...goldCard,
                     border: "1px solid rgba(221,158,51,0.22)",
                     background: "rgba(221,158,51,0.04)",
                   }}
@@ -1608,7 +1623,7 @@ function OfferingsTab({
                 <div
                   key={offering.id}
                   style={{
-                    ...surfaceCard,
+                    ...goldCard,
                     border: "1px solid rgba(221,158,51,0.2)",
                     background: "rgba(221,158,51,0.03)",
                   }}
@@ -2619,7 +2634,7 @@ function MyCityTab({
             <div
               key={post.id}
               style={{
-                ...surfaceCard,
+                ...accentCard,
                 border: isOwn ? "1px solid rgba(52,238,182,0.2)" : "1px solid rgba(255,255,255,0.06)",
               }}
             >
@@ -2926,6 +2941,8 @@ function DashboardTab({
                   ...surfaceCard,
                   padding: "14px 16px",
                   border: o.type === "MCE" ? "1px solid rgba(221,158,51,0.15)" : "1px solid rgba(52,238,182,0.1)",
+                  borderLeft: o.type === "MCE" ? "3px solid rgba(221,158,51,0.45)" : "3px solid rgba(52,238,182,0.45)",
+                  paddingLeft: 13,
                 }}
               >
                 <div
@@ -3136,7 +3153,7 @@ function MCEsTab({
               {epoch1Mces.map((mce, i) => {
                 const pct = Math.round((mce.votesFor / totalVotesCast) * 100);
                 return (
-                  <div key={mce.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+                  <div key={mce.id} style={{ ...purpleCard, marginBottom: 12 }}>
                     <div
                       style={{
                         display: "flex",
@@ -3291,7 +3308,7 @@ function MCEsTab({
 
           {/* Existing epoch2 proposals */}
           {state.epoch2Proposals.map(prop => (
-            <div key={prop.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+            <div key={prop.id} style={{ ...purpleCard, marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                 <span
                   style={{

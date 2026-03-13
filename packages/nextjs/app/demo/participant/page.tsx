@@ -310,6 +310,21 @@ const card: React.CSSProperties = {
   padding: "16px",
   boxShadow: "0 2px 10px rgba(0,0,0,0.22)",
 };
+const cardAccent: React.CSSProperties = {
+  ...card,
+  borderLeft: "3px solid rgba(52,238,182,0.45)",
+  paddingLeft: 13,
+};
+const cardGold: React.CSSProperties = {
+  ...card,
+  borderLeft: "3px solid rgba(221,158,51,0.45)",
+  paddingLeft: 13,
+};
+const cardPurple: React.CSSProperties = {
+  ...card,
+  borderLeft: "3px solid rgba(167,139,250,0.5)",
+  paddingLeft: 13,
+};
 
 const APP_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
   position: "fixed",
@@ -1570,7 +1585,14 @@ function TaskCard({
   const catColor = CAT_COLORS[task.category] ?? "#666";
 
   return (
-    <div style={{ ...card, marginBottom: 10 }}>
+    <div
+      style={{
+        ...card,
+        marginBottom: 10,
+        borderLeft: task.isMCE ? "3px solid rgba(221,158,51,0.45)" : "3px solid rgba(52,238,182,0.45)",
+        paddingLeft: 13,
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
@@ -2544,7 +2566,7 @@ function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
         const badgeColor = CAT_BADGE[post.category] ?? "#666";
 
         return (
-          <div key={post.id} style={{ ...card, marginBottom: 12 }}>
+          <div key={post.id} style={{ ...cardAccent, marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div
@@ -2752,7 +2774,7 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
               const pct = Math.round((totalVotes / totalVotesCast) * 100);
 
               return (
-                <div key={mce.id} style={{ ...card, marginBottom: 12 }}>
+                <div key={mce.id} style={{ ...cardPurple, marginBottom: 12 }}>
                   <div
                     style={{
                       display: "flex",
@@ -2893,7 +2915,7 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
           {state.epoch2Proposals.map(prop => {
             const liked = state.participant.likedEpoch2Ids.includes(prop.id);
             return (
-              <div key={prop.id} style={{ ...card, marginBottom: 12 }}>
+              <div key={prop.id} style={{ ...cardPurple, marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                   <span
                     style={{
@@ -3165,7 +3187,10 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
                         background: "rgba(221,158,51,0.04)",
                         paddingLeft: 13,
                       }
-                    : {}),
+                    : {
+                        borderLeft: "3px solid rgba(52,238,182,0.4)",
+                        paddingLeft: 13,
+                      }),
                 }}
               >
                 <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
@@ -3297,7 +3322,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
             </div>
           ) : (
             filteredRedemptions.map(r => (
-              <div key={r.id} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
+              <div key={r.id} style={{ ...cardGold, marginBottom: 8, padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>

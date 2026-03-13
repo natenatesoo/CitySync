@@ -1583,6 +1583,7 @@ function TasksTab({
                       borderRadius: 16,
                       padding: 16,
                       paddingLeft: 13,
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
                     }}
                   >
                     <div style={{ marginBottom: 10 }}>
@@ -2812,7 +2813,7 @@ function VerifyTab({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {issuedItems.map(task => {
                 return (
-                  <div key={task.taskId} style={{ ...surfaceCard }}>
+                  <div key={task.taskId} style={{ ...accentCard }}>
                     <div
                       style={{
                         display: "flex",
@@ -2888,7 +2889,7 @@ function VerifyTab({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {claimedItems.map(task => {
                 return (
-                  <div key={task.taskId} style={{ ...surfaceCard }}>
+                  <div key={task.taskId} style={{ ...accentCard }}>
                     <div
                       style={{
                         display: "flex",
@@ -3049,10 +3050,8 @@ function VerifyTab({
                   <div
                     key={`${task.taskId}-${task.claimant ?? "none"}`}
                     style={{
-                      background: SURFACE,
+                      ...accentCard,
                       border: "1px solid rgba(221,158,51,0.2)",
-                      borderRadius: 16,
-                      padding: 16,
                     }}
                   >
                     <div style={{ marginBottom: 10 }}>
@@ -3344,7 +3343,7 @@ function MCEsTab({
               {epoch1Mces.map((mce, i) => {
                 const pct = Math.round((mce.votesFor / totalVotesCast) * 100);
                 return (
-                  <div key={mce.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+                  <div key={mce.id} style={{ ...purpleCard, marginBottom: 12 }}>
                     <div
                       style={{
                         display: "flex",
@@ -3499,7 +3498,7 @@ function MCEsTab({
 
           {/* Existing epoch2 proposals */}
           {state.epoch2Proposals.map(prop => (
-            <div key={prop.id} style={{ ...surfaceCard, marginBottom: 12 }}>
+            <div key={prop.id} style={{ ...purpleCard, marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                 <span
                   style={{
