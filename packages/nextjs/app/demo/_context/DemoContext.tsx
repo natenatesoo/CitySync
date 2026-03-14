@@ -131,6 +131,7 @@ type Action =
     }
   | { type: "SYNC_ONCHAIN_OFFERS"; offers: RedemptionOffer[] }
   | { type: "HYDRATE_TASK_STATE"; availableTasks: Task[]; issuerTasks: IssuerTask[]; totalTasksIssued: number }
+  | { type: "HYDRATE_REDEMPTIONS"; pastRedemptions: PastRedemption[] }
   | { type: "ADD_QUEUE_REDEMPTION"; redemption: QueuedRedemption }
   | { type: "CLEAR_NOTIFICATION" };
 
@@ -156,6 +157,7 @@ const _randomAddress = () =>
 const VERIFY_DURATION = 7; // seconds
 const TASK_STATE_STORAGE_KEY = "citysync:demo:taskState:v2";
 const PROFILE_NAMES_STORAGE_KEY = "citysync:demo:profile:names:v1";
+const REDEMPTION_STORAGE_KEY = "citysync:demo:pastRedemptions:v1";
 
 const parseTaskOpportunityId = (taskId: string): bigint | null => {
   const m = taskId.match(/^task-(\d+)$/);
@@ -583,6 +585,13 @@ function reducer(state: DemoState, action: Action): DemoState {
       };
     }
 
+    case "HYDRATE_REDEMPTIONS": {
+      return {
+        ...state,
+        pastRedemptions: action.pastRedemptions,
+      };
+    }
+
     case "ADD_QUEUE_REDEMPTION": {
       return {
         ...state,
@@ -691,6 +700,34 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       // Ignore persistence failures.
     }
   }, [state.availableTasks, state.issuer.tasks, state.issuer.totalTasksIssued]);
+
+  // ── Redemption history persistence ──────────────────────────────────────────
+  const redemptionHydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(REDEMPTION_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as PastRedemption[];
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      dispatch({ type: "HYDRATE_REDEMPTIONS", pastRedemptions: parsed });
+    } catch {
+      // Ignore hydration failures.
+    } finally {
+      redemptionHydratedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!redemptionHydratedRef.current) return;
+    try {
+      window.localStorage.setItem(REDEMPTION_STORAGE_KEY, JSON.stringify(state.pastRedemptions));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [state.pastRedemptions]);
 
   const normalizeWriteError = useCallback((error: unknown, fallback: string) => {
     if (!(error instanceof Error)) return fallback;

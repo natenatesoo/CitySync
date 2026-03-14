@@ -57,7 +57,7 @@ export default function WalletModal({
           left: 0,
           right: 0,
           bottom: 69,
-          maxHeight: "25%",
+          maxHeight: "50%",
           overflowY: "auto",
           zIndex: 221,
           background: "#1E1E2C",

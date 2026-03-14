@@ -753,6 +753,22 @@ function ProfileTab({
   const issuerAddress = address ?? FAKE_WALLETS.issuer;
   const shortAddress = `${issuerAddress.slice(0, 8)}...${issuerAddress.slice(-6)}`;
   const logoStorageKey = `citysync:demo:profile:photo:issuer:v1:${issuerAddress.toLowerCase()}`;
+  const nameStorageKey = `citysync:demo:issuer:name:v1:${issuerAddress.toLowerCase()}`;
+
+  // Hydrate org name from localStorage on mount (works even without wallet connection).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem(nameStorageKey);
+      if (saved && !issuer.orgName) {
+        dispatch({ type: "ISSUER_REGISTER", orgName: saved });
+        setDraft(saved);
+      }
+    } catch {
+      // Ignore hydration failures.
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameStorageKey]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -791,6 +807,7 @@ function ProfileTab({
   const saveEdit = () => {
     if (draft.trim()) {
       dispatch({ type: "ISSUER_REGISTER", orgName: draft.trim() });
+      try { window.localStorage.setItem(nameStorageKey, draft.trim()); } catch { /* ignore */ }
     }
     setEditing(false);
   };

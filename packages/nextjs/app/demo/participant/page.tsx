@@ -792,7 +792,7 @@ function RedeemModal({
 }) {
   React.useEffect(() => {
     if (confirmed) {
-      const timer = setTimeout(onClose, 2500);
+      const timer = setTimeout(onClose, 5000);
       return () => clearTimeout(timer);
     }
   }, [confirmed, onClose]);
@@ -827,7 +827,7 @@ function RedeemModal({
             padding: "24px 20px 24px",
             overflowY: "auto",
             animation: confirmed
-              ? "flashConfirm 0.5s ease-in-out 0s 5"
+              ? "flashConfirm 0.5s ease-in-out 0s 10"
               : "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
             pointerEvents: "auto",
           }}
@@ -1014,6 +1014,22 @@ function ProfileTab({
   const [localCompletedTasks, setLocalCompletedTasks] = useState<Array<Task & { completedAt: string }>>([]);
 
   const photoStorageKey = `citysync:demo:profile:photo:participant:v1:${participantAddress.toLowerCase()}`;
+  const nameStorageKey = `citysync:demo:participant:name:v1:${participantAddress.toLowerCase()}`;
+
+  // Hydrate citizen name from localStorage on mount (works even without wallet connection).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem(nameStorageKey);
+      if (saved && !p.citizenName) {
+        setCitizenName(saved);
+        setNameInput(saved);
+      }
+    } catch {
+      // Ignore hydration failures.
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameStorageKey]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1067,7 +1083,10 @@ function ProfileTab({
 
   const saveEdit = () => {
     const trimmed = nameInput.trim();
-    if (trimmed) setCitizenName(trimmed);
+    if (trimmed) {
+      setCitizenName(trimmed);
+      try { window.localStorage.setItem(nameStorageKey, trimmed); } catch { /* ignore */ }
+    }
     setEditing(false);
   };
   const cancelEdit = () => {
@@ -3382,6 +3401,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
                         onClick={() => {
                           if (disabled) return;
                           setRedeemWriteStatus({ state: "idle" });
+                          setShowRedeemTxBox(true);
                           setConfirmOffer(offer);
                         }}
                         disabled={disabled}
@@ -3491,7 +3511,8 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
           onClose={() => {
             if (redeemWriteStatus.state !== "pending") {
               setConfirmOffer(null);
-              setRedeemWriteStatus({ state: "idle" });
+              // Leave redeemWriteStatus as-is so the block-explorer link box
+              // stays visible after a confirmed redemption.
             }
           }}
           pending={redeemWriteStatus.state === "pending"}
