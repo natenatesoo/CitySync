@@ -33,6 +33,13 @@ const IconClipboard = () => (
   </svg>
 );
 
+const IconShieldCheck = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7l-9-5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const IconCity = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <path d="M3 21h18M3 7l9-4 9 4v14H3V7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -88,6 +95,7 @@ const IconHeart = () => (
 const TABS = [
   { key: "profile", label: "Profile", icon: <IconBuilding /> },
   { key: "tasks", label: "Tasks", icon: <IconClipboard /> },
+  { key: "verify", label: "Verify", icon: <IconShieldCheck /> },
   { key: "community", label: "Community", icon: <IconCity /> },
 ];
 
@@ -351,6 +359,8 @@ export default function IssuerApp() {
   const [verifyWriteStatus, setVerifyWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [proposeWriteStatus, setProposeWriteStatus] = useState<TaskWriteStatus>({ state: "idle" });
   const [openInfoCards, setOpenInfoCards] = useState<IssuerLearnCardKey[]>([]);
+  const [unissueConfirmId, setUnissueConfirmId] = useState<string | null>(null);
+  const [noShowConfirmItem, setNoShowConfirmItem] = useState<{ taskId: string; claimant: `0x${string}`; title: string } | null>(null);
 
   const { issuer } = state;
   const rightPanel = getIssuerRightPanel(activeTab);
@@ -403,6 +413,10 @@ export default function IssuerApp() {
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
   const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
+  const creditsIssued = issuer.tasks.reduce((sum, t) => {
+    const verifiedCount = t.completions?.filter((c: any) => c.verified).length ?? 0;
+    return sum + verifiedCount * t.credits;
+  }, 0);
 
   const handleVerify = async (taskId: string, citizen: string) => {
     if (!address) {
@@ -597,6 +611,7 @@ export default function IssuerApp() {
             issuer={issuer}
             totalPending={totalPending}
             creditsCommitted={creditsCommitted}
+            creditsIssued={creditsIssued}
             onLearnMore={openLearnMore}
           />
         )}
@@ -608,21 +623,25 @@ export default function IssuerApp() {
             proposedTasks={proposedTasks}
             onApproveProposed={handleApproveProposed}
             approvedCatalogTasks={approvedCatalogTasks}
-            onRemoveCatalogTask={taskId => {
-              setApprovedCatalogTasks(prev => prev.filter(t => t.id !== taskId));
-              setToast("Task removed from catalog.");
-            }}
             onModifyCatalogTask={taskId => setCatalogModifyTaskId(taskId)}
             taskWriteStatus={taskWriteStatus}
             onDismissTaskWrite={() => setTaskWriteStatus({ state: "idle" })}
+            proposeWriteStatus={proposeWriteStatus}
+            onDismissProposeWrite={() => setProposeWriteStatus({ state: "idle" })}
+            onLearnMore={openLearnMore}
+            onUnissueConfirm={setUnissueConfirmId}
+          />
+        )}
+        {activeTab === "verify" && (
+          <VerifyTab
             onVerify={handleVerify}
             onSetTaskActive={issuerSetTaskActive}
             onUnissueTask={handleUnissueTask}
             verifyWriteStatus={verifyWriteStatus}
             onDismissVerifyWrite={() => setVerifyWriteStatus({ state: "idle" })}
-            proposeWriteStatus={proposeWriteStatus}
-            onDismissProposeWrite={() => setProposeWriteStatus({ state: "idle" })}
             onLearnMore={openLearnMore}
+            onUnissueConfirm={setUnissueConfirmId}
+            onNoShowConfirm={setNoShowConfirmItem}
           />
         )}
         {activeTab === "community" && (
@@ -680,6 +699,27 @@ export default function IssuerApp() {
               />
             ) : null;
           })()}
+
+        {unissueConfirmId && (
+          <UnissueConfirmSheet
+            taskId={unissueConfirmId}
+            onConfirm={() => {
+              void handleUnissueTask(unissueConfirmId);
+              setUnissueConfirmId(null);
+            }}
+            onCancel={() => setUnissueConfirmId(null)}
+          />
+        )}
+        {noShowConfirmItem && (
+          <NoShowConfirmSheet
+            item={noShowConfirmItem}
+            onConfirm={() => {
+              void handleUnissueTask(noShowConfirmItem.taskId);
+              setNoShowConfirmItem(null);
+            }}
+            onCancel={() => setNoShowConfirmItem(null)}
+          />
+        )}
       </AppShell>
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
@@ -693,11 +733,13 @@ function ProfileTab({
   issuer,
   totalPending,
   creditsCommitted,
+  creditsIssued,
   onLearnMore,
 }: {
   issuer: ReturnType<typeof useDemo>["state"]["issuer"];
   totalPending: number;
   creditsCommitted: number;
+  creditsIssued: number;
   onLearnMore: (key: IssuerLearnCardKey) => void;
 }) {
   const { dispatch } = useDemo();
@@ -1082,7 +1124,7 @@ function ProfileTab({
         }}
       >
         <StatRow label="Tasks Created" value={issuer.totalTasksIssued} accentColor={ACCENT_BLUE} />
-        <StatRow label="Credits Issued" value={issuer.totalCreditsIssued} suffix="CITYx" border accentColor={ACCENT} />
+        <StatRow label="Credits Issued" value={creditsIssued} suffix="CITYx" border accentColor={ACCENT} />
         <StatRow
           label="Pending Verifications"
           value={totalPending}
@@ -1193,18 +1235,13 @@ function TasksTab({
   proposedTasks,
   onApproveProposed,
   approvedCatalogTasks,
-  onRemoveCatalogTask,
   onModifyCatalogTask,
   taskWriteStatus,
   onDismissTaskWrite,
-  onVerify,
-  onSetTaskActive,
-  onUnissueTask,
-  verifyWriteStatus,
-  onDismissVerifyWrite,
   proposeWriteStatus,
   onDismissProposeWrite,
   onLearnMore,
+  onUnissueConfirm,
 }: {
   creditsCommitted: number;
   onCreateOpen: () => void;
@@ -1212,21 +1249,16 @@ function TasksTab({
   proposedTasks: ProposedTask[];
   onApproveProposed: (task: ProposedTask) => void;
   approvedCatalogTasks: Task[];
-  onRemoveCatalogTask: (taskId: string) => void;
   onModifyCatalogTask: (taskId: string) => void;
   taskWriteStatus: TaskWriteStatus;
   onDismissTaskWrite: () => void;
-  onVerify: (taskId: string, citizen: string) => Promise<void>;
-  onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
-  onUnissueTask: (taskId: string) => Promise<void>;
-  verifyWriteStatus: TaskWriteStatus;
-  onDismissVerifyWrite: () => void;
   proposeWriteStatus: TaskWriteStatus;
   onDismissProposeWrite: () => void;
   onLearnMore: (key: IssuerLearnCardKey) => void;
+  onUnissueConfirm: (taskId: string) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
-  const [view, setView] = useState<"issue" | "verify" | "catalog">("issue");
+  const [view, setView] = useState<"issue" | "catalog">("issue");
   const [onchainTasks, setOnchainTasks] = useState<
     Array<{
       id: string;
@@ -1404,7 +1436,7 @@ function TasksTab({
         </div>
       </div>
 
-      {/* Segment control — Issue / Catalog / Verify */}
+      {/* Segment control — Issue / Catalog */}
       <div
         style={{
           background: "rgba(255,255,255,0.04)",
@@ -1415,13 +1447,12 @@ function TasksTab({
           gap: 2,
         }}
       >
-        {(["issue", "verify", "catalog"] as const).map(v => {
+        {(["issue", "catalog"] as const).map(v => {
           const labels: Record<string, string> = {
             issue: `Issue (${onchainTasks.length})`,
-            verify: "Verify",
             catalog: `Catalog (${approvedCatalogTasks.length})`,
           };
-          const segAccent = v === "verify" ? ACCENT_TEAL : v === "catalog" ? ACCENT_PURPLE : ACCENT;
+          const segAccent = v === "catalog" ? ACCENT_PURPLE : ACCENT;
           return (
             <button
               key={v}
@@ -1831,25 +1862,9 @@ function TasksTab({
 
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
-                      onClick={() => onRemoveCatalogTask(task.id)}
-                      style={{
-                        flex: 1,
-                        background: "rgba(255,107,157,0.12)",
-                        border: "1px solid rgba(255,107,157,0.35)",
-                        borderRadius: 10,
-                        padding: "9px 0",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#ff6b9d",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Remove From Catalog
-                    </button>
-                    <button
                       onClick={() => onModifyCatalogTask(task.id)}
                       style={{
-                        flex: 1,
+                        width: "100%",
                         background: "rgba(255,255,255,0.06)",
                         border: "1px solid rgba(255,255,255,0.12)",
                         borderRadius: 10,
@@ -1869,17 +1884,6 @@ function TasksTab({
           )}
         </>
       )}
-
-      {view === "verify" && (
-        <VerifyTab
-          onVerify={onVerify}
-          onSetTaskActive={onSetTaskActive}
-          onUnissueTask={onUnissueTask}
-          verifyWriteStatus={verifyWriteStatus}
-          onDismissVerifyWrite={onDismissVerifyWrite}
-          onLearnMore={onLearnMore}
-        />
-      )}
     </div>
   );
 }
@@ -1896,60 +1900,30 @@ function CreateTaskSheet({
   onIssueTask: (taskId: string) => void;
 }) {
   return (
-    <div
-      style={{
+    <>
+      <style>{`
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div onClick={e => e.stopPropagation()} style={{
         position: "absolute",
-        inset: 0,
-        zIndex: 34,
+        top: 0, left: 0, right: 0, bottom: 68,
+        zIndex: 221,
+        background: "#1E1E2C",
+        animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+        overflowY: "auto",
         display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "12px 16px 18px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 16px",
-            }}
-          />
-
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Task Catalog</div>
+        flexDirection: "column",
+      }}>
+        {/* Sticky header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Task Catalog</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+        </div>
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 24px" }}>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}>
             Approved tasks available for issuance. Select a task, then choose quantity in the next step.
           </div>
@@ -2015,7 +1989,7 @@ function CreateTaskSheet({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2112,60 +2086,30 @@ function ProposeTaskSheet({
   };
 
   return (
-    <div
-      style={{
+    <>
+      <style>{`
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div onClick={e => e.stopPropagation()} style={{
         position: "absolute",
-        inset: 0,
-        zIndex: 40,
+        top: 0, left: 0, right: 0, bottom: 68,
+        zIndex: 221,
+        background: "#1E1E2C",
+        animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+        overflowY: "auto",
         display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "24px 20px 24px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 20px",
-            }}
-          />
-
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Propose New Task</div>
+        flexDirection: "column",
+      }}>
+        {/* Sticky header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Propose New Task</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+        </div>
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 24px" }}>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
             Submit a task for admin review. Once approved, it will enter the catalog for participants to claim.
           </div>
@@ -2326,7 +2270,7 @@ function ProposeTaskSheet({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2423,46 +2367,45 @@ function MyCityTab({
 
   return (
     <div style={{ padding: "24px 20px 100px" }}>
-      {/* Header */}
+      {/* Header — New Post left, Learn More right */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>MyCity Feed</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
-          <button
-            onClick={onCompose}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: ACCENT,
-              border: "none",
-              borderRadius: 10,
-              padding: "8px 14px",
-              fontSize: 12,
-              fontWeight: 700,
-              color: BG,
-              cursor: "pointer",
-            }}
-          >
-            <IconPlus /> New Post
-          </button>
-        </div>
+        <button
+          onClick={onCompose}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: ACCENT,
+            border: "none",
+            borderRadius: 10,
+            padding: "8px 14px",
+            fontSize: 12,
+            fontWeight: 700,
+            color: BG,
+            cursor: "pointer",
+          }}
+        >
+          <IconPlus /> New Post
+        </button>
+        <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
       </div>
 
       {/* Sort tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, display: "flex", marginBottom: 20 }}>
         {(["recent", "top"] as const).map(s => (
           <button
             key={s}
             onClick={() => setSort(s)}
             style={{
+              flex: 1,
               border: "none",
-              borderRadius: 20,
-              padding: "6px 16px",
+              borderRadius: 10,
+              padding: "8px 0",
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
-              background: sort === s ? ACCENT : "rgba(255,255,255,0.07)",
+              transition: "all 0.18s",
+              background: sort === s ? ACCENT : "transparent",
               color: sort === s ? BG : MUTED,
             }}
           >
@@ -2481,8 +2424,12 @@ function MyCityTab({
             <div
               key={post.id}
               style={{
-                ...surfaceCard,
-                border: isOwn ? "1px solid rgba(221,158,51,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                background: "linear-gradient(135deg, rgba(221,158,51,0.06) 0%, #1E1E2C 100%)",
+                border: isOwn ? "1px solid rgba(221,158,51,0.3)" : `1px solid ${catColor}22`,
+                borderLeft: `3px solid ${catColor}80`,
+                borderRadius: 16,
+                padding: "16px 16px 16px 13px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.28)",
               }}
             >
               <div
@@ -2575,59 +2522,27 @@ function ComposePostSheet({
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 40,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "24px 20px 24px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 20px",
-            }}
-          />
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Post</div>
+    <>
+      <style>{`
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 68,
+          maxHeight: "60%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>New Post</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+          </div>
 
           {/* Category picker */}
           <div style={{ marginBottom: 14 }}>
@@ -2710,7 +2625,71 @@ function ComposePostSheet({
           </button>
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+// ─── Unissue Confirm Sheet ────────────────────────────────────────────────────
+
+function UnissueConfirmSheet({ taskId: _taskId, onConfirm, onCancel }: { taskId: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 68, maxHeight: "32%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 24px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          display: "flex", flexDirection: "column", justifyContent: "center", gap: 16,
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>Unissue Task?</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+              This will deactivate the task onchain. It will be removed from the open task pool.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={onCancel} style={{ flex: 1, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "white", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+            <button onClick={onConfirm} style={{ flex: 1, background: "#ff6b9d", border: "none", color: "white", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Unissue Task</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── No Show Confirm Sheet ────────────────────────────────────────────────────
+
+function NoShowConfirmSheet({ item, onConfirm, onCancel }: { item: { taskId: string; claimant: `0x${string}`; title: string }; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 68, maxHeight: "32%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 24px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          display: "flex", flexDirection: "column", justifyContent: "center", gap: 16,
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>Mark as No-Show?</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+              The participant did not complete this task. It will be removed from active tasks.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={onCancel} style={{ flex: 1, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "white", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+            <button onClick={onConfirm} style={{ flex: 1, background: "#ff6b9d", border: "none", color: "white", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Mark No-Show</button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -2735,6 +2714,8 @@ function VerifyTab({
   verifyWriteStatus,
   onDismissVerifyWrite,
   onLearnMore,
+  onUnissueConfirm,
+  onNoShowConfirm,
 }: {
   onVerify: (taskId: string, citizen: string) => Promise<void>;
   onSetTaskActive: (taskId: string, active: boolean) => Promise<{ ok: boolean; hash?: `0x${string}`; error?: string }>;
@@ -2742,6 +2723,8 @@ function VerifyTab({
   verifyWriteStatus: TaskWriteStatus;
   onDismissVerifyWrite: () => void;
   onLearnMore: (key: IssuerLearnCardKey) => void;
+  onUnissueConfirm: (taskId: string) => void;
+  onNoShowConfirm: (item: { taskId: string; claimant: `0x${string}`; title: string }) => void;
 }) {
   const { address } = useAccount({ type: "ModularAccountV2" });
   const [view, setView] = useState<"issued" | "claimed" | "completed">("issued");
@@ -2983,11 +2966,7 @@ function VerifyTab({
                       Open · Awaiting Claim
                     </div>
                     <button
-                      onClick={async () => {
-                        // Optimistically remove from local state immediately
-                        setIssuedItems(prev => prev.filter(i => i.taskId !== task.taskId));
-                        await onUnissueTask(task.taskId);
-                      }}
+                      onClick={() => onUnissueConfirm(task.taskId)}
                       style={{
                         marginLeft: 8,
                         fontSize: 11,
@@ -3097,8 +3076,14 @@ function VerifyTab({
                           Claimant no-show handling removes this task from circulation.
                         </div>
                         <button
-                          onClick={async () => {
-                            await onSetTaskActive(task.taskId, false);
+                          onClick={() => {
+                            if (task.claimant) {
+                              onNoShowConfirm({
+                                taskId: task.taskId,
+                                claimant: task.claimant,
+                                title: task.title,
+                              });
+                            }
                           }}
                           style={{
                             width: "100%",
@@ -3234,27 +3219,6 @@ function VerifyTab({
                         <span style={{ color: "#4169E1" }}>{task.voteTokens} VOTE</span>
                       </span>
                     </div>
-
-                    <textarea
-                      placeholder="Optional feedback on task execution…"
-                      value={feedbackMap[fbKey] ?? ""}
-                      onChange={e => setFeedbackMap(prev => ({ ...prev, [fbKey]: e.target.value }))}
-                      rows={2}
-                      style={{
-                        width: "100%",
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 10,
-                        color: "#fff",
-                        fontSize: 12,
-                        padding: "8px 12px",
-                        outline: "none",
-                        resize: "none",
-                        boxSizing: "border-box",
-                        marginBottom: 10,
-                        lineHeight: 1.5,
-                      }}
-                    />
 
                     <button
                       onClick={async () => {
@@ -3710,59 +3674,27 @@ function MCEsTab({
 
       {/* MCE Proposal Create Sheet */}
       {proposeOpen && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 40,
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 430,
-              height: "100%",
-              position: "relative",
-              pointerEvents: "auto",
-            }}
-            onClick={() => setProposeOpen(false)}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(0,0,0,0.34)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: 10,
-                right: 10,
-                bottom: "92px",
-                maxHeight: "min(74vh, calc(100% - 98px))",
-                overflowY: "auto",
-                background: SURFACE,
-                borderRadius: 22,
-                padding: "24px 20px 24px",
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div
-                style={{
-                  width: 40,
-                  height: 4,
-                  background: "rgba(255,255,255,0.15)",
-                  borderRadius: 2,
-                  margin: "0 auto 20px",
-                }}
-              />
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
+        <>
+          <style>{`
+            @keyframes walletSlideUp {
+              from { transform: translateY(100%); opacity: 0; }
+              to   { transform: translateY(0);    opacity: 1; }
+            }
+          `}</style>
+          <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={() => setProposeOpen(false)} />
+            <div onClick={e => e.stopPropagation()} style={{
+              position: "absolute", left: 0, right: 0, bottom: 68,
+              maxHeight: "65%", zIndex: 1,
+              background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+              animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+              overflowY: "auto", pointerEvents: "auto",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>New MCE Proposal</span>
+                <button onClick={() => setProposeOpen(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
               <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
                 Submit a proposal for community consideration. Strong proposals include clear goals and measurable
                 benefits.
@@ -3854,7 +3786,7 @@ function MCEsTab({
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -3888,52 +3820,30 @@ function IssueTaskPopup({
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 35,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "10px 16px 14px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="mx-auto mb-3 h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+    <>
+      <style>{`
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 68,
+          maxHeight: "65%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Issue Task</div>
-            <div style={{ fontSize: 11, color: DIMMED, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              {step === "select" ? "Step 1 of 2" : "Step 2 of 2"}
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Issue Task</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ fontSize: 11, color: DIMMED, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                {step === "select" ? "Step 1 of 2" : "Step 2 of 2"}
+              </div>
+              <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
             </div>
           </div>
 
@@ -4082,7 +3992,7 @@ function IssueTaskPopup({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -4123,59 +4033,27 @@ function ModifyTaskSheet({
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 40,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "24px 20px 24px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 20px",
-            }}
-          />
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Modify Task</div>
+    <>
+      <style>{`
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 68,
+          maxHeight: "55%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Modify Task</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+          </div>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 6 }}>{task.title}</div>
           <div
             style={{
@@ -4231,7 +4109,7 @@ function ModifyTaskSheet({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
