@@ -327,16 +327,6 @@ const cardPurple: React.CSSProperties = {
   paddingLeft: 13,
 };
 
-const APP_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
-  position: "fixed",
-  left: "50%",
-  transform: "translateX(-50%)",
-  width: "min(calc(100% - 32px), 520px)",
-  top: 68,
-  bottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
-  pointerEvents: "none",
-};
-
 // Full-bleed overlay that spans from nav bar to tab bar (no width limit)
 const FULL_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
   position: "fixed",
@@ -368,79 +358,6 @@ const TABS: NavTab[] = [
   { key: "community", label: "Community", icon: <IconCity /> },
   { key: "redeem", label: "Redeem", icon: <IconGift /> },
 ];
-
-// ─── Verification Overlay ─────────────────────────────────────────────────────
-
-function VerifyOverlay() {
-  const { state } = useDemo();
-  const v = state.verifying;
-  if (!v) return null;
-
-  const pct = Math.round(((7 - v.secondsRemaining) / 7) * 100);
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 200,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "rgba(13,13,20,0.92)",
-      }}
-    >
-      <div style={{ ...card, maxWidth: 320, width: "90%", textAlign: "center", padding: 28 }}>
-        <div style={{ position: "relative", width: 80, height: 80, margin: "0 auto 20px" }}>
-          <svg width="80" height="80" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
-            <circle
-              cx="40"
-              cy="40"
-              r="34"
-              fill="none"
-              stroke={TEAL}
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 34}`}
-              strokeDashoffset={`${2 * Math.PI * 34 * (1 - pct / 100)}`}
-              style={{ transition: "stroke-dashoffset 0.9s linear" }}
-            />
-          </svg>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 22,
-              fontWeight: 700,
-              color: "white",
-            }}
-          >
-            {v.secondsRemaining}
-          </div>
-        </div>
-        <div style={{ color: TEAL, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Verifying on-chain…</div>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5 }}>{v.taskTitle}</div>
-        <div
-          style={{
-            marginTop: 16,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 8,
-            padding: "10px 14px",
-            fontSize: 12,
-            color: "rgba(255,255,255,0.4)",
-          }}
-        >
-          Demo: auto-verification simulates the on-chain completion flow
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Execute Task Modal ───────────────────────────────────────────────────────
 
