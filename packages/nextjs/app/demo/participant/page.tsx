@@ -350,6 +350,212 @@ const CAT_COLORS: Record<string, string> = {
   Infrastructure: "#607D8B",
 };
 
+// ─── Claim Confirmation Sheet ─────────────────────────────────────────────────
+
+function ClaimConfirmSheet({
+  task,
+  onConfirm,
+  onCancel,
+}: {
+  task: Task;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <>
+      <style>{`
+        @keyframes walletSlideDown {
+          from { transform: translateY(-100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+
+      {/* Backdrop */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.45)",
+          zIndex: 220,
+        }}
+        onClick={onCancel}
+      />
+
+      {/* Sheet — slides down, covers bottom quarter */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: "fixed",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(100vw, 430px)",
+          top: 68,
+          height: "calc((100vh - 68px - 68px) * 0.25 + 68px)",
+          maxHeight: 320,
+          zIndex: 221,
+          background: "#1E1E2C",
+          borderRadius: "0 0 24px 24px",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          padding: "20px 24px 24px",
+          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 16,
+          overflowY: "auto",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
+            Claim "{task.title}"?
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+            Please note: you are only allowed to claim two tasks at any one time.
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              background: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: "white",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              background: TEAL,
+              border: "none",
+              color: "#0f0f1e",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Claim
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Unclaim Confirmation Sheet ────────────────────────────────────────────────
+
+function UnclaimConfirmSheet({
+  task,
+  onConfirm,
+  onCancel,
+}: {
+  task: Task;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <>
+      <style>{`
+        @keyframes walletSlideDown {
+          from { transform: translateY(-100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+
+      {/* Backdrop */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.45)",
+          zIndex: 220,
+        }}
+        onClick={onCancel}
+      />
+
+      {/* Sheet — slides down, covers bottom quarter */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: "fixed",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(100vw, 430px)",
+          top: 68,
+          height: "calc((100vh - 68px - 68px) * 0.25 + 68px)",
+          maxHeight: 320,
+          zIndex: 221,
+          background: "#1E1E2C",
+          borderRadius: "0 0 24px 24px",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          padding: "20px 24px 24px",
+          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 16,
+          overflowY: "auto",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
+            Unclaim "{task.title}"?
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+            If you are unclaiming close to the date of task execution, please message the Issuer Organization directly.
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              background: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: "white",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              background: "#ff6b9d",
+              border: "none",
+              color: "white",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Unclaim
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 const TABS: NavTab[] = [
@@ -618,18 +824,50 @@ function BurnConfirmOverlay({
   }, [onDone]);
 
   return (
-    <div style={FULL_CONTENT_OVERLAY_FRAME}>
+    <>
+      <style>{`
+        @keyframes walletSlideDown {
+          from { transform: translateY(-100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        @keyframes burnPulse {
+          0% { transform: scale(0.6); opacity: 0; }
+          60% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Backdrop — closes on tap */}
       <div
         style={{
-          position: "absolute",
+          position: "fixed",
           inset: 0,
+          background: "rgba(0,0,0,0.45)",
+          zIndex: 220,
+        }}
+        onClick={onDone}
+      />
+
+      {/* Sheet — slides down from top, spans from nav to tab bar */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: "fixed",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(100vw, 430px)",
+          top: 68,
+          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+          zIndex: 221,
           background: "#0f4a37",
-          pointerEvents: "auto",
+          borderRadius: "0 0 24px 24px",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          padding: "20px 24px 24px",
+          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "40px 24px",
           overflowY: "auto",
         }}
       >
@@ -711,16 +949,8 @@ function BurnConfirmOverlay({
         >
           Continue
         </button>
-
-        <style>{`
-          @keyframes burnPulse {
-            0% { transform: scale(0.6); opacity: 0; }
-            60% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-          }
-        `}</style>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -1807,6 +2037,8 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
     error?: string;
     label?: string;
   }>({ state: "idle" });
+  const [claimConfirmTask, setClaimConfirmTask] = useState<Task | null>(null);
+  const [unclaimConfirmTask, setUnclaimConfirmTask] = useState<Task | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2134,10 +2366,11 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   }, [addressLower, onchainTasks]);
 
   const handleClaim = async (task: Task) => {
-    const confirmed = window.confirm(
-      `Claim "${task.title}"?\n\nPlease note: you are only allowed to claim two tasks at any one time.`,
-    );
-    if (!confirmed) return;
+    setClaimConfirmTask(task);
+  };
+
+  const handleClaimConfirmed = async (task: Task) => {
+    setClaimConfirmTask(null);
     if (myTasks.length >= 2) {
       setToast("Max 2 tasks can be claimed at a time");
       return;
@@ -2157,10 +2390,11 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   };
 
   const handleUnclaim = async (task: Task) => {
-    const confirmed = window.confirm(
-      `Unclaim "${task.title}"?\n\nIf you are unclaiming close to the date of task execution, please message the Issuer Organization directly.`,
-    );
-    if (!confirmed) return;
+    setUnclaimConfirmTask(task);
+  };
+
+  const handleUnclaimConfirmed = async (task: Task) => {
+    setUnclaimConfirmTask(null);
     if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
       setLocalOnboardingClaimed(false);
       setToast("Task returned to Open Tasks");
@@ -2472,6 +2706,20 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
       {executeTask && (
         <ExecuteModal task={executeTask} onConfirm={handleExecuteConfirm} onClose={() => setExecuteTask(null)} />
       )}
+      {claimConfirmTask && (
+        <ClaimConfirmSheet
+          task={claimConfirmTask}
+          onConfirm={() => handleClaimConfirmed(claimConfirmTask)}
+          onCancel={() => setClaimConfirmTask(null)}
+        />
+      )}
+      {unclaimConfirmTask && (
+        <UnclaimConfirmSheet
+          task={unclaimConfirmTask}
+          onConfirm={() => handleUnclaimConfirmed(unclaimConfirmTask)}
+          onCancel={() => setUnclaimConfirmTask(null)}
+        />
+      )}
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
@@ -2486,41 +2734,52 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
 
   return (
     <div style={{ paddingBottom: 20 }}>
-      {/* Segment toggle */}
+      {/* Segment toggle with Learn More on the right */}
       <div
         style={{
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: 16,
-          padding: 4,
           display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           margin: "20px 16px 20px",
+          gap: 12,
         }}
       >
-        {(
-          [
-            { key: "feed" as const, label: "MyCity Feed", color: ACCENT },
-            { key: "vote" as const, label: "Vote", color: PURPLE },
-          ] as const
-        ).map(({ key, label, color }) => (
-          <button
-            key={key}
-            onClick={() => setSection(key)}
-            style={{
-              flex: 1,
-              border: "none",
-              borderRadius: 12,
-              padding: "9px 0",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              background: section === key ? color : "transparent",
-              color: section === key ? "#15151E" : "rgba(255,255,255,0.45)",
-            }}
-          >
-            {label}
-          </button>
-        ))}
+        <div
+          style={{
+            flex: 1,
+            background: "rgba(255,255,255,0.05)",
+            borderRadius: 16,
+            padding: 4,
+            display: "flex",
+          }}
+        >
+          {(
+            [
+              { key: "feed" as const, label: "MyCity Feed", color: ACCENT },
+              { key: "vote" as const, label: "Vote", color: PURPLE },
+            ] as const
+          ).map(({ key, label, color }) => (
+            <button
+              key={key}
+              onClick={() => setSection(key)}
+              style={{
+                flex: 1,
+                border: "none",
+                borderRadius: 12,
+                padding: "9px 0",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: section === key ? color : "transparent",
+                color: section === key ? "#15151E" : "rgba(255,255,255,0.45)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <LearnMoreLink onClick={() => onLearnMore(section === "feed" ? "mycity-feed" : "vote-overview")} />
       </div>
 
       {section === "feed" && (
@@ -2566,8 +2825,7 @@ function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
 
   return (
     <div style={{ paddingBottom: 4 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 12 }}>
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3 }}>
           {(["recent", "top"] as const).map(s => (
             <button
@@ -3028,6 +3286,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
   const [filter] = useState<CreditFilter>("All");
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
   const [redeemWriteStatus, setRedeemWriteStatus] = useState<RedeemWriteStatus>({ state: "idle" });
+  const [showRedeemTxBox, setShowRedeemTxBox] = useState(true);
   const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string; costCity: number } | null>(
     null,
   );
@@ -3074,15 +3333,20 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      {/* Balances */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>{p.cityBalance}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITYx Available</div>
+      {/* Balances with Learn More to the right */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, display: "flex", gap: 10 }}>
+          <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>{p.cityBalance}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITYx Available</div>
+          </div>
+          <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{p.mceBalance}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>MCE Credits</div>
+          </div>
         </div>
-        <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{p.mceBalance}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>MCE Credits</div>
+        <div style={{ display: "flex", alignItems: "center", paddingTop: 2 }}>
+          <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
         </div>
       </div>
 
@@ -3123,12 +3387,7 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
         ))}
       </div>
 
-      {/* Learn More — always visible regardless of browse/history section */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
-      </div>
-
-      {redeemWriteStatus.state !== "idle" && (
+      {redeemWriteStatus.state !== "idle" && showRedeemTxBox && (
         <div
           style={{
             ...card,
@@ -3145,8 +3404,33 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
                 : redeemWriteStatus.state === "failed"
                   ? "rgba(255,107,157,0.08)"
                   : "rgba(65,105,225,0.08)",
+            position: "relative",
+            paddingRight: 32,
           }}
         >
+          <button
+            onClick={() => setShowRedeemTxBox(false)}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.55)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 20,
+              height: 20,
+            }}
+            aria-label="Close"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 6 }}>Last Redemption Write</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "white", marginBottom: 6 }}>
             {redeemWriteStatus.state === "pending" && "Pending wallet/user-op confirmation..."}
