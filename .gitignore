@@ -24,3 +24,4 @@ dist
 
 # Private documents — keep off GitHub
 docs/official/
+.vercel
