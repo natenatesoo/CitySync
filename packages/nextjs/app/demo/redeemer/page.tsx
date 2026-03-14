@@ -1889,61 +1889,21 @@ function AddOfferingSheet({
   const accentCol = type === "committed" ? ACCENT : "#DD9E33";
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 40,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "24px 20px 24px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 20px",
-            }}
-          />
-
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
-            Add Offering to your Catalog
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 69,
+          maxHeight: "75%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 18, color: "white" }}>Add Offering to your Catalog</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
           </div>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
             {type === "committed"
@@ -2088,7 +2048,7 @@ function AddOfferingSheet({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2119,61 +2079,23 @@ function IssueOfferingFromCatalogSheet({
   const [pendingCommitId, setPendingCommitId] = useState<string | null>(null);
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 42,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "22px 20px 20px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 18px",
-            }}
-          />
-
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-            {isCommitted ? "Committed Offerings Catalog" : "MCE Offerings Catalog"}
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 69,
+          maxHeight: "70%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 18, color: "white" }}>
+              {isCommitted ? "Committed Offerings Catalog" : "MCE Offerings Catalog"}
+            </span>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
           </div>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 18 }}>
             Select an offering to modify, or commit it onchain as an active offering.
@@ -2290,7 +2212,7 @@ function IssueOfferingFromCatalogSheet({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2312,100 +2234,67 @@ function ConfirmDialog({
   warningOnly?: boolean;
 }) {
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 46,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "rgba(0,0,0,0.34)",
-        padding: "0 20px",
-      }}
-      onClick={onCancel}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 380,
-          background: SURFACE,
-          borderRadius: 20,
-          padding: "28px 24px",
-          border: "1px solid rgba(255,107,157,0.2)",
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div
-          style={{
-            fontSize: 24,
-            marginBottom: 12,
-            textAlign: "center",
-          }}
-        >
-          🔒
-        </div>
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 700,
-            color: "#fff",
-            marginBottom: 12,
-            textAlign: "center",
-          }}
-        >
-          {title}
-        </div>
-        <p
-          style={{
-            fontSize: 13,
-            color: MUTED,
-            lineHeight: 1.6,
-            margin: "0 0 24px",
-            textAlign: "center",
-          }}
-        >
-          {message}
-        </p>
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 69,
+          maxHeight: "40%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 24px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          display: "flex", flexDirection: "column", justifyContent: "center", gap: 16,
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
+              🔒 {title}
+            </div>
+            <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, margin: 0 }}>
+              {message}
+            </p>
+          </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          {!warningOnly && (
+          <div style={{ display: "flex", gap: 10 }}>
+            {!warningOnly && (
+              <button
+                onClick={onCancel}
+                style={{
+                  flex: 1,
+                  background: "rgba(255,255,255,0.07)",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "12px 0",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: MUTED,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            )}
             <button
-              onClick={onCancel}
+              onClick={onConfirm}
               style={{
                 flex: 1,
-                background: "rgba(255,255,255,0.07)",
-                border: "none",
+                background: warningOnly ? ACCENT : "rgba(255,107,157,0.15)",
+                border: warningOnly ? "none" : "1px solid rgba(255,107,157,0.3)",
                 borderRadius: 12,
                 padding: "12px 0",
                 fontSize: 14,
-                fontWeight: 600,
-                color: MUTED,
+                fontWeight: 700,
+                color: warningOnly ? BG : "#ff6b9d",
                 cursor: "pointer",
               }}
             >
-              Cancel
+              {confirmLabel}
             </button>
-          )}
-          <button
-            onClick={onConfirm}
-            style={{
-              flex: 1,
-              background: warningOnly ? ACCENT : "rgba(255,107,157,0.15)",
-              border: warningOnly ? "none" : "1px solid rgba(255,107,157,0.3)",
-              borderRadius: 12,
-              padding: "12px 0",
-              fontSize: 14,
-              fontWeight: 700,
-              color: warningOnly ? BG : "#ff6b9d",
-              cursor: "pointer",
-            }}
-          >
-            {confirmLabel}
-          </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2415,33 +2304,25 @@ function QRModal({ offering, onClose }: { offering: QROfferingData; onClose: () 
   const qrPayload = `citysync://redeem?offer=${offering.id}&redeemer=${FAKE_WALLETS.redeemer}&cost=${offering.costCity}`;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 44,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "rgba(0,0,0,0.34)",
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          margin: "0 20px",
-          background: SURFACE,
-          borderRadius: 24,
-          padding: 24,
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{offering.name}</div>
-          <div style={{ fontSize: 13, color: MUTED }}>{offering.orgName}</div>
-        </div>
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 69,
+          maxHeight: "65%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 24px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{offering.name}</div>
+              <div style={{ fontSize: 12, color: MUTED }}>{offering.orgName}</div>
+            </div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+          </div>
 
         {/* QR placeholder */}
         <div
@@ -2514,8 +2395,9 @@ function QRModal({ offering, onClose }: { offering: QROfferingData; onClose: () 
         >
           Done
         </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2786,59 +2668,22 @@ function ComposePostSheet({
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 40,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-        onClick={onClose}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: "92px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            background: SURFACE,
-            borderRadius: 22,
-            padding: "24px 20px 24px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 4,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: 2,
-              margin: "0 auto 20px",
-            }}
-          />
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Post</div>
+    <>
+      <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", left: 0, right: 0, bottom: 69,
+          maxHeight: "65%", zIndex: 1,
+          background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto", pointerEvents: "auto",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>New Post</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+          </div>
 
           {/* Category picker */}
           <div style={{ marginBottom: 14 }}>
@@ -2921,7 +2766,7 @@ function ComposePostSheet({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -3425,59 +3270,21 @@ function MCEsTab({
 
       {/* MCE Proposal Create Sheet */}
       {proposeOpen && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 40,
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 430,
-              height: "100%",
-              position: "relative",
-              pointerEvents: "auto",
-            }}
-            onClick={() => setProposeOpen(false)}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(0,0,0,0.34)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: 10,
-                right: 10,
-                bottom: "92px",
-                maxHeight: "min(74vh, calc(100% - 98px))",
-                overflowY: "auto",
-                background: SURFACE,
-                borderRadius: 22,
-                padding: "24px 20px 24px",
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div
-                style={{
-                  width: 40,
-                  height: 4,
-                  background: "rgba(255,255,255,0.15)",
-                  borderRadius: 2,
-                  margin: "0 auto 20px",
-                }}
-              />
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>New MCE Proposal</div>
+        <>
+          <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+          <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              position: "absolute", left: 0, right: 0, top: 0, bottom: 69,
+              zIndex: 1,
+              background: "#1E1E2C", borderRadius: "20px 20px 0 0",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
+              animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+              overflowY: "auto", pointerEvents: "auto",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>New MCE Proposal</span>
+                <button onClick={() => setProposeOpen(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4, fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
               <div style={{ fontSize: 13, color: MUTED, marginBottom: 20, lineHeight: 1.5 }}>
                 Submit a proposal for community consideration. Strong proposals include clear goals and measurable
                 benefits.
@@ -3569,7 +3376,7 @@ function MCEsTab({
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
