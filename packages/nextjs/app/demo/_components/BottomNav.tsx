@@ -24,6 +24,7 @@ export default function BottomNav({ tabs, active, onChange, accentColor = "#4169
       className="absolute left-0 right-0 z-40 flex items-stretch"
       style={{
         bottom: 0,
+        minHeight: 69,
         background: "rgba(24,24,38,0.97)",
         borderTop: "1px solid rgba(255,255,255,0.07)",
         boxShadow: "0 -8px 24px rgba(0,0,0,0.35)",
