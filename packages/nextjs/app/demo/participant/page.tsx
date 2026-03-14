@@ -350,22 +350,27 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
         }
       `}</style>
 
-      {/* Full-area overlay — positioned relative to <main>, stays inside phone frame */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 220 }}>
-        {/* Backdrop */}
+      {/* Overlay wrapper — pointerEvents:none so BottomNav area stays clickable */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        {/* Backdrop — stops at BottomNav top (68 px from <main> bottom) */}
         <div
-          style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }}
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 68,
+            background: "rgba(0,0,0,0.45)",
+            pointerEvents: "auto",
+          }}
           onClick={onCancel}
         />
 
-        {/* Sheet — bottom quarter, slides up */}
+        {/* Sheet — bottom quarter, slides up from above BottomNav */}
         <div
           onClick={e => e.stopPropagation()}
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 68,
             minHeight: 180,
             maxHeight: "32%",
             zIndex: 1,
@@ -379,6 +384,7 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
             justifyContent: "center",
             gap: 16,
             overflowY: "auto",
+            pointerEvents: "auto",
           }}
         >
           <div>
@@ -442,22 +448,27 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
         }
       `}</style>
 
-      {/* Full-area overlay — positioned relative to <main>, stays inside phone frame */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 220 }}>
-        {/* Backdrop */}
+      {/* Overlay wrapper — pointerEvents:none so BottomNav area stays clickable */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        {/* Backdrop — stops at BottomNav top (68 px from <main> bottom) */}
         <div
-          style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }}
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 68,
+            background: "rgba(0,0,0,0.45)",
+            pointerEvents: "auto",
+          }}
           onClick={onCancel}
         />
 
-        {/* Sheet — bottom quarter, slides up */}
+        {/* Sheet — bottom quarter, slides up from above BottomNav */}
         <div
           onClick={e => e.stopPropagation()}
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 68,
             minHeight: 180,
             maxHeight: "32%",
             zIndex: 1,
@@ -471,6 +482,7 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
             justifyContent: "center",
             gap: 16,
             overflowY: "auto",
+            pointerEvents: "auto",
           }}
         >
           <div>
@@ -547,12 +559,12 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
         }
       `}</style>
 
-      {/* Full-height slide sheet — fills main area (Nav Bar to Tab Bar), stays in phone frame */}
+      {/* Full-height slide sheet — fills content area above BottomNav, stays in phone frame */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position: "absolute",
-          inset: 0,
+          top: 0, left: 0, right: 0, bottom: 68,
           zIndex: 221,
           background: "#14172e",
           animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -794,12 +806,12 @@ function BurnConfirmOverlay({
         }
       `}</style>
 
-      {/* Full-height sheet — fills main area, positioned inside phone frame */}
+      {/* Full-height sheet — fills content area above BottomNav, positioned inside phone frame */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position: "absolute",
-          inset: 0,
+          top: 0, left: 0, right: 0, bottom: 68,
           zIndex: 221,
           background: "#0f4a37",
           padding: "20px 24px 24px",
@@ -940,21 +952,28 @@ function RedeemModal({
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
-      {/* Full-area overlay — positioned relative to <main>, stays inside phone frame */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 220 }}>
+      {/* Overlay wrapper — pointerEvents:none so BottomNav area stays clickable */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        {/* Backdrop — stops at BottomNav top (68 px from <main> bottom) */}
         <div
-          style={{ position: "absolute", inset: 0, background: "rgba(13,13,20,0.62)" }}
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 68,
+            background: "rgba(13,13,20,0.62)",
+            pointerEvents: "auto",
+          }}
           onClick={() => {
             if (!pending) onClose();
           }}
         />
+        {/* Sheet — slides up from above BottomNav */}
         <div
           onClick={e => e.stopPropagation()}
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 68,
             maxHeight: "62%",
             zIndex: 1,
             background: "rgb(26, 29, 50)",
@@ -963,6 +982,7 @@ function RedeemModal({
             padding: "24px 20px 24px",
             overflowY: "auto",
             animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+            pointerEvents: "auto",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
