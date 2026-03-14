@@ -20,14 +20,14 @@ export default function BottomNav({ tabs, active, onChange, accentColor = "#4169
 
   return (
     <nav
-      className="absolute left-3 right-3 z-40 flex items-center justify-around rounded-2xl"
+      className="absolute left-0 right-0 z-40 flex items-center justify-around"
       style={{
-        bottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
-        background: "rgba(24,24,38,0.9)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-        backdropFilter: "blur(10px)",
-        padding: "6px",
+        bottom: 0,
+        background: "rgba(24,24,38,0.97)",
+        borderTop: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "0 -8px 24px rgba(0,0,0,0.35)",
+        backdropFilter: "blur(14px)",
+        padding: "6px 6px calc(10px + env(safe-area-inset-bottom, 0px))",
       }}
     >
       {tabs.map(tab => {

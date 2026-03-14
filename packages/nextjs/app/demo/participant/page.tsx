@@ -58,7 +58,7 @@ const PARTICIPANT_LEARN_CARDS: Record<ParticipantLearnCardKey, LearnInfoCard> = 
   "vote-overview": {
     title: "Voting and MCE Governance",
     subtitle: "Using earned VOTE",
-    body: "VOTE is earned through civic contribution and used in time-bounded proposal rounds where participants allocate vote weight to proposals. MCEs are mission-oriented cycles where the community signals priorities and organizations execute coordinated tasks, linking governance outcomes to tangible civic execution.",
+    body: "VOTE is earned through civic contribution and used in time-bounded proposal rounds where participants allocate vote weight to proposals. MCEs are mission-oriented cycles where the community signals priorities and organizations execute coordinated tasks, linking governance outcomes to tangible civic execution.\n\nEpoch 2 — Upcoming: These proposals are gathering community support for the next voting epoch. Like the ones you want considered — the top-liked proposals may be selected by the committee for Epoch 2 voting.",
   },
   "redeem-flow": {
     title: "Redemption Flow",
@@ -335,6 +335,18 @@ const APP_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
   top: 68,
   bottom: "calc(108px + env(safe-area-inset-bottom, 0px))",
   pointerEvents: "none",
+};
+
+// Full-bleed overlay that spans from nav bar to tab bar (no width limit)
+const FULL_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  transform: "translateX(-50%)",
+  width: "min(100vw, 430px)",
+  top: 68,
+  bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+  pointerEvents: "none",
+  zIndex: 300,
 };
 
 // ─── Category pill colors ─────────────────────────────────────────────────────
@@ -624,21 +636,6 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
             />
           </div>
 
-          <div
-            style={{
-              fontSize: 12,
-              color: "rgba(255,255,255,0.4)",
-              background: "rgba(255,255,255,0.03)",
-              borderRadius: 8,
-              padding: "10px 12px",
-              marginBottom: 20,
-              lineHeight: 1.5,
-            }}
-          >
-            In production, the issuer reviews your submission before minting credits. In this DEMO, verification is
-            automatically approved — a 7-second countdown simulates on-chain activity.
-          </div>
-
           <button
             onClick={onConfirm}
             style={{
@@ -704,138 +701,107 @@ function BurnConfirmOverlay({
   }, [onDone]);
 
   return (
-    <div
-      style={{
-        ...APP_CONTENT_OVERLAY_FRAME,
-        zIndex: 300,
-      }}
-    >
+    <div style={FULL_CONTENT_OVERLAY_FRAME}>
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(8,10,18,0.76)",
+          background: "#0f4a37",
           pointerEvents: "auto",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 12,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          pointerEvents: "none",
+          padding: "40px 24px",
+          overflowY: "auto",
         }}
       >
+        {/* Animated checkmark circle */}
+        <div
+          style={{
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            background: "rgba(52,238,182,0.12)",
+            border: "3px solid #34eeb6",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 28,
+            animation: "burnPulse 0.6s ease-out",
+          }}
+        >
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#34eeb6"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            color: "#34eeb6",
+            marginBottom: 8,
+          }}
+        >
+          Confirmed
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 6, lineHeight: 1.3 }}>
+          {offerTitle}
+        </div>
+        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginBottom: 24 }}>{redeemerName}</div>
+
         <div
           style={{
             width: "100%",
-            maxWidth: 392,
-            maxHeight: "100%",
-            overflowY: "auto",
-            background: "#0f4a37",
-            border: "1px solid rgba(212,255,233,0.3)",
-            borderRadius: 22,
-            boxShadow: "0 18px 42px rgba(0,0,0,0.48)",
-            padding: "32px 22px",
-            textAlign: "center",
-            pointerEvents: "auto",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.28)",
+            borderRadius: 14,
+            padding: "14px 20px",
+            marginBottom: 22,
           }}
         >
-          {/* Animated checkmark circle */}
-          <div
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: "50%",
-              background: "rgba(52,238,182,0.12)",
-              border: "3px solid #34eeb6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 28,
-              animation: "burnPulse 0.6s ease-out",
-            }}
-          >
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#34eeb6"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: "#34eeb6",
-              marginBottom: 8,
-            }}
-          >
-            Burn Confirmed
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 6, lineHeight: 1.3 }}>
-            {offerTitle}
-          </div>
-          <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginBottom: 24 }}>{redeemerName}</div>
-
-          <div
-            style={{
-              width: "100%",
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.28)",
-              borderRadius: 14,
-              padding: "14px 20px",
-              marginBottom: 22,
-            }}
-          >
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>Redemption Offering</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{offerTitle}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>CITY Burned</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#d4ffe9" }}>-{costCity} CITYx</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.66)", marginTop: 6 }}>
-              Onchain redemption confirmed
-            </div>
-          </div>
-
-          <button
-            onClick={onDone}
-            style={{
-              width: "100%",
-              background: "#d4ffe9",
-              color: "#0f4a37",
-              border: "none",
-              borderRadius: 12,
-              padding: "12px 16px",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Continue
-          </button>
-
-          <style>{`
-            @keyframes burnPulse {
-              0% { transform: scale(0.6); opacity: 0; }
-              60% { transform: scale(1.1); }
-              100% { transform: scale(1); opacity: 1; }
-            }
-          `}</style>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>Redemption Offering</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{offerTitle}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>CITY Burned</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#d4ffe9" }}>-{costCity} CITYx</div>
         </div>
+
+        <button
+          onClick={onDone}
+          style={{
+            width: "100%",
+            background: "#d4ffe9",
+            color: "#0f4a37",
+            border: "none",
+            borderRadius: 12,
+            padding: "12px 16px",
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Continue
+        </button>
+
+        <style>{`
+          @keyframes burnPulse {
+            0% { transform: scale(0.6); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
       </div>
     </div>
   );
@@ -882,43 +848,48 @@ function RedeemModal({
   return (
     <div
       style={{
-        ...APP_CONTENT_OVERLAY_FRAME,
+        position: "absolute",
+        inset: 0,
         zIndex: 220,
+        display: "flex",
+        justifyContent: "center",
+        pointerEvents: "none",
       }}
     >
       <div
         style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(8,10,18,0.76)",
+          width: "100%",
+          maxWidth: 430,
+          height: "100%",
+          position: "relative",
           pointerEvents: "auto",
-        }}
-        onClick={() => {
-          if (!pending) onClose();
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 12,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          pointerEvents: "none",
         }}
       >
         <div
           style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(13,13,20,0.62)",
+          }}
+          onClick={() => {
+            if (!pending) onClose();
+          }}
+        />
+        <div
+          style={{
             ...card,
-            width: "100%",
-            maxWidth: 392,
-            maxHeight: "100%",
-            overflowY: "auto",
-            background: "#1b1f33",
-            border: "1px solid rgba(255,255,255,0.16)",
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: 92,
+            background: "rgb(26, 29, 50)",
+            backdropFilter: "none",
             borderRadius: 22,
-            boxShadow: "0 18px 42px rgba(0,0,0,0.48)",
-            pointerEvents: "auto",
+            border: "1px solid rgba(255,255,255,0.1)",
+            padding: "24px 20px 24px",
+            maxHeight: "min(74vh, calc(100% - 98px))",
+            overflowY: "auto",
+            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
@@ -973,8 +944,9 @@ function RedeemModal({
               </div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.58)", lineHeight: 1.5 }}>
                 In production, a redemption QR code is generated for each offering that calls the &ldquo;Burn
-                Function&rdquo; on the token contract for the credit rate of that offering. In this demo, the function
-                is called instantly.
+                Function&rdquo; on the token contract for the credit rate of that offering. These QR codes will be
+                available near PoS systems for the redeemer organization. In this demo, the function is called
+                instantly.
               </div>
             </div>
           </div>
@@ -995,7 +967,7 @@ function RedeemModal({
               opacity: pending ? 0.8 : 1,
             }}
           >
-            {pending ? "Confirming Onchain..." : "Redeem Now"}
+            {pending ? "Confirming..." : "Redeem Now"}
           </button>
           {error ? (
             <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,107,157,0.9)", lineHeight: 1.45 }}>{error}</div>
@@ -1386,6 +1358,23 @@ function ProfileTab({
           >
             {copied ? "✓" : "⧉"}
           </button>
+          <a
+            href={`https://sepolia.basescan.org/address/${participantAddress}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: ACCENT,
+              fontSize: 11,
+              textDecoration: "none",
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+              padding: "0 2px",
+            }}
+            title="View on block explorer"
+          >
+            View Account ↗
+          </a>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -2228,6 +2217,10 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   }, [addressLower, onchainTasks]);
 
   const handleClaim = async (task: Task) => {
+    const confirmed = window.confirm(
+      `Claim "${task.title}"?\n\nPlease note: you are only allowed to claim two tasks at any one time.`,
+    );
+    if (!confirmed) return;
     if (myTasks.length >= 2) {
       setToast("Max 2 tasks can be claimed at a time");
       return;
@@ -2247,6 +2240,10 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   };
 
   const handleUnclaim = async (task: Task) => {
+    const confirmed = window.confirm(
+      `Unclaim "${task.title}"?\n\nIf you are unclaiming close to the date of task execution, please message the Issuer Organization directly.`,
+    );
+    if (!confirmed) return;
     if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
       setLocalOnboardingClaimed(false);
       setToast("Task returned to Open Tasks");
@@ -2584,7 +2581,7 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
       >
         {(
           [
-            { key: "feed" as const, label: "City Feed", color: ACCENT },
+            { key: "feed" as const, label: "MyCity Feed", color: ACCENT },
             { key: "vote" as const, label: "Vote", color: PURPLE },
           ] as const
         ).map(({ key, label, color }) => (
@@ -2652,8 +2649,8 @@ function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
 
   return (
     <div style={{ paddingBottom: 4 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>MyCity Feed</div>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: 3 }}>
           {(["recent", "top"] as const).map(s => (
             <button
@@ -2674,13 +2671,6 @@ function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
             </button>
           ))}
         </div>
-      </div>
-
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16 }}>
-        Updates from Issuer and Redeemer organizations in your city
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("mycity-feed")} />
       </div>
 
       {sorted.map(post => {
@@ -2787,12 +2777,6 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
 
   return (
     <div style={{ paddingBottom: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Governance Voting</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <LearnMoreLink onClick={() => onLearnMore("vote-overview")} />
-        </div>
-      </div>
       {/* Epoch toggle */}
       <div
         style={{
@@ -3028,13 +3012,6 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
 
       {section === "epoch2" && (
         <>
-          <div style={{ ...card, marginBottom: 16, padding: "14px 16px" }}>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-              These proposals are gathering community support for the next voting epoch. Like the ones you want
-              considered — the top-liked proposals may be selected by the committee for Epoch 2 voting.
-            </div>
-          </div>
-
           {state.epoch2Proposals.map(prop => {
             const liked = state.participant.likedEpoch2Ids.includes(prop.id);
             return (
@@ -3106,6 +3083,11 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
           })}
         </>
       )}
+
+      {/* Learn More — always visible regardless of epoch section */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+        <LearnMoreLink onClick={() => onLearnMore("vote-overview")} />
+      </div>
     </div>
   );
 }
@@ -3175,9 +3157,6 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
-      </div>
       {/* Balances */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
@@ -3227,25 +3206,11 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
         ))}
       </div>
 
-      {/* Scan QR (browse only) */}
-      {view === "browse" && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 20,
-              padding: "7px 10px",
-              cursor: "default",
-              color: "rgba(255,255,255,0.5)",
-            }}
-          >
-            <QRIcon />
-          </button>
-        </div>
-      )}
+      {/* Learn More — always visible regardless of browse/history section */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
+      </div>
+
       {redeemWriteStatus.state !== "idle" && (
         <div
           style={{
@@ -3568,7 +3533,6 @@ export default function ParticipantPage() {
         {activeTab === "explore" && <ExploreTab onLearnMore={openLearnMore} />}
         {activeTab === "community" && <CommunityTab onLearnMore={openLearnMore} />}
         {activeTab === "redeem" && <RedeemTab onLearnMore={openLearnMore} />}
-        <VerifyOverlay />
       </AppShell>
     </>
   );

@@ -291,29 +291,59 @@ export default function AppShell({
           </svg>
         </div>
 
-        {/* Right: Wallet button */}
-        <button
-          onClick={() => setWalletOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl transition"
-          style={{
-            justifySelf: "end",
-            minHeight: 42,
-            padding: "8px 12px 8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <div className="h-2 w-2 rounded-full" style={{ background: "#34eeb6" }} />
-          <span className="font-mono text-white" style={{ fontSize: 11, lineHeight: 1, whiteSpace: "nowrap" }}>
-            {cityBalance.toLocaleString()} CITY
-          </span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ color: "rgba(255,255,255,0.4)" }}>
-            <rect x="2" y="7" width="20" height="15" rx="2" stroke="currentColor" strokeWidth="2" />
-            <path d="M16 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor" />
-            <path d="M2 11h20" stroke="currentColor" strokeWidth="2" />
-            <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
+        {/* Right: QR + Wallet buttons */}
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 8 }}>
+          {/* QR icon button */}
+          <button
+            style={{
+              minHeight: 42,
+              padding: "8px 10px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10,
+              cursor: "pointer",
+              color: "rgba(255,255,255,0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            aria-label="QR Code"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+              <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+              <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none" />
+              <path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" fill="currentColor" stroke="none" />
+            </svg>
+          </button>
+          {/* Wallet icon button */}
+          <button
+            onClick={() => setWalletOpen(true)}
+            style={{
+              minHeight: 42,
+              padding: "8px 10px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10,
+              cursor: "pointer",
+              color: "rgba(255,255,255,0.65)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            aria-label="Wallet"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M16 14a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" fill="currentColor" stroke="none" />
+              <path d="M2 11h20" />
+              <path d="M7 7V5a5 5 0 0 1 10 0v2" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Scrollable content area */}
