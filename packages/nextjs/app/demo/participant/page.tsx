@@ -344,24 +344,28 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
   return (
     <>
       <style>{`
-        @keyframes walletSlideDown {
-          from { transform: translateY(-100%); opacity: 0; }
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
 
-      {/* Backdrop */}
+      {/* Backdrop — constrained to phone frame */}
       <div
         style={{
           position: "fixed",
-          inset: 0,
+          top: 68,
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(100vw, 430px)",
           background: "rgba(0,0,0,0.45)",
           zIndex: 220,
         }}
         onClick={onCancel}
       />
 
-      {/* Sheet — slides down, covers bottom quarter */}
+      {/* Sheet — slides up from tab bar, covers bottom quarter */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -369,15 +373,16 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
           left: "50%",
           transform: "translateX(-50%)",
           width: "min(100vw, 430px)",
-          top: 68,
-          height: "calc((100vh - 68px - 68px) * 0.25 + 68px)",
-          maxHeight: 320,
+          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+          height: "calc((100vh - 68px - 68px) * 0.28)",
+          minHeight: 180,
+          maxHeight: 280,
           zIndex: 221,
           background: "#1E1E2C",
-          borderRadius: "0 0 24px 24px",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
           padding: "20px 24px 24px",
-          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -439,24 +444,28 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
   return (
     <>
       <style>{`
-        @keyframes walletSlideDown {
-          from { transform: translateY(-100%); opacity: 0; }
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
 
-      {/* Backdrop */}
+      {/* Backdrop — constrained to phone frame */}
       <div
         style={{
           position: "fixed",
-          inset: 0,
+          top: 68,
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(100vw, 430px)",
           background: "rgba(0,0,0,0.45)",
           zIndex: 220,
         }}
         onClick={onCancel}
       />
 
-      {/* Sheet — slides down, covers bottom quarter */}
+      {/* Sheet — slides up from tab bar, covers bottom quarter */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -464,15 +473,16 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
           left: "50%",
           transform: "translateX(-50%)",
           width: "min(100vw, 430px)",
-          top: 68,
-          height: "calc((100vh - 68px - 68px) * 0.25 + 68px)",
-          maxHeight: 320,
+          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+          height: "calc((100vh - 68px - 68px) * 0.28)",
+          minHeight: 180,
+          maxHeight: 280,
           zIndex: 221,
           background: "#1E1E2C",
-          borderRadius: "0 0 24px 24px",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
           padding: "20px 24px 24px",
-          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -545,59 +555,56 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 180,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
+    <>
+      <style>{`
+        @keyframes walletSlideDown {
+          from { transform: translateY(-100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+
+      {/* Full-height slide sheet — from Nav Bar down to Tab Bar */}
       <div
+        onClick={e => e.stopPropagation()}
         style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
+          position: "fixed",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(100vw, 430px)",
+          top: 68,
+          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+          zIndex: 221,
+          background: "#14172e",
+          borderRadius: "0 0 24px 24px",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
+        {/* Header */}
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(13,13,20,0.62)",
-          }}
-        />
-        <div
-          style={{
-            ...card,
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: 92,
-            background: "rgb(26, 29, 50)",
-            backdropFilter: "none",
-            borderRadius: 22,
-            border: "1px solid rgba(255,255,255,0.1)",
-            padding: "24px 20px 24px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
-            overflowY: "auto",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "20px 20px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Submit for Verification</span>
-            <button
-              onClick={onClose}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
-            >
-              <IconXSmall size={18} />
-            </button>
-          </div>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "white" }}>Submit for Verification</span>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 4 }}
+          >
+            <IconXSmall size={18} />
+          </button>
+        </div>
 
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 24px" }}>
           <div
             style={{
               marginBottom: 16,
@@ -705,7 +712,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
           </div>
 
           {/* Notes */}
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>
               Notes to Issuer (optional)
             </div>
@@ -749,7 +756,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -809,18 +816,7 @@ function BurnConfirmOverlay({
         }
       `}</style>
 
-      {/* Backdrop — closes on tap */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.45)",
-          zIndex: 220,
-        }}
-        onClick={onDone}
-      />
-
-      {/* Sheet — slides down from top, spans from nav to tab bar */}
+      {/* Sheet — slides down from top, spans from nav to tab bar, no backdrop */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -2011,6 +2007,7 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   }>({ state: "idle" });
   const [claimConfirmTask, setClaimConfirmTask] = useState<Task | null>(null);
   const [unclaimConfirmTask, setUnclaimConfirmTask] = useState<Task | null>(null);
+  const [claimNotice, setClaimNotice] = useState<{ message: string; type: "info" | "warn" } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2344,12 +2341,12 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
   const handleClaimConfirmed = async (task: Task) => {
     setClaimConfirmTask(null);
     if (myTasks.length >= 2) {
-      setToast("Max 2 tasks can be claimed at a time");
+      setClaimNotice({ message: "Max 2 tasks can be claimed at a time", type: "warn" });
       return;
     }
     if (task.id === DEMO_LOCAL_ONBOARDING_TASK.id) {
       setLocalOnboardingClaimed(true);
-      setToast(`Claimed: ${task.title}`);
+      setClaimNotice({ message: `Claimed: ${task.title}`, type: "info" });
       return;
     }
     setTaskWriteStatus({ state: "pending", label: "Claim" });
@@ -2570,6 +2567,45 @@ function ExploreTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKe
             ))}
           </div>
         </>
+      )}
+
+      {/* Inline claim notice — appears above task list, below category tags */}
+      {claimNotice && (
+        <div
+          style={{
+            borderRadius: 12,
+            marginBottom: 12,
+            position: "relative",
+            border:
+              claimNotice.type === "warn" ? "1px solid rgba(255,198,77,0.4)" : "1px solid rgba(52,238,182,0.35)",
+            background:
+              claimNotice.type === "warn" ? "rgba(255,198,77,0.08)" : "rgba(52,238,182,0.08)",
+            padding: "12px 36px 12px 14px",
+          }}
+        >
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>
+            {claimNotice.type === "warn" ? "Notice" : "Claim Confirmed"}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{claimNotice.message}</div>
+          <button
+            onClick={() => setClaimNotice(null)}
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 10,
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.3)",
+              cursor: "pointer",
+              fontSize: 16,
+              padding: 0,
+              lineHeight: 1,
+            }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {taskWriteStatus.state !== "idle" && (
@@ -2905,7 +2941,7 @@ function MyCityTab({ _onLearnMore }: { _onLearnMore?: (key: ParticipantLearnCard
 // VOTE TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
-function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
+function VoteTab({ onLearnMore: _onLearnMore }: { onLearnMore?: (key: ParticipantLearnCardKey) => void }) {
   const { state, allocateMceVote, likeEpoch2 } = useDemo();
   const p = state.participant;
   const [section, setSection] = useState<"epoch1" | "epoch2">("epoch1");
@@ -3231,10 +3267,6 @@ function VoteTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) 
         </>
       )}
 
-      {/* Learn More — always visible regardless of epoch section */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-        <LearnMoreLink onClick={() => onLearnMore("vote-overview")} />
-      </div>
     </div>
   );
 }
