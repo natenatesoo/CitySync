@@ -1241,7 +1241,7 @@ function TasksTab({
   proposeWriteStatus,
   onDismissProposeWrite,
   onLearnMore,
-  onUnissueConfirm,
+  onUnissueConfirm: _onUnissueConfirm,
 }: {
   creditsCommitted: number;
   onCreateOpen: () => void;
@@ -2663,7 +2663,7 @@ function UnissueConfirmSheet({ taskId: _taskId, onConfirm, onCancel }: { taskId:
 
 // ─── No Show Confirm Sheet ────────────────────────────────────────────────────
 
-function NoShowConfirmSheet({ item, onConfirm, onCancel }: { item: { taskId: string; claimant: `0x${string}`; title: string }; onConfirm: () => void; onCancel: () => void }) {
+function NoShowConfirmSheet({ item: _item, onConfirm, onCancel }: { item: { taskId: string; claimant: `0x${string}`; title: string }; onConfirm: () => void; onCancel: () => void }) {
   return (
     <>
       <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
@@ -2709,8 +2709,8 @@ type OnchainVerifyItem = {
 
 function VerifyTab({
   onVerify,
-  onSetTaskActive,
-  onUnissueTask,
+  onSetTaskActive: _onSetTaskActive,
+  onUnissueTask: _onUnissueTask,
   verifyWriteStatus,
   onDismissVerifyWrite,
   onLearnMore,
@@ -3183,7 +3183,6 @@ function VerifyTab({
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {completedItems.map(task => {
-                const fbKey = task.taskId;
                 return (
                   <div
                     key={`${task.taskId}-${task.claimant ?? "none"}`}
