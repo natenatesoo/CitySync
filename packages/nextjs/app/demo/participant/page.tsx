@@ -2756,7 +2756,7 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
 
       {section === "feed" && (
         <div style={{ padding: "0 16px" }}>
-          <MyCityTab onLearnMore={onLearnMore} />
+          <MyCityTab _onLearnMore={onLearnMore} />
         </div>
       )}
       {section === "vote" && (
