@@ -94,6 +94,35 @@ docs/
 
 **Note on essay order:** Essays are numbered in save order, not write order. Essay 14 was written first.
 
+## Pre-Commit Linting Checklist (CRITICAL) ⚠️
+
+**BEFORE EVERY COMMIT**, run these checks to prevent Vercel build failures:
+
+### 1. ESLint (zero errors allowed)
+```bash
+npx eslint packages/nextjs/app/demo/participant/page.tsx --max-warnings=0
+```
+
+### 2. Prettier Format Check
+```bash
+npx prettier --check packages/nextjs/app/demo/participant/page.tsx
+```
+If fails: `npx prettier --write packages/nextjs/app/demo/participant/page.tsx`
+
+### 3. Quick Validation (all checks)
+```bash
+npx eslint packages/nextjs/app/demo/participant/page.tsx --max-warnings=0 && npx prettier --check packages/nextjs/app/demo/participant/page.tsx && echo "✅ Safe to commit"
+```
+
+**Common ESLint/Prettier issues:**
+- Unused vars → prefix with `_` or delete
+- Unescaped quotes in JSX → use `&quot;` instead of `"`
+- Multi-line attributes → each on own line (SVG especially)
+- Unused parameters → prefix with `_`
+- Long function signatures → condense to one line OR properly multi-line
+
+**Never skip these checks.** Linting errors cause immediate Vercel build failures.
+
 ## Environment Notes
 - **Node scripts:** `NODE_PATH=/usr/local/lib/node_modules_global/lib/node_modules node <script.js>`
 - **Yarn:** Bundled at `.yarn/releases/yarn-3.2.3.cjs`; wrapper at `/sessions/gracious-vigilant-thompson/.local/bin/yarn`; always set `export PATH="/sessions/gracious-vigilant-thompson/.local/bin:$PATH"`
