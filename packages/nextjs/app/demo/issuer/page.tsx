@@ -1922,9 +1922,10 @@ function CreateTaskSheet({
       `}</style>
       <div onClick={e => e.stopPropagation()} style={{
         position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 69,
+        top: 112, left: 0, right: 0, bottom: 69,
         zIndex: 221,
         background: "#1E1E2C",
+        borderRadius: "12px 12px 0 0",
         animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
         overflowY: "auto",
         display: "flex",
@@ -2108,9 +2109,10 @@ function ProposeTaskSheet({
       `}</style>
       <div onClick={e => e.stopPropagation()} style={{
         position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 69,
+        top: 112, left: 0, right: 0, bottom: 69,
         zIndex: 221,
         background: "#1E1E2C",
+        borderRadius: "12px 12px 0 0",
         animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
         overflowY: "auto",
         display: "flex",

@@ -559,14 +559,15 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
         }
       `}</style>
 
-      {/* Full-height slide sheet — fills content area above BottomNav, stays in phone frame */}
+      {/* Full-height slide sheet — fills content area between header and BottomNav */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 69,
+          top: 112, left: 0, right: 0, bottom: 69,
           zIndex: 221,
           background: "#14172e",
+          borderRadius: "12px 12px 0 0",
           animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           overflowY: "auto",
           display: "flex",
