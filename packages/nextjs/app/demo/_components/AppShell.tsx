@@ -355,10 +355,9 @@ export default function AppShell({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <rect x="2" y="7" width="20" height="14" rx="2" />
-              <path d="M16 14a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" fill="currentColor" stroke="none" />
-              <path d="M2 11h20" />
-              <path d="M7 7V5a5 5 0 0 1 10 0v2" />
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <rect x="4" y="7" width="4" height="4" rx="0.5" fill="currentColor" stroke="none" />
+              <path d="M9 15h11" strokeWidth="1.2" />
             </svg>
           </button>
         </div>
