@@ -553,8 +553,8 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
   return (
     <>
       <style>{`
-        @keyframes walletSlideDown {
-          from { transform: translateY(-100%); opacity: 0; }
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
@@ -567,7 +567,7 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
           top: 0, left: 0, right: 0, bottom: 68,
           zIndex: 221,
           background: "#14172e",
-          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
