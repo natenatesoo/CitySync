@@ -954,3 +954,14 @@ CitySync acts as its own Issuer, offering public tasks and issuing civic credits
   - Added `Last Redemption Write` status card with pending/confirmed/failed states and optional Base Sepolia tx link.
 - Result:
   - removes false-positive redemption success UI when contract calls fail.
+
+## 2026-03-13 — OAuth Legal Page Format Hardening
+
+- Replaced React `page.tsx` legal routes with pure HTML route handlers for stricter OAuth verification compatibility:
+  - `packages/nextjs/app/demo/privacy/route.ts`
+  - `packages/nextjs/app/demo/terms/route.ts`
+- Removed:
+  - `packages/nextjs/app/demo/privacy/page.tsx`
+  - `packages/nextjs/app/demo/terms/page.tsx`
+- Route handlers now return self-contained `text/html; charset=utf-8` with no app layout/provider dependencies and explicit `HEAD` support.
+- Goal: satisfy Google OAuth consent-screen brand verification expectations for dedicated HTML legal-policy pages.
