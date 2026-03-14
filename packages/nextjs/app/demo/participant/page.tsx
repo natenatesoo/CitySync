@@ -351,12 +351,12 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
       `}</style>
 
       {/* Overlay wrapper — pointerEvents:none so BottomNav area stays clickable */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        {/* Backdrop — stops at BottomNav top (68 px from <main> bottom) */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        {/* Backdrop — stops at BottomNav top (69 px from bottom) */}
         <div
           style={{
             position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 68,
+            top: 0, left: 0, right: 0, bottom: 69,
             background: "rgba(0,0,0,0.45)",
             pointerEvents: "auto",
           }}
@@ -370,7 +370,7 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 68,
+            bottom: 69,
             minHeight: 180,
             maxHeight: "32%",
             zIndex: 1,
@@ -449,12 +449,12 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
       `}</style>
 
       {/* Overlay wrapper — pointerEvents:none so BottomNav area stays clickable */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        {/* Backdrop — stops at BottomNav top (68 px from <main> bottom) */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        {/* Backdrop — stops at BottomNav top (69 px from bottom) */}
         <div
           style={{
             position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 68,
+            top: 0, left: 0, right: 0, bottom: 69,
             background: "rgba(0,0,0,0.45)",
             pointerEvents: "auto",
           }}
@@ -468,7 +468,7 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 68,
+            bottom: 69,
             minHeight: 180,
             maxHeight: "32%",
             zIndex: 1,
@@ -563,8 +563,8 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          position: "absolute",
-          top: 0, left: 0, right: 0, bottom: 68,
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 69,
           zIndex: 221,
           background: "#14172e",
           animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -750,162 +750,6 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
   );
 }
 
-// ─── Burn Confirm Overlay ─────────────────────────────────────────────────────
-
-function BurnConfirmOverlay({
-  offerTitle,
-  redeemerName,
-  costCity,
-  onDone,
-}: {
-  offerTitle: string;
-  redeemerName: string;
-  costCity: number;
-  onDone: () => void;
-}) {
-  React.useEffect(() => {
-    // Play a two-tone success chime via Web Audio API
-    try {
-      const ctx = new AudioContext();
-      const play = (freq: number, start: number, duration: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0, ctx.currentTime + start);
-        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + start + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + duration);
-      };
-      play(660, 0, 0.3);
-      play(880, 0.2, 0.4);
-    } catch {
-      // Audio not available — silent fallback
-    }
-
-    const timeout = setTimeout(onDone, 5000);
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [onDone]);
-
-  return (
-    <>
-      <style>{`
-        @keyframes walletSlideDown {
-          from { transform: translateY(-100%); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @keyframes burnPulse {
-          0% { transform: scale(0.6); opacity: 0; }
-          60% { transform: scale(1.1); }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
-
-      {/* Full-height sheet — fills content area above BottomNav, positioned inside phone frame */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          position: "absolute",
-          top: 0, left: 0, right: 0, bottom: 68,
-          zIndex: 221,
-          background: "#0f4a37",
-          padding: "20px 24px 24px",
-          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          overflowY: "auto",
-        }}
-      >
-        {/* Animated checkmark circle */}
-        <div
-          style={{
-            width: 100,
-            height: 100,
-            borderRadius: "50%",
-            background: "rgba(52,238,182,0.12)",
-            border: "3px solid #34eeb6",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 28,
-            animation: "burnPulse 0.6s ease-out",
-          }}
-        >
-          <svg
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#34eeb6"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            color: "#34eeb6",
-            marginBottom: 8,
-          }}
-        >
-          Confirmed
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 6, lineHeight: 1.3 }}>
-          {offerTitle}
-        </div>
-        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginBottom: 24 }}>{redeemerName}</div>
-
-        <div
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.12)",
-            border: "1px solid rgba(255,255,255,0.28)",
-            borderRadius: 14,
-            padding: "14px 20px",
-            marginBottom: 22,
-          }}
-        >
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>Redemption Offering</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{offerTitle}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>CITY Burned</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#d4ffe9" }}>-{costCity} CITYx</div>
-        </div>
-
-        <button
-          onClick={onDone}
-          style={{
-            width: "100%",
-            background: "#d4ffe9",
-            color: "#0f4a37",
-            border: "none",
-            borderRadius: 12,
-            padding: "12px 16px",
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          Continue
-        </button>
-      </div>
-    </>
-  );
-}
-
 // ─── Redeem Confirm Modal ─────────────────────────────────────────────────────
 
 function QRIcon() {
@@ -936,14 +780,23 @@ function RedeemModal({
   onConfirm,
   onClose,
   pending = false,
+  confirmed = false,
   error,
 }: {
   offer: RedemptionOffer;
   onConfirm: () => void | Promise<void>;
   onClose: () => void;
   pending?: boolean;
+  confirmed?: boolean;
   error?: string;
 }) {
+  React.useEffect(() => {
+    if (confirmed) {
+      const timer = setTimeout(onClose, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [confirmed, onClose]);
+
   return (
     <>
       <style>{`
@@ -951,37 +804,31 @@ function RedeemModal({
           from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
+        @keyframes flashConfirm {
+          0%, 100% { background-color: rgb(26, 29, 50); }
+          50% { background-color: rgb(10, 60, 30); }
+        }
       `}</style>
-      {/* Overlay wrapper — pointerEvents:none so BottomNav area stays clickable */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        {/* Backdrop — stops at BottomNav top (68 px from <main> bottom) */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 68,
-            background: "rgba(13,13,20,0.62)",
-            pointerEvents: "auto",
-          }}
-          onClick={() => {
-            if (!pending) onClose();
-          }}
-        />
-        {/* Sheet — slides up from above BottomNav */}
+      {/* Overlay wrapper — fixed so sheet doesn't scroll with page content */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        {/* Sheet — full height from top to BottomNav */}
         <div
           onClick={e => e.stopPropagation()}
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 68,
-            maxHeight: "62%",
+            top: 0,
+            bottom: 69,
             zIndex: 1,
             background: "rgb(26, 29, 50)",
-            borderRadius: "24px 24px 0 0",
+            borderRadius: "20px 20px 0 0",
             border: "1px solid rgba(255,255,255,0.1)",
             padding: "24px 20px 24px",
             overflowY: "auto",
-            animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+            animation: confirmed
+              ? "flashConfirm 0.5s ease-in-out 0s 5"
+              : "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
             pointerEvents: "auto",
           }}
         >
@@ -1046,21 +893,22 @@ function RedeemModal({
 
           <button
             onClick={onConfirm}
-            disabled={pending}
+            disabled={pending || confirmed}
             style={{
               width: "100%",
               padding: "14px 0",
-              background: TEAL,
-              color: "#15151E",
+              background: confirmed ? "rgb(10, 120, 60)" : TEAL,
+              color: confirmed ? "#d4ffe9" : "#15151E",
               border: "none",
               borderRadius: 12,
               fontWeight: 700,
               fontSize: 15,
-              cursor: pending ? "not-allowed" : "pointer",
+              cursor: (pending || confirmed) ? "not-allowed" : "pointer",
               opacity: pending ? 0.8 : 1,
+              transition: "background 0.3s ease",
             }}
           >
-            {pending ? "Confirming..." : "Redeem Now"}
+            {confirmed ? "Confirmed" : pending ? "Confirming..." : "Redeem Now"}
           </button>
           {error ? (
             <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,107,157,0.9)", lineHeight: 1.45 }}>{error}</div>
@@ -3268,9 +3116,6 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
   const [confirmOffer, setConfirmOffer] = useState<RedemptionOffer | null>(null);
   const [redeemWriteStatus, setRedeemWriteStatus] = useState<RedeemWriteStatus>({ state: "idle" });
   const [showRedeemTxBox, setShowRedeemTxBox] = useState(true);
-  const [burnConfirm, setBurnConfirm] = useState<{ offerTitle: string; redeemerName: string; costCity: number } | null>(
-    null,
-  );
 
   // Show all offers (CITYx and MCE) — MCE offers are visually distinguished by color
   const filteredOffers = state.offers;
@@ -3307,9 +3152,8 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
       setRedeemWriteStatus({ state: "failed", error: result.error });
       return;
     }
+    // Keep modal open — confirmed=true triggers flash animation, auto-closes after 2.5s
     setRedeemWriteStatus({ state: "confirmed", hash: result.hash });
-    setConfirmOffer(null);
-    setBurnConfirm({ offerTitle: offer.offerTitle, redeemerName: offer.redeemerName, costCity: offer.costCity });
   };
 
   return (
@@ -3647,18 +3491,12 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
           onClose={() => {
             if (redeemWriteStatus.state !== "pending") {
               setConfirmOffer(null);
+              setRedeemWriteStatus({ state: "idle" });
             }
           }}
           pending={redeemWriteStatus.state === "pending"}
+          confirmed={redeemWriteStatus.state === "confirmed"}
           error={redeemWriteStatus.state === "failed" ? redeemWriteStatus.error : undefined}
-        />
-      )}
-      {burnConfirm && (
-        <BurnConfirmOverlay
-          offerTitle={burnConfirm.offerTitle}
-          redeemerName={burnConfirm.redeemerName}
-          costCity={burnConfirm.costCity}
-          onDone={() => setBurnConfirm(null)}
         />
       )}
     </div>

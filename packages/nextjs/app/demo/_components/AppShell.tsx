@@ -696,6 +696,7 @@ export default function AppShell({
                 borderRadius: 50,
                 overflow: "hidden",
                 position: "relative",
+                transform: "translateZ(0)",
               }}
             >
               {phoneInner}
@@ -725,6 +726,7 @@ export default function AppShell({
           borderLeft: "1px solid rgba(255,255,255,0.05)",
           borderRight: "1px solid rgba(255,255,255,0.05)",
           boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+          transform: "translateZ(0)",
         }}
       >
         {phoneInner}

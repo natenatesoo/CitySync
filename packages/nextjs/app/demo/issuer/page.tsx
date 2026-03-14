@@ -1905,8 +1905,8 @@ function CreateTaskSheet({
         }
       `}</style>
       <div onClick={e => e.stopPropagation()} style={{
-        position: "absolute",
-        top: 0, left: 0, right: 0, bottom: 68,
+        position: "fixed",
+        top: 0, left: 0, right: 0, bottom: 69,
         zIndex: 221,
         background: "#1E1E2C",
         animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -2091,8 +2091,8 @@ function ProposeTaskSheet({
         }
       `}</style>
       <div onClick={e => e.stopPropagation()} style={{
-        position: "absolute",
-        top: 0, left: 0, right: 0, bottom: 68,
+        position: "fixed",
+        top: 0, left: 0, right: 0, bottom: 69,
         zIndex: 221,
         background: "#1E1E2C",
         animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -2526,10 +2526,10 @@ function ComposePostSheet({
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
         <div onClick={e => e.stopPropagation()} style={{
-          position: "absolute", left: 0, right: 0, bottom: 68,
+          position: "absolute", left: 0, right: 0, bottom: 69,
           maxHeight: "60%", zIndex: 1,
           background: "#1E1E2C", borderRadius: "24px 24px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
@@ -2632,10 +2632,10 @@ function UnissueConfirmSheet({ taskId: _taskId, onConfirm, onCancel }: { taskId:
   return (
     <>
       <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
         <div onClick={e => e.stopPropagation()} style={{
-          position: "absolute", left: 0, right: 0, bottom: 68, maxHeight: "32%", zIndex: 1,
+          position: "absolute", left: 0, right: 0, bottom: 69, maxHeight: "32%", zIndex: 1,
           background: "#1E1E2C", borderRadius: "24px 24px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 24px 24px",
           animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -2664,10 +2664,10 @@ function NoShowConfirmSheet({ item: _item, onConfirm, onCancel }: { item: { task
   return (
     <>
       <style>{`@keyframes walletSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onCancel} />
         <div onClick={e => e.stopPropagation()} style={{
-          position: "absolute", left: 0, right: 0, bottom: 68, maxHeight: "32%", zIndex: 1,
+          position: "absolute", left: 0, right: 0, bottom: 69, maxHeight: "32%", zIndex: 1,
           background: "#1E1E2C", borderRadius: "24px 24px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 24px 24px",
           animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -3677,12 +3677,11 @@ function MCEsTab({
               to   { transform: translateY(0);    opacity: 1; }
             }
           `}</style>
-          <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={() => setProposeOpen(false)} />
+          <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
             <div onClick={e => e.stopPropagation()} style={{
-              position: "absolute", left: 0, right: 0, bottom: 68,
-              maxHeight: "65%", zIndex: 1,
-              background: "#1E1E2C", borderRadius: "24px 24px 0 0",
+              position: "absolute", left: 0, right: 0, top: 0, bottom: 69,
+              zIndex: 1,
+              background: "#1E1E2C", borderRadius: "20px 20px 0 0",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
               animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
               overflowY: "auto", pointerEvents: "auto",
@@ -3823,10 +3822,10 @@ function IssueTaskPopup({
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
         <div onClick={e => e.stopPropagation()} style={{
-          position: "absolute", left: 0, right: 0, bottom: 68,
+          position: "absolute", left: 0, right: 0, bottom: 69,
           maxHeight: "65%", zIndex: 1,
           background: "#1E1E2C", borderRadius: "24px 24px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
@@ -4036,10 +4035,10 @@ function ModifyTaskSheet({
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
-      <div style={{ position: "absolute", inset: 0, zIndex: 220, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 68, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 69, background: "rgba(0,0,0,0.45)", pointerEvents: "auto" }} onClick={onClose} />
         <div onClick={e => e.stopPropagation()} style={{
-          position: "absolute", left: 0, right: 0, bottom: 68,
+          position: "absolute", left: 0, right: 0, bottom: 69,
           maxHeight: "55%", zIndex: 1,
           background: "#1E1E2C", borderRadius: "24px 24px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",

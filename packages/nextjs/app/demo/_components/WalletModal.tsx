@@ -32,8 +32,8 @@ export default function WalletModal({
   return (
     <>
       <style>{`
-        @keyframes walletSlideDown {
-          from { transform: translateY(-100%); opacity: 0; }
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
@@ -49,23 +49,23 @@ export default function WalletModal({
         onClick={onClose}
       />
 
-      {/* Sheet — slides down from top, constrained to ~quarter screen */}
+      {/* Sheet — slides up from tab bar, constrained to ~quarter screen */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 0,
-          maxHeight: "30%",
+          bottom: 69,
+          maxHeight: "25%",
           overflowY: "auto",
           zIndex: 221,
           background: "#1E1E2C",
-          borderBottom: `3px solid ${color}`,
-          borderRadius: "0 0 24px 24px",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+          borderTop: `3px solid ${color}`,
+          borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -12px 40px rgba(0,0,0,0.55)",
           padding: "20px 18px 24px",
-          animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
         }}
       >
         {/* Drag handle */}
