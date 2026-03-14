@@ -413,10 +413,7 @@ export default function IssuerApp() {
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
   const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
-  const creditsIssued = issuer.tasks.reduce((sum, t) => {
-    const verifiedCount = t.completions?.filter((c: any) => c.verified).length ?? 0;
-    return sum + verifiedCount * t.credits;
-  }, 0);
+  const creditsIssued = issuer.tasks.reduce((sum, t) => sum + t.verifiedCount * t.credits, 0);
 
   const handleVerify = async (taskId: string, citizen: string) => {
     if (!address) {
