@@ -17,32 +17,37 @@ interface BottomNavProps {
 
 export default function BottomNav({ tabs, active, onChange, accentColor = "#4169E1" }: BottomNavProps) {
   const activeBg = `${accentColor}20`;
+  const lastIdx = tabs.length - 1;
 
   return (
     <nav
-      className="absolute left-0 right-0 z-40 flex items-center justify-around"
+      className="absolute left-0 right-0 z-40 flex items-stretch"
       style={{
         bottom: 0,
         background: "rgba(24,24,38,0.97)",
         borderTop: "1px solid rgba(255,255,255,0.07)",
         boxShadow: "0 -8px 24px rgba(0,0,0,0.35)",
         backdropFilter: "blur(14px)",
-        padding: "6px 6px calc(10px + env(safe-area-inset-bottom, 0px))",
       }}
     >
-      {tabs.map(tab => {
+      {tabs.map((tab, index) => {
         const isActive = tab.key === active;
+        const isFirst = index === 0;
+        const isLast = index === lastIdx;
+        const borderRadius = isFirst ? "0 0 0 20px" : isLast ? "0 0 20px 0" : 0;
         return (
           <button
             key={tab.key}
             onClick={() => onChange(tab.key)}
-            className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-3 transition-all"
+            className="flex flex-col items-center justify-center gap-0.5 transition-all"
             style={{
               color: isActive ? accentColor : "rgba(255,255,255,0.45)",
-              minHeight: 52,
-              minWidth: 58,
               flex: 1,
               background: isActive ? activeBg : "transparent",
+              border: "none",
+              paddingTop: 8,
+              paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
+              borderRadius,
             }}
           >
             <span

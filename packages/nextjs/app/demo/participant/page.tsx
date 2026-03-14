@@ -2602,8 +2602,8 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
           style={{
             background: "rgba(255,255,255,0.05)",
             borderRadius: 16,
-            padding: 4,
             display: "flex",
+            overflow: "hidden",
           }}
         >
           {(
@@ -2611,14 +2611,14 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
               { key: "feed" as const, label: "MyCity Feed", color: ACCENT },
               { key: "vote" as const, label: "Vote", color: PURPLE },
             ] as const
-          ).map(({ key, label, color }) => (
+          ).map(({ key, label, color }, i) => (
             <button
               key={key}
               onClick={() => setSection(key)}
               style={{
                 flex: 1,
                 border: "none",
-                borderRadius: 12,
+                borderRadius: i === 0 ? "16px 0 0 16px" : "0 16px 16px 0",
                 padding: "9px 0",
                 fontSize: 13,
                 fontWeight: 600,

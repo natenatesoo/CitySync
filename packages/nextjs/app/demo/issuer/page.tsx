@@ -1455,13 +1455,12 @@ function TasksTab({
         style={{
           background: "rgba(255,255,255,0.04)",
           borderRadius: 14,
-          padding: 4,
           display: "flex",
           marginBottom: 20,
-          gap: 2,
+          overflow: "hidden",
         }}
       >
-        {(["issue", "catalog"] as const).map(v => {
+        {(["issue", "catalog"] as const).map((v, i) => {
           const labels: Record<string, string> = {
             issue: `Issue (${onchainTasks.length})`,
             catalog: `Catalog (${approvedCatalogTasks.length})`,
@@ -1474,7 +1473,7 @@ function TasksTab({
               style={{
                 flex: 1,
                 border: "none",
-                borderRadius: 10,
+                borderRadius: i === 0 ? "14px 0 0 14px" : "0 14px 14px 0",
                 padding: "8px 0",
                 fontSize: 12,
                 fontWeight: 600,
@@ -2312,13 +2311,12 @@ function CommunityTab({
         style={{
           background: "rgba(255,255,255,0.04)",
           borderRadius: 14,
-          padding: 4,
           display: "flex",
-          gap: 2,
           margin: "0 20px 20px",
+          overflow: "hidden",
         }}
       >
-        {(["feed", "mces"] as const).map(s => {
+        {(["feed", "mces"] as const).map((s, i) => {
           const segAccent = s === "feed" ? ACCENT : ACCENT_PURPLE;
           return (
             <button
@@ -2327,7 +2325,7 @@ function CommunityTab({
               style={{
                 flex: 1,
                 border: "none",
-                borderRadius: 10,
+                borderRadius: i === 0 ? "14px 0 0 14px" : "0 14px 14px 0",
                 padding: "8px 0",
                 fontSize: 12,
                 fontWeight: 600,
@@ -2405,15 +2403,15 @@ function MyCityTab({
       </div>
 
       {/* Sort tabs */}
-      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, display: "flex", marginBottom: 20 }}>
-        {(["recent", "top"] as const).map(s => (
+      <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, display: "flex", marginBottom: 20, overflow: "hidden" }}>
+        {(["recent", "top"] as const).map((s, i) => (
           <button
             key={s}
             onClick={() => setSort(s)}
             style={{
               flex: 1,
               border: "none",
-              borderRadius: 10,
+              borderRadius: i === 0 ? "14px 0 0 14px" : "0 14px 14px 0",
               padding: "8px 0",
               fontSize: 12,
               fontWeight: 600,

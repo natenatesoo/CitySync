@@ -833,20 +833,20 @@ function ProfileTab({
   return (
     <div style={{ padding: "24px 20px 100px" }}>
       {/* Profile / Dashboard segment toggle */}
-      <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
+      <div style={{ background: SURFACE, borderRadius: 16, display: "flex", marginBottom: 20, overflow: "hidden" }}>
         {(
           [
             { key: "profile" as const, label: "Profile", color: ACCENT },
             { key: "dashboard" as const, label: "Dashboard", color: ACCENT_BLUE },
           ] as const
-        ).map(({ key, label, color }) => (
+        ).map(({ key, label, color }, i) => (
           <button
             key={key}
             onClick={() => setSection(key)}
             style={{
               flex: 1,
               border: "none",
-              borderRadius: 12,
+              borderRadius: i === 0 ? "16px 0 0 16px" : "0 16px 16px 0",
               padding: "9px 0",
               fontSize: 13,
               fontWeight: 600,
@@ -1263,20 +1263,20 @@ function OfferingsTab({
         <LearnMoreLink onClick={() => onLearnMore("offerings-commitment")} />
       </div>
       {/* Segment control */}
-      <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", marginBottom: 20 }}>
+      <div style={{ background: SURFACE, borderRadius: 16, display: "flex", marginBottom: 20, overflow: "hidden" }}>
         {(
           [
             { key: "committed", label: `Committed (${committedOfferings.length})`, color: ACCENT },
             { key: "mce", label: `MCE (${mceOfferings.length})`, color: ACCENT_GOLD },
           ] as const
-        ).map(({ key, label, color }) => (
+        ).map(({ key, label, color }, i) => (
           <button
             key={key}
             onClick={() => setView(key)}
             style={{
               flex: 1,
               border: "none",
-              borderRadius: 12,
+              borderRadius: i === 0 ? "16px 0 0 16px" : "0 16px 16px 0",
               padding: "9px 0",
               fontSize: 13,
               fontWeight: 600,
@@ -2444,20 +2444,20 @@ function CommunityTab({
   return (
     <div style={{ padding: "0 0 100px" }}>
       {/* Segment toggle */}
-      <div style={{ background: SURFACE, borderRadius: 16, padding: 4, display: "flex", margin: "24px 20px 20px" }}>
+      <div style={{ background: SURFACE, borderRadius: 16, display: "flex", margin: "24px 20px 20px", overflow: "hidden" }}>
         {(
           [
             { key: "feed" as const, label: "City Feed", color: ACCENT },
             { key: "mces" as const, label: "MCEs", color: ACCENT_PURPLE },
           ] as const
-        ).map(({ key, label, color }) => (
+        ).map(({ key, label, color }, i) => (
           <button
             key={key}
             onClick={() => setSection(key)}
             style={{
               flex: 1,
               border: "none",
-              borderRadius: 12,
+              borderRadius: i === 0 ? "16px 0 0 16px" : "0 16px 16px 0",
               padding: "9px 0",
               fontSize: 13,
               fontWeight: 600,
@@ -2784,23 +2784,31 @@ function DashboardTab({
   onLearnMore: (key: RedeemerLearnCardKey) => void;
 }) {
   const totalCityxBurned = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
-  // Simulated network-level values
-  const totalInCirculation = 125000;
-  const networkBurned = totalCityxBurned + 4820; // includes other redeemers
+  const activeOfferingsCount = committedOfferings.length + mceOfferings.length;
+  const queuedRedemptionsCount = redeemer.redemptionQueue.length;
 
-  // Build per-offering breakdown — merge committed + mce, simulate redemptions
+  // Tally processedRedemptions by offerTitle for accurate per-offering breakdown
+  const redemptionsByTitle = redeemer.processedRedemptions.reduce<
+    Record<string, { redemptions: number; cityxBurned: number }>
+  >((acc, r) => {
+    const key = r.offerTitle;
+    if (!acc[key]) acc[key] = { redemptions: 0, cityxBurned: 0 };
+    acc[key].redemptions++;
+    acc[key].cityxBurned += r.costCity;
+    return acc;
+  }, {});
+
+  // Build per-offering breakdown — merge committed + mce with real tallied stats
   const offeringStats: { name: string; type: string; redemptions: number; cityxBurned: number }[] = [
-    ...committedOfferings.map((o, i) => ({
+    ...committedOfferings.map(o => ({
       name: o.name,
       type: "Committed",
-      redemptions: i === 0 ? redeemer.processedRedemptions.length : 0,
-      cityxBurned: i === 0 ? totalCityxBurned : 0,
+      ...(redemptionsByTitle[o.name] ?? { redemptions: 0, cityxBurned: 0 }),
     })),
     ...mceOfferings.map(o => ({
       name: o.name,
       type: "MCE",
-      redemptions: 0,
-      cityxBurned: 0,
+      ...(redemptionsByTitle[o.name] ?? { redemptions: 0, cityxBurned: 0 }),
     })),
   ];
 
@@ -2809,18 +2817,18 @@ function DashboardTab({
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <LearnMoreLink onClick={() => onLearnMore("dashboard-metrics")} />
       </div>
-      {/* Network Totals */}
-      <SectionLabel text="Network Overview" accentColor={ACCENT_BLUE} />
+      {/* Activity Overview */}
+      <SectionLabel text="Activity Overview" accentColor={ACCENT_BLUE} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
         <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: ACCENT }}>
-            {(totalInCirculation - networkBurned).toLocaleString()}
+            {activeOfferingsCount}
           </div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>CITYx in Circulation</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Active Offerings</div>
         </div>
         <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: "#ff6b9d" }}>{networkBurned.toLocaleString()}</div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Total CITYx Burned</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#ff6b9d" }}>{queuedRedemptionsCount}</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Queued Redemptions</div>
         </div>
         <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#DD9E33" }}>{redeemer.processedRedemptions.length}</div>
