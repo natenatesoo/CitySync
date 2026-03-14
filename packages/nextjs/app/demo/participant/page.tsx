@@ -350,88 +350,80 @@ function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfir
         }
       `}</style>
 
-      {/* Backdrop — constrained to phone frame */}
-      <div
-        style={{
-          position: "fixed",
-          top: 68,
-          bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(100vw, 430px)",
-          background: "rgba(0,0,0,0.45)",
-          zIndex: 220,
-        }}
-        onClick={onCancel}
-      />
+      {/* Full-area overlay — positioned relative to <main>, stays inside phone frame */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 220 }}>
+        {/* Backdrop */}
+        <div
+          style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }}
+          onClick={onCancel}
+        />
 
-      {/* Sheet — slides up from tab bar, covers bottom quarter */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          position: "fixed",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(100vw, 430px)",
-          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
-          height: "calc((100vh - 68px - 68px) * 0.28)",
-          minHeight: 180,
-          maxHeight: 280,
-          zIndex: 221,
-          background: "#1E1E2C",
-          borderRadius: "24px 24px 0 0",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
-          padding: "20px 24px 24px",
-          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: 16,
-          overflowY: "auto",
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
-            Claim &quot;{task.title}&quot;?
+        {/* Sheet — bottom quarter, slides up */}
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            minHeight: 180,
+            maxHeight: "32%",
+            zIndex: 1,
+            background: "#1E1E2C",
+            borderRadius: "24px 24px 0 0",
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
+            padding: "20px 24px 24px",
+            animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 16,
+            overflowY: "auto",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
+              Claim &quot;{task.title}&quot;?
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+              Please note: you are only allowed to claim two tasks at any one time.
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
-            Please note: you are only allowed to claim two tasks at any one time.
-          </div>
-        </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "white",
-              borderRadius: 10,
-              padding: "10px 14px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              flex: 1,
-              background: TEAL,
-              border: "none",
-              color: "#0f0f1e",
-              borderRadius: 10,
-              padding: "10px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Claim
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={onCancel}
+              style={{
+                flex: 1,
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "white",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              style={{
+                flex: 1,
+                background: TEAL,
+                border: "none",
+                color: "#0f0f1e",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Claim
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -450,88 +442,80 @@ function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConf
         }
       `}</style>
 
-      {/* Backdrop — constrained to phone frame */}
-      <div
-        style={{
-          position: "fixed",
-          top: 68,
-          bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(100vw, 430px)",
-          background: "rgba(0,0,0,0.45)",
-          zIndex: 220,
-        }}
-        onClick={onCancel}
-      />
+      {/* Full-area overlay — positioned relative to <main>, stays inside phone frame */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 220 }}>
+        {/* Backdrop */}
+        <div
+          style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }}
+          onClick={onCancel}
+        />
 
-      {/* Sheet — slides up from tab bar, covers bottom quarter */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          position: "fixed",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(100vw, 430px)",
-          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
-          height: "calc((100vh - 68px - 68px) * 0.28)",
-          minHeight: 180,
-          maxHeight: 280,
-          zIndex: 221,
-          background: "#1E1E2C",
-          borderRadius: "24px 24px 0 0",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
-          padding: "20px 24px 24px",
-          animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: 16,
-          overflowY: "auto",
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
-            Unclaim &quot;{task.title}&quot;?
+        {/* Sheet — bottom quarter, slides up */}
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            minHeight: 180,
+            maxHeight: "32%",
+            zIndex: 1,
+            background: "#1E1E2C",
+            borderRadius: "24px 24px 0 0",
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
+            padding: "20px 24px 24px",
+            animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 16,
+            overflowY: "auto",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
+              Unclaim &quot;{task.title}&quot;?
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+              If you are unclaiming close to the date of task execution, please message the Issuer Organization directly.
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
-            If you are unclaiming close to the date of task execution, please message the Issuer Organization directly.
-          </div>
-        </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "white",
-              borderRadius: 10,
-              padding: "10px 14px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              flex: 1,
-              background: "#ff6b9d",
-              border: "none",
-              color: "white",
-              borderRadius: 10,
-              padding: "10px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Unclaim
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={onCancel}
+              style={{
+                flex: 1,
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "white",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              style={{
+                flex: 1,
+                background: "#ff6b9d",
+                border: "none",
+                color: "white",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Unclaim
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -563,20 +547,14 @@ function ExecuteModal({ task, onConfirm, onClose }: { task: Task; onConfirm: () 
         }
       `}</style>
 
-      {/* Full-height slide sheet — from Nav Bar down to Tab Bar */}
+      {/* Full-height slide sheet — fills main area (Nav Bar to Tab Bar), stays in phone frame */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          position: "fixed",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(100vw, 430px)",
-          top: 68,
-          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+          position: "absolute",
+          inset: 0,
           zIndex: 221,
           background: "#14172e",
-          borderRadius: "0 0 24px 24px",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
           animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           overflowY: "auto",
           display: "flex",
@@ -816,20 +794,14 @@ function BurnConfirmOverlay({
         }
       `}</style>
 
-      {/* Sheet — slides down from top, spans from nav to tab bar, no backdrop */}
+      {/* Full-height sheet — fills main area, positioned inside phone frame */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          position: "fixed",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "min(100vw, 430px)",
-          top: 68,
-          bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
+          position: "absolute",
+          inset: 0,
           zIndex: 221,
           background: "#0f4a37",
-          borderRadius: "0 0 24px 24px",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
           padding: "20px 24px 24px",
           animation: "walletSlideDown 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           display: "flex",
@@ -961,50 +933,36 @@ function RedeemModal({
   error?: string;
 }) {
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 220,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          height: "100%",
-          position: "relative",
-          pointerEvents: "auto",
-        }}
-      >
+    <>
+      <style>{`
+        @keyframes walletSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      {/* Full-area overlay — positioned relative to <main>, stays inside phone frame */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 220 }}>
         <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(13,13,20,0.62)",
-          }}
+          style={{ position: "absolute", inset: 0, background: "rgba(13,13,20,0.62)" }}
           onClick={() => {
             if (!pending) onClose();
           }}
         />
         <div
+          onClick={e => e.stopPropagation()}
           style={{
-            ...card,
             position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: 92,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            maxHeight: "62%",
+            zIndex: 1,
             background: "rgb(26, 29, 50)",
-            backdropFilter: "none",
-            borderRadius: 22,
+            borderRadius: "24px 24px 0 0",
             border: "1px solid rgba(255,255,255,0.1)",
             padding: "24px 20px 24px",
-            maxHeight: "min(74vh, calc(100% - 98px))",
             overflowY: "auto",
-            boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
+            animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
@@ -1089,7 +1047,7 @@ function RedeemModal({
           ) : null}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2742,19 +2700,19 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
 
   return (
     <div style={{ paddingBottom: 20 }}>
-      {/* Segment toggle with Learn More on the right */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          margin: "20px 16px 20px",
-          gap: 12,
-        }}
-      >
+      {/* Learn More row — above segment toggle, triggers both cards */}
+      <div style={{ display: "flex", justifyContent: "flex-end", margin: "16px 16px 4px" }}>
+        <LearnMoreLink
+          onClick={() => {
+            onLearnMore("mycity-feed");
+            onLearnMore("vote-overview");
+          }}
+        />
+      </div>
+      {/* Segment toggle */}
+      <div style={{ margin: "0 16px 20px" }}>
         <div
           style={{
-            flex: 1,
             background: "rgba(255,255,255,0.05)",
             borderRadius: 16,
             padding: 4,
@@ -2787,7 +2745,6 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
             </button>
           ))}
         </div>
-        <LearnMoreLink onClick={() => onLearnMore(section === "feed" ? "mycity-feed" : "vote-overview")} />
       </div>
 
       {section === "feed" && (
@@ -3337,20 +3294,20 @@ function RedeemTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey
 
   return (
     <div style={{ padding: "20px 16px 24px" }}>
-      {/* Balances with Learn More to the right */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, display: "flex", gap: 10 }}>
-          <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>{p.cityBalance}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITYx Available</div>
-          </div>
-          <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{p.mceBalance}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>MCE Credits</div>
-          </div>
+      {/* Learn More row — above balance boxes */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
+      </div>
+
+      {/* Balance boxes */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: TEAL }}>{p.cityBalance}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>CITYx Available</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", paddingTop: 2 }}>
-          <LearnMoreLink onClick={() => onLearnMore("redeem-flow")} />
+        <div style={{ flex: 1, ...card, padding: "12px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{p.mceBalance}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>MCE Credits</div>
         </div>
       </div>
 

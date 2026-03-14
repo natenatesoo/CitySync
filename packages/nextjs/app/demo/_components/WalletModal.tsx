@@ -49,7 +49,7 @@ export default function WalletModal({
         onClick={onClose}
       />
 
-      {/* Sheet — slides down from top */}
+      {/* Sheet — slides down from top, constrained to ~quarter screen */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -57,6 +57,8 @@ export default function WalletModal({
           left: 0,
           right: 0,
           top: 0,
+          maxHeight: "30%",
+          overflowY: "auto",
           zIndex: 221,
           background: "#1E1E2C",
           borderBottom: `3px solid ${color}`,
