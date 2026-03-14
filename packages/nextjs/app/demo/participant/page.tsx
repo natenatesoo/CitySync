@@ -327,18 +327,6 @@ const cardPurple: React.CSSProperties = {
   paddingLeft: 13,
 };
 
-// Full-bleed overlay that spans from nav bar to tab bar (no width limit)
-const FULL_CONTENT_OVERLAY_FRAME: React.CSSProperties = {
-  position: "fixed",
-  left: "50%",
-  transform: "translateX(-50%)",
-  width: "min(100vw, 430px)",
-  top: 68,
-  bottom: "calc(68px + env(safe-area-inset-bottom, 0px))",
-  pointerEvents: "none",
-  zIndex: 300,
-};
-
 // ─── Category pill colors ─────────────────────────────────────────────────────
 
 const CAT_COLORS: Record<string, string> = {
@@ -352,15 +340,7 @@ const CAT_COLORS: Record<string, string> = {
 
 // ─── Claim Confirmation Sheet ─────────────────────────────────────────────────
 
-function ClaimConfirmSheet({
-  task,
-  onConfirm,
-  onCancel,
-}: {
-  task: Task;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
+function ClaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfirm: () => void; onCancel: () => void }) {
   return (
     <>
       <style>{`
@@ -407,7 +387,7 @@ function ClaimConfirmSheet({
       >
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
-            Claim "{task.title}"?
+            Claim &quot;{task.title}&quot;?
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
             Please note: you are only allowed to claim two tasks at any one time.
@@ -455,15 +435,7 @@ function ClaimConfirmSheet({
 
 // ─── Unclaim Confirmation Sheet ────────────────────────────────────────────────
 
-function UnclaimConfirmSheet({
-  task,
-  onConfirm,
-  onCancel,
-}: {
-  task: Task;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
+function UnclaimConfirmSheet({ task, onConfirm, onCancel }: { task: Task; onConfirm: () => void; onCancel: () => void }) {
   return (
     <>
       <style>{`
@@ -510,7 +482,7 @@ function UnclaimConfirmSheet({
       >
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 8 }}>
-            Unclaim "{task.title}"?
+            Unclaim &quot;{task.title}&quot;?
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
             If you are unclaiming close to the date of task execution, please message the Issuer Organization directly.
@@ -2800,7 +2772,7 @@ function CommunityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCard
 // MYCITY TAB
 // ═════════════════════════════════════════════════════════════════════════════
 
-function MyCityTab({ onLearnMore }: { onLearnMore: (key: ParticipantLearnCardKey) => void }) {
+function MyCityTab({ _onLearnMore }: { _onLearnMore?: (key: ParticipantLearnCardKey) => void }) {
   const { state, likePost } = useDemo();
   const [sort, setSort] = useState<"recent" | "top">("recent");
 
