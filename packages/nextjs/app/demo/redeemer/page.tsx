@@ -400,6 +400,21 @@ export default function RedeemerApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-process queued redemptions after 3 s to simulate business fulfillment.
+  const autoProcessTimers = React.useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  React.useEffect(() => {
+    redeemer.redemptionQueue.forEach(item => {
+      if (!autoProcessTimers.current.has(item.id)) {
+        const timer = setTimeout(() => {
+          dispatch({ type: "REDEEMER_PROCESS_REDEMPTION", queueId: item.id });
+          autoProcessTimers.current.delete(item.id);
+        }, 3000);
+        autoProcessTimers.current.set(item.id, timer);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redeemer.redemptionQueue]);
+
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -2785,7 +2800,7 @@ function DashboardTab({
 }) {
   const totalCityxBurned = redeemer.processedRedemptions.reduce((n, r) => n + r.costCity, 0);
   const activeOfferingsCount = committedOfferings.length + mceOfferings.length;
-  const queuedRedemptionsCount = redeemer.redemptionQueue.length;
+  const isActive = activeOfferingsCount > 0;
 
   // Tally processedRedemptions by offerTitle for accurate per-offering breakdown
   const redemptionsByTitle = redeemer.processedRedemptions.reduce<
@@ -2827,8 +2842,19 @@ function DashboardTab({
           <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Active Offerings</div>
         </div>
         <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: "#ff6b9d" }}>{queuedRedemptionsCount}</div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Queued Redemptions</div>
+          <div style={{
+            fontSize: 16, fontWeight: 700,
+            color: isActive ? ACCENT : MUTED,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: isActive ? ACCENT : MUTED,
+              display: "inline-block", flexShrink: 0,
+            }} />
+            {isActive ? "Active" : "Inactive"}
+          </div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Redeemer Status</div>
         </div>
         <div style={{ ...surfaceCard, textAlign: "center", padding: "16px 12px" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#DD9E33" }}>{redeemer.processedRedemptions.length}</div>
