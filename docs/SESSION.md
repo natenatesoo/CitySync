@@ -12,10 +12,68 @@ When major product, contract-integration, or deployment-impacting changes are ma
 ---
 
 ## Last Updated
-2026-03-11 (Session 18)
+2026-03-14 (Session 19)
 
 ## Current Branch
 `main`
+
+## Session 19 Summary (2026-03-14)
+
+### Completed This Session
+
+**Redemption History Persistence** (`56d3be0`)
+- Added `REDEMPTION_STORAGE_KEY = "citysync:demo:pastRedemptions:v1"` constant in `DemoContext.tsx`.
+- Added `HYDRATE_REDEMPTIONS` action type and reducer case.
+- Added hydration effect (on mount) and persist effect (on `state.pastRedemptions` change).
+- Used `redemptionHydratedRef` to prevent overwriting loaded data on first render.
+
+**Redeemer Sheet Migration** (`487409a`)
+- Converted all 6 Redeemer role sheets from `position: "absolute"` floating card style to the standard fixed bottom-sheet pattern used by Participant and Issuer roles.
+- Pattern A (partial-height): `AddOfferingSheet`, `IssueOfferingFromCatalogSheet`, `ConfirmDialog`, `QRModal`, `ComposePostSheet` — each now uses `position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none"` wrapper + `walletSlideUp` animation + `borderRadius: "24px 24px 0 0"`.
+- Pattern C (full-height): MCE Proposal Create Sheet — `position: "fixed", inset: 0, zIndex: 220` wrapper with inner `position: "absolute", top: 0, left: 0, right: 0, bottom: 69`.
+- Fixed stray `</div>` JSX mismatch after MCE sheet restructure.
+
+**Dashboard Metrics Fix** (`13afada`)
+- Replaced fake `totalInCirculation = 125000` and `networkBurned = totalCityxBurned + 4820` with real stats.
+- Dashboard grid now shows: Active Offerings (`committedOfferings.length + mceOfferings.length`), Queued Redemptions (`redeemer.redemptionQueue.length`), Your Redemptions, Your CITYx Burned.
+- Fixed per-offering breakdown: now tallies `processedRedemptions` by `offerTitle` via `redemptionsByTitle` reduce, so each offering shows its own accurate redemption count.
+
+**Tab Bar Fill-Style Redesign** (`13afada`)
+- All tab controls (BottomNav + 6 segment toggles) updated: buttons now fill the full container with no padding gaps.
+- BottomNav (`BottomNav.tsx`): removed container padding, added `items-stretch`, removed `rounded-xl`/`minWidth`/`minHeight` from buttons, added index-aware `borderRadius` (outer bottom corners: `0 0 0 20px` / `0 0 20px 0` for first/last).
+- All segment toggles across `participant/page.tsx`, `redeemer/page.tsx` (×3), `issuer/page.tsx` (×3): removed `padding: 4` and `gap: 2` from containers, added `overflow: "hidden"`, changed button `borderRadius` to `"16px 0 0 16px"` / `"0 16px 16px 0"` (or 14px for issuer variants).
+
+**BottomNav Min-Height Restored** (`1248654`)
+- After removing container padding, nav shrank below the `bottom: 69` constant used by all sheets, causing a gap.
+- Added `minHeight: 69` to the nav style to lock it at exactly the height sheets expect.
+
+**Full Sheets Top Offset** (`106c860`)
+- Full-height sheets (`top: 0`) were covering the AppShell header nav bar.
+- Changed `top: 0` → `top: 112` (50px PhoneStatusBar + 62px header) on all 4 full-height sheet panels:
+  - Issuer: Task Catalog sheet, Propose New Task sheet.
+  - Participant: Submit for Verification sheet.
+  - Redeemer: MCE Proposal Create sheet.
+- Added `borderRadius: "12px 12px 0 0"` to each sheet's top edge for a clean transition below the header.
+
+**Legal Page Updates** (`0bd8f72`)
+- Updated contact email from `hello@city-sync.org` → `city-sync@pm.me` in both Privacy Policy and Terms of Service.
+- Privacy Policy footer: added divider + links to Terms of Service and Back to Demo (`/demo`).
+- Terms of Service footer: added divider + links to Privacy Policy and Back to Demo (`/demo`).
+
+### Files Changed This Session
+- `packages/nextjs/app/demo/_context/DemoContext.tsx` — redemption persistence
+- `packages/nextjs/app/demo/redeemer/page.tsx` — sheet migration, dashboard metrics, segment toggles
+- `packages/nextjs/app/demo/participant/page.tsx` — segment toggle, full sheet top offset
+- `packages/nextjs/app/demo/issuer/page.tsx` — segment toggles, full sheet top offsets
+- `packages/nextjs/app/demo/_components/BottomNav.tsx` — fill-style redesign, min-height
+- `packages/nextjs/app/demo/privacy/route.ts` — email, footer links
+- `packages/nextjs/app/demo/terms/route.ts` — email, footer links
+
+### No Deployment Changes
+- No contract changes, no env vars added, no new dependencies.
+- All changes are frontend UI/UX only.
+
+---
 
 ## Session 18 Summary (2026-03-11)
 
