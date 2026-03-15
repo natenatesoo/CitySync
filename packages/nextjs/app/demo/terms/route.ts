@@ -129,7 +129,13 @@ const TERMS_HTML = String.raw`<!doctype html>
 
       <h2>10. Contact</h2>
       <p>
-        Terms questions: <a href="mailto:hello@city-sync.org">hello@city-sync.org</a>
+        Terms questions: <a href="mailto:city-sync@pm.me">city-sync@pm.me</a>
+      </p>
+
+      <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 28px 0 20px;" />
+      <p style="margin: 0; display: flex; gap: 20px; flex-wrap: wrap;">
+        <a href="/demo/privacy">Privacy Policy</a>
+        <a href="/demo">← Back to Demo</a>
       </p>
     </main>
   </body>
