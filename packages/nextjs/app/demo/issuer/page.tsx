@@ -3735,9 +3735,9 @@ function MCEsTab({
           `}</style>
           <div style={{ position: "fixed", inset: 0, zIndex: 220, pointerEvents: "none" }}>
             <div onClick={e => e.stopPropagation()} style={{
-              position: "absolute", left: 0, right: 0, top: 0, bottom: 69,
+              position: "absolute", left: 0, right: 0, top: 112, bottom: 69,
               zIndex: 1,
-              background: "#1E1E2C", borderRadius: "20px 20px 0 0",
+              background: "#1E1E2C", borderRadius: "12px 12px 0 0",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.55)", padding: "20px 20px 24px",
               animation: "walletSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
               overflowY: "auto", pointerEvents: "auto",
