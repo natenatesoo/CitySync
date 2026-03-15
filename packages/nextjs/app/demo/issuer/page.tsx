@@ -100,6 +100,8 @@ const TABS = [
 ];
 
 const EPOCH1_CAP = 312;
+const EPOCH_RESET_KEY = "citysync:demo:issuer:epochReset:v1";
+const EPOCH_RESET_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
 const ACCENT = "#DD9E33"; // gold — primary issuer colour
 const ACCENT_PURPLE = "#a78bfa"; // purple — community / MCE content
@@ -361,8 +363,21 @@ export default function IssuerApp() {
   const [openInfoCards, setOpenInfoCards] = useState<IssuerLearnCardKey[]>([]);
   const [unissueConfirmId, setUnissueConfirmId] = useState<string | null>(null);
   const [noShowConfirmItem, setNoShowConfirmItem] = useState<{ taskId: string; claimant: `0x${string}`; title: string } | null>(null);
+  const [epochCreditOffset, setEpochCreditOffset] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const raw = window.localStorage.getItem(EPOCH_RESET_KEY);
+      return raw ? (JSON.parse(raw) as { resetAt: number; offsetCredits: number }).offsetCredits : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // Always-current ref so the settle-timer can read tasks after DemoContext hydrates.
+  const issuerTasksRef = React.useRef([] as typeof issuer.tasks);
 
   const { issuer } = state;
+  issuerTasksRef.current = issuer.tasks;
   const rightPanel = getIssuerRightPanel(activeTab);
   const leftPanel =
     openInfoCards.length > 0 ? (
@@ -381,6 +396,29 @@ export default function IssuerApp() {
   React.useEffect(() => {
     setRole("issuer");
     // Intentional mount-only role selection; avoids reruns when callback identity updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Weekly epoch reset: 250ms settle lets DemoContext hydrate issuer.tasks before we snapshot.
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (typeof window === "undefined") return;
+      try {
+        const raw = window.localStorage.getItem(EPOCH_RESET_KEY);
+        const stored = raw
+          ? (JSON.parse(raw) as { resetAt: number; offsetCredits: number })
+          : { resetAt: 0, offsetCredits: 0 };
+        if (Date.now() - stored.resetAt > EPOCH_RESET_MS) {
+          const total = issuerTasksRef.current.reduce((s, t) => s + t.credits, 0);
+          const next = { resetAt: Date.now(), offsetCredits: total };
+          window.localStorage.setItem(EPOCH_RESET_KEY, JSON.stringify(next));
+          setEpochCreditOffset(total);
+        }
+      } catch {
+        // Ignore storage failures.
+      }
+    }, 250);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -412,7 +450,8 @@ export default function IssuerApp() {
 
   const allPosts = [...localPosts, ...state.posts];
   const totalPending = issuer.tasks.reduce((n, t) => n + t.pendingCompletions.length, 0);
-  const creditsCommitted = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
+  const allTimeCredits = issuer.tasks.reduce((sum, t) => sum + t.credits, 0);
+  const creditsCommitted = Math.max(0, allTimeCredits - epochCreditOffset);
   const creditsIssued = issuer.tasks.reduce((sum, t) => sum + t.verifiedCount * t.credits, 0);
 
   const handleVerify = async (taskId: string, citizen: string) => {
